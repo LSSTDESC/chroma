@@ -63,7 +63,7 @@ class PhosimObject(object):
     import socket
     if socket.gethostname() == 'Trogdor':
         phosim_dir = '/Users/josh/phosim-3.2.1/'
-    else:
+    else: #kipac machine or slac batch farm
         phosim_dir = '/nfs/slac/g/ki/ki19/jmeyers3/phosim-3.2.1/'
 
     def get_SED(self):
