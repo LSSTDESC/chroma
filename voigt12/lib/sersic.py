@@ -2,13 +2,7 @@ import numpy as np
 from scipy.special import gammainc, gamma
 from scipy.optimize import newton
 
-class SersicInputError(ValueError):
-    def __init__(self, value):
-        self.value = value
-    def __str__(self):
-        return repr(self.value)
-
-class Sersic:
+class Sersic(object):
     ''' Class for handling all things related to Sersic surface brightness profiles.  The main usage
     is to evaluate the surface brightness at a given location, but also provides routines to convert
     peak surface brightness to integrated flux, for example.  Initialization is meant to be very
