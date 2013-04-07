@@ -59,13 +59,13 @@ class VoigtImageFactory(object):
             self.load_PSF(PSF)
         return self.PSF_image_dict[key]
 
-    def loadPSF(self, PSF):
+    def load_PSF(self, PSF):
         '''Evaluate PSF at subpixel centers and store in PSF dictionary cache.'''
         try:
             key = PSF.key
         except AttributeError:
             key = id(PSF)
-        self.PSF_image_dict[key] = PSF(self.ysub, self.xsub)
+        self.PSF_image_dict[key] = PSF(self.ysub, self.xsub)/(self.oversample_factor**2.0)
 
     def _get_subpix_centers(self):
         '''Calculate the coordinates of the centers of each subpixel.
@@ -142,13 +142,13 @@ class VoigtImageFactory(object):
                 HD_reg = self._get_HD_subpix_region(HD_center)
                 # proceed only if HD region is not too close to the edges
                 if min(HD_reg) >= 0 and max(HD_reg) < self.padded_oversize:
-                    HD_center_coord = self.y_subpix_centers[w][0], self.x_subpix_centers[w][0]
+                    HD_center_coord = self.ysub[w][0], self.xsub[w][0]
                     ysubsub, xsubsub = self._get_subsubpix_centers(HD_center_coord)
                     galHD = gal(ysubsub, xsubsub)
                     galim[HD_reg[0]:HD_reg[1], HD_reg[2]:HD_reg[3]] = \
                       self._rebin(galHD, (self.HD_size, self.HD_size))
             if PSF is not None:
-                PSFim = self.get_PSFimage(PSF)
+                PSFim = self.get_PSF_image(PSF)
                 galim = fftconvolve(galim, PSFim, mode='same')
             oversampled_image += galim
         return oversampled_image
@@ -165,4 +165,40 @@ class VoigtImageFactory(object):
         im = padded_im[self.pad:-self.pad, self.pad:-self.pad]
         return im
 
-# Should write some tests for this!!!
+if __name__ == '__main__':
+    # compare our image generation to that produced by GalSim.
+    # The GalSim comparison image and yaml file for producing that image are in the
+    # data directory.
+    from sersic import Sersic
+    import pyfits
+    image_factory = VoigtImageFactory()
+    image_factory_extreme = VoigtImageFactory(pad=3, oversample_factor=25, HD_size=75, HD_factor=35)
+
+    gmag = 0.2
+    phi = 30 * np.pi/180.0
+
+    bulge_flux = 0.25
+    bulge_rad = 2.0
+    bulge_n = 4.0
+
+    disk_flux = 0.75
+    disk_rad = 3.0
+    disk_n = 1.0
+
+    y0=0.3
+    x0=0.1
+
+    bulge = Sersic(y0, x0, bulge_n, r_e=bulge_rad, flux=bulge_flux, phi=phi, gmag=gmag)
+    disk = Sersic(y0, x0, disk_n, r_e=disk_rad, flux=disk_flux, phi=phi, gmag=gmag)
+
+    FWHM = 1.0 * np.sqrt(8.0 * np.log(2.0))
+    psf = Sersic(0.0, 0.0, 0.5, FWHM=FWHM, flux=1.0, phi=0.0, gmag=0.0)
+
+    image = image_factory.get_image([(disk, psf),(bulge, psf)])
+    gimage = pyfits.getdata('../data/galsim_test/galsim_test.fits')
+
+    print 'Comparing two images each with total flux=1.0.  The differences should be small'
+    print 'RMS difference with default settings: {}'.format(np.std(image-gimage))
+
+    image_extreme = image_factory_extreme.get_image([(disk, psf),(bulge, psf)])
+    print 'RMS difference with extreme settings: {}'.format(np.std(image_extreme-gimage))
