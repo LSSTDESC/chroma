@@ -11,7 +11,7 @@ def fiducial_galaxy():
     gparam.add('b_x0', value=0.1)
     gparam.add('b_y0', value=0.3)
     gparam.add('b_n', value=4.0, vary=False)
-    gparam.add('b_r_e', value=0.7 * 1.1)
+    gparam.add('b_r_e', value=1.1 * 1.1)
     gparam.add('b_flux', value=0.25)
     gparam.add('b_gmag', value=0.2)
     gparam.add('b_phi', value=0.0)
@@ -19,7 +19,7 @@ def fiducial_galaxy():
     gparam.add('d_x0', expr='b_x0')
     gparam.add('d_y0', expr='b_y0')
     gparam.add('d_n', value=1.0, vary=False)
-    gparam.add('d_r_e', value=0.7)
+    gparam.add('d_r_e', value=1.1)
     gparam.add('d_flux', expr='1.0 - b_flux')
     gparam.add('d_gmag', expr='b_gmag')
     gparam.add('d_phi', expr='b_phi')
@@ -35,7 +35,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
                                                  bulge_SED_file, disk_SED_file,
                                                  redshift, PSF_ellip, PSF_phi)
     map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-    set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
+    set_FWHM_ratio(gparam, 1.4, circ_c_PSF, im_fac)
     gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
     gen_init_param = init_param_generator(gparam)
     measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
@@ -60,10 +60,9 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
 def fig3_fiducial(im_fac=None):
     if im_fac is None:
         im_fac = VoigtImageFactory()
-    gparam = fiducial_galaxy()
-    filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
+
     bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
     disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
@@ -73,7 +72,9 @@ def fig3_fiducial(im_fac=None):
     print
 
     fil = open('fig3_fiducial.dat', 'w')
-    for fw in filter_widths:
+#    for fw in [350]:
+    for fw in [150, 250, 350, 450]:
+        gparam = fiducial_galaxy()
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
@@ -85,7 +86,6 @@ def fig3_fiducial(im_fac=None):
 def fig3_redshift(im_fac=None):
     if im_fac is None:
         im_fac = VoigtImageFactory()
-    gparam = fiducial_galaxy()
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -99,6 +99,7 @@ def fig3_redshift(im_fac=None):
 
     fil = open('fig3_redshift.dat', 'w')
     for fw in filter_widths:
+        gparam = fiducial_galaxy()
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
@@ -110,8 +111,6 @@ def fig3_redshift(im_fac=None):
 def fig3_bulge_radius(im_fac=None):
     if im_fac is None:
         im_fac = VoigtImageFactory()
-    gparam = fiducial_galaxy()
-    gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -125,6 +124,8 @@ def fig3_bulge_radius(im_fac=None):
 
     fil = open('fig3_bulge_radius.dat', 'w')
     for fw in filter_widths:
+        gparam = fiducial_galaxy()
+        gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
@@ -136,7 +137,6 @@ def fig3_bulge_radius(im_fac=None):
 def fig3_disk_spectrum(im_fac=None):
     if im_fac is None:
         im_fac = VoigtImageFactory()
-    gparam = fiducial_galaxy()
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -150,6 +150,7 @@ def fig3_disk_spectrum(im_fac=None):
 
     fil = open('fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:
+        gparam = fiducial_galaxy()
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
@@ -310,3 +311,6 @@ def fig3plot():
 
 
     plt.savefig('fig3.pdf')
+
+if __name__ == '__main__':
+    fig3data()
