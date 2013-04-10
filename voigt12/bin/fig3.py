@@ -4,7 +4,7 @@ import ringtest
 from lmfit import Parameters, Minimizer
 from VoigtImageFactory import VoigtImageFactory
 from bdgal import *
-
+import matplotlib.pyplot as plt
 
 def fiducial_galaxy():
     gparam = Parameters()
@@ -26,6 +26,24 @@ def fiducial_galaxy():
     dummyfit = Minimizer(lambda x: 0, gparam)
     dummyfit.prepare_fit()
     return gparam
+
+def measure_shear_calib(gen_target_image, gen_init_param, measure_ellip):
+    gamma0 = 0.0 + 0.0j
+    gamma0_hat = ringtest.ringtest(gamma0, 3,
+                                   gen_target_image,
+                                   gen_init_param,
+                                   measure_ellip)
+    c = gamma0_hat.real, gamma0_hat.imag
+
+    gamma1 = 0.01 + 0.02j
+    gamma1_hat = ringtest.ringtest(gamma1, 3,
+                                   gen_target_image,
+                                   gen_init_param,
+                                   measure_ellip)
+    m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
+    m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
+    m = m0, m1
+    return m, c
 
 def fig3_fiducial(im_fac=None):
     if im_fac is None:
@@ -50,28 +68,269 @@ def fig3_fiducial(im_fac=None):
                                                      bulge_sed_file, disk_sed_file,
                                                      redshift, PSF_ellip, PSF_phi)
         map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-
         set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
         gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
         gen_init_param = init_param_generator(gparam)
         measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
 
-        gamma0 = 0.0 + 0.0j
-        gamma0_hat = ringtest.ringtest(gamma0, 3,
-                                       gen_target_image,
-                                       gen_init_param,
-                                       measure_ellip)
-        c = gamma0_hat.real, gamma0_hat.imag
-
-        gamma1 = 0.01 + 0.02j
-        gamma1_hat = ringtest.ringtest(gamma1, 3,
-                                       gen_target_image,
-                                       gen_init_param,
-                                       measure_ellip)
-        m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
-        m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
-        m = m0, m1
+        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
     fil.close()
+
+def fig3_redshift(im_fac=None):
+    if im_fac is None:
+        im_fac = VoigtImageFactory()
+    gparam = fiducial_galaxy()
+    filter_widths = [150, 250, 350, 450]
+    PSF_ellip = 0.05
+    PSF_phi = 0.0
+    bulge_sed_file = '../data/SEDs/CWW_E_ext.ascii'
+    disk_sed_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    redshift = 1.4
+
+    print
+    print 'Varying the redshift'
+    print
+
+    fil = open('fig3_redshift.dat', 'w')
+    for fw in filter_widths:
+        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
+                                                     gparam['b_flux'].value,
+                                                     bulge_sed_file, disk_sed_file,
+                                                     redshift, PSF_ellip, PSF_phi)
+        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
+        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
+        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
+        gen_init_param = init_param_generator(gparam)
+        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
+
+        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
+        print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
+        fil.write('{} {} {}\n'.format(fw, c, m))
+    fil.close()
+
+def fig3_bulge_radius(im_fac=None):
+    if im_fac is None:
+        im_fac = VoigtImageFactory()
+    gparam = fiducial_galaxy()
+    gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
+    filter_widths = [150, 250, 350, 450]
+    PSF_ellip = 0.05
+    PSF_phi = 0.0
+    bulge_sed_file = '../data/SEDs/CWW_E_ext.ascii'
+    disk_sed_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    redshift = 0.9
+
+    print
+    print 'Varying the bulge radius'
+    print
+
+    fil = open('fig3_bulge_radius.dat', 'w')
+    for fw in filter_widths:
+        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
+                                                     gparam['b_flux'].value,
+                                                     bulge_sed_file, disk_sed_file,
+                                                     redshift, PSF_ellip, PSF_phi)
+        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
+        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
+        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
+        gen_init_param = init_param_generator(gparam)
+        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
+
+        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
+        print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
+        fil.write('{} {} {}\n'.format(fw, c, m))
+    fil.close()
+
+def fig3_disk_spectrum(im_fac=None):
+    if im_fac is None:
+        im_fac = VoigtImageFactory()
+    gparam = fiducial_galaxy()
+    filter_widths = [150, 250, 350, 450]
+    PSF_ellip = 0.05
+    PSF_phi = 0.0
+    bulge_sed_file = '../data/SEDs/CWW_E_ext.ascii'
+    disk_sed_file = '../data/SEDs/CWW_Im_ext.ascii'
+    redshift = 0.9
+
+    print
+    print 'Varying the disk spectrum'
+    print
+
+    fil = open('fig3_disk_spectrum.dat', 'w')
+    for fw in filter_widths:
+        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
+                                                     gparam['b_flux'].value,
+                                                     bulge_sed_file, disk_sed_file,
+                                                     redshift, PSF_ellip, PSF_phi)
+        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
+        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
+        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
+        gen_init_param = init_param_generator(gparam)
+        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
+
+        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
+        print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
+        fil.write('{} {} {}\n'.format(fw, c, m))
+    fil.close()
+
+def fig3data():
+    im_fac = VoigtImageFactory()
+    fig3_fiducial(im_fac)
+    fig3_redshift(im_fac)
+    fig3_bulge_radius(im_fac)
+    fig3_disk_spectrum(im_fac)
+
+def fig3plot():
+    #setup plots
+    fig = plt.figure(figsize=(5.5,7), dpi=100)
+    fig.subplots_adjust(left=0.18)
+    ax1 = fig.add_subplot(211)
+    ax1.set_yscale('log')
+    ax1.set_ylabel('|m|')
+    ax1.set_ylim(5.e-5, 2.e-2)
+    ax1.set_xlim(150, 450)
+    ax1.fill_between([150,450], [1.e-3, 1.e-3], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+    ax1.fill_between([150,450], [1.e-3/2, 1.e-3/2], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+    ax1.fill_between([150,450], [1.e-3/5, 1.e-3/5], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+
+    ax2 = fig.add_subplot(212)
+    ax2.set_yscale('log')
+    ax2.set_xlabel('Filter width (nm)')
+    ax2.set_ylabel('|c|')
+    ax2.set_ylim(1.e-5, 1.e-3)
+    ax2.set_xlim(150, 450)
+    ax2.fill_between([150,450], [3.e-4, 3.e-4], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+    ax2.fill_between([150,450], [3.e-4/2, 3.e-4/2], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+    ax2.fill_between([150,450], [3.e-4/5, 3.e-4/5], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.2, edgecolor='None')
+
+    #load fiducial galaxy
+
+    calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
+    try:
+        with open('fig3_fiducial.dat', 'r') as fil:
+            for line in fil:
+                line = line.replace('(', ' ')
+                line = line.replace(')', ' ')
+                line = line.replace(',', ' ')
+                line = ' '.join(line.split())
+                width, c1, c2, m1, m2 = line.split(' ')
+                calib['width'].append(int(width))
+                calib['c1'].append(float(c1))
+                calib['c2'].append(float(c2))
+                calib['m1'].append(float(m1))
+                calib['m2'].append(float(m2))
+    except IOError:
+        pass
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), 's', mfc='None', mec='red', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), color='red')
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), 'x', mfc='None', mec='red', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), color='red')
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), 's', mfc='None', mec='red', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), color='red')
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), 'x', mfc='None', mec='red', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), color='red')
+
+
+    #load varied redshift galaxy
+
+    calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
+    try:
+        with open('fig3_redshift.dat', 'r') as fil:
+            for line in fil:
+                line = line.replace('(', ' ')
+                line = line.replace(')', ' ')
+                line = line.replace(',', ' ')
+                line = ' '.join(line.split())
+                width, c1, c2, m1, m2 = line.split(' ')
+                calib['width'].append(int(width))
+                calib['c1'].append(float(c1))
+                calib['c2'].append(float(c2))
+                calib['m1'].append(float(m1))
+                calib['m2'].append(float(m2))
+    except IOError:
+        pass
+
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), 's', mfc='None', mec='blue', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), color='blue', linestyle='--')
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), 'x', mfc='None', mec='blue', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), color='blue', linestyle='--')
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), 's', mfc='None', mec='blue', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), color='blue', linestyle='--')
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), 'x', mfc='None', mec='blue', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), color='blue', linestyle='--')
+
+
+    #load varied bulge radius galaxy
+
+    calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
+    try:
+        with open('fig3_bulge_radius.dat', 'r') as fil:
+            for line in fil:
+                line = line.replace('(', ' ')
+                line = line.replace(')', ' ')
+                line = line.replace(',', ' ')
+                line = ' '.join(line.split())
+                width, c1, c2, m1, m2 = line.split(' ')
+                calib['width'].append(int(width))
+                calib['c1'].append(float(c1))
+                calib['c2'].append(float(c2))
+                calib['m1'].append(float(m1))
+                calib['m2'].append(float(m2))
+    except IOError:
+        pass
+
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), 's', mfc='None', mec='green', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), color='green', linestyle='-.')
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), 'x', mfc='None', mec='green', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), color='green', linestyle='-.')
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), 's', mfc='None', mec='green', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), color='green', linestyle='-.')
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), 'x', mfc='None', mec='green', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), color='green', linestyle='-.')
+
+
+    #load varied disk spectrum galaxy
+
+    calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
+    try:
+        with open('fig3_disk_spectrum.dat', 'r') as fil:
+            for line in fil:
+                line = line.replace('(', ' ')
+                line = line.replace(')', ' ')
+                line = line.replace(',', ' ')
+                line = ' '.join(line.split())
+                width, c1, c2, m1, m2 = line.split(' ')
+                calib['width'].append(int(width))
+                calib['c1'].append(float(c1))
+                calib['c2'].append(float(c2))
+                calib['m1'].append(float(m1))
+                calib['m2'].append(float(m2))
+    except IOError:
+        pass
+
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), 's', mfc='None', mec='black', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m1'])), color='black', linestyle=':')
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), 'x', mfc='None', mec='black', mew=1.3)
+    ax1.plot(calib['width'], abs(np.array(calib['m2'])), color='black', linestyle=':')
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), 's', mfc='None', mec='black', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c1'])), color='black', linestyle=':')
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), 'x', mfc='None', mec='black', mew=1.3)
+    ax2.plot(calib['width'], abs(np.array(calib['c2'])), color='black', linestyle=':')
+
+
+    plt.savefig('fig3.pdf')
