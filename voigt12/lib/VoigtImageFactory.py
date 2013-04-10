@@ -65,7 +65,8 @@ class VoigtImageFactory(object):
             key = PSF.key
         except AttributeError:
             key = id(PSF)
-        self.PSF_image_dict[key] = PSF(self.ysub, self.xsub)/(self.oversample_factor**2.0)
+        if key not in self.PSF_image_dict:
+            self.PSF_image_dict[key] = PSF(self.ysub, self.xsub)/(self.oversample_factor**2.0)
 
     def _get_subpix_centers(self):
         '''Calculate the coordinates of the centers of each subpixel.

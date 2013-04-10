@@ -34,6 +34,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
                                                  gparam['b_flux'].value,
                                                  bulge_SED_file, disk_SED_file,
                                                  redshift, PSF_ellip, PSF_phi)
+    map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
     set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
     gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
     gen_init_param = init_param_generator(gparam)
@@ -99,17 +100,8 @@ def fig3_redshift(im_fac=None):
     fil = open('fig3_redshift.dat', 'w')
     for fw in filter_widths:
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
-        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-                                                     gparam['b_flux'].value,
-                                                     bulge_SED_file, disk_SED_file,
-                                                     redshift, PSF_ellip, PSF_phi)
-        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
-        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
-        gen_init_param = init_param_generator(gparam)
-        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
-
-        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
+                                   PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
@@ -134,17 +126,8 @@ def fig3_bulge_radius(im_fac=None):
     fil = open('fig3_bulge_radius.dat', 'w')
     for fw in filter_widths:
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
-        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-                                                     gparam['b_flux'].value,
-                                                     bulge_SED_file, disk_SED_file,
-                                                     redshift, PSF_ellip, PSF_phi)
-        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
-        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
-        gen_init_param = init_param_generator(gparam)
-        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
-
-        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
+                                   PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
@@ -168,17 +151,8 @@ def fig3_disk_spectrum(im_fac=None):
     fil = open('fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
-        b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-                                                     gparam['b_flux'].value,
-                                                     bulge_SED_file, disk_SED_file,
-                                                     redshift, PSF_ellip, PSF_phi)
-        map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-        set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
-        gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
-        gen_init_param = init_param_generator(gparam)
-        measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
-
-        m, c = measure_shear_calib(gen_target_image, gen_init_param, measure_ellip)
+        m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
+                                   PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
@@ -187,13 +161,9 @@ def fig3_disk_spectrum(im_fac=None):
 def fig3data():
     im_fac = VoigtImageFactory()
     fig3_fiducial(im_fac)
-    print im_fac.PSF_image_dict.keys()
     fig3_redshift(im_fac)
-    print im_fac.PSF_image_dict.keys()
     fig3_bulge_radius(im_fac)
-    print im_fac.PSF_image_dict.keys()
     fig3_disk_spectrum(im_fac)
-    print im_fac.PSF_image_dict.keys()
 
 def fig3plot():
     #setup plots
