@@ -5,6 +5,7 @@ from Voigt12PSF import Voigt12PSF
 from scipy.integrate import simps
 from sersic import Sersic
 from scipy.optimize import newton
+from lmfit import minimize
 
 def get_SED_photons(SED_file, filter_file, redshift):
     '''Return wave and photon-flux of filtered spectrum.
