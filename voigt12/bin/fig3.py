@@ -185,13 +185,13 @@ def fig3plot():
     ax2.set_yscale('log')
     ax2.set_xlabel('Filter width (nm)')
     ax2.set_ylabel('|c|')
-    ax2.set_ylim(1.e-5, 1.e-3)
+    ax2.set_ylim(1.5e-5, 1.e-3)
     ax2.set_xlim(150, 450)
-    ax2.fill_between([150,450], [3.e-4, 3.e-4], [1.e-5, 1.e-5],
+    ax2.fill_between([150,450], [3.e-4, 3.e-4], [1.5e-5, 1.5e-5],
                      color='grey', alpha=0.2, edgecolor='None')
-    ax2.fill_between([150,450], [3.e-4/2, 3.e-4/2], [1.e-5, 1.e-5],
+    ax2.fill_between([150,450], [3.e-4/2, 3.e-4/2], [1.5e-5, 1.5e-5],
                      color='grey', alpha=0.2, edgecolor='None')
-    ax2.fill_between([150,450], [3.e-4/5, 3.e-4/5], [1.e-5, 1.e-5],
+    ax2.fill_between([150,450], [3.e-4/5, 3.e-4/5], [1.5e-5, 1.5e-5],
                      color='grey', alpha=0.2, edgecolor='None')
 
     #load fiducial galaxy
