@@ -115,16 +115,18 @@ def target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac):
     return f
 
 def init_param_generator(gparam):
-    #parameters which will change with each angle along the ring in a ringtest
+    #parameters which will change with applied shear gamma or angle along ring beta
     #extract their initial values here
     b_y0 = gparam['b_y0'].value
-    d_y0 = gparam['d_y0'].value
     b_x0 = gparam['b_x0'].value
-    d_x0 = gparam['d_x0'].value
     b_gmag = gparam['b_gmag'].value
-    d_gmag = gparam['d_gmag'].value
     b_phi = gparam['b_phi'].value
+    b_r_e = gparam['b_r_e'].value
+    d_y0 = gparam['d_y0'].value
+    d_x0 = gparam['d_x0'].value
+    d_gmag = gparam['d_gmag'].value
     d_phi = gparam['d_phi'].value
+    d_r_e = gparam['d_r_e'].value
 
     def gen_init_param(gamma, beta):
         gparam1 = copy.deepcopy(gparam)
@@ -142,6 +144,8 @@ def init_param_generator(gparam):
         d_s_c_ellip = shear_galaxy(d_c_ellip, gamma)
         d_s_gmag = abs(d_s_c_ellip)
         d_s_phi = np.angle(d_s_c_ellip) / 2.0
+        #radius rescaling
+        rescale = np.sqrt(1.0 - abs(gamma)**2.0)
 
         gparam1['b_y0'].value = b_y0 * np.sin(beta / 2.0) + b_x0 * np.cos(beta / 2.0)
         gparam1['b_x0'].value = b_y0 * np.cos(beta / 2.0) - b_x0 * np.sin(beta / 2.0)
@@ -151,6 +155,8 @@ def init_param_generator(gparam):
         gparam1['d_gmag'].value = d_s_gmag
         gparam1['b_phi'].value = b_s_phi
         gparam1['d_phi'].value = d_s_phi
+        gparam1['b_r_e'].value = b_r_e * rescale
+        gparam1['d_r_e'].value = d_r_e * rescale
         return gparam1
     return gen_init_param
 
