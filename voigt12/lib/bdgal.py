@@ -4,7 +4,7 @@ from VoigtImageFactory import VoigtImageFactory
 from Voigt12PSF import Voigt12PSF
 from scipy.integrate import simps
 from sersic import Sersic
-
+from scipy.optimize import newton
 
 def get_SED_photons(SED_file, filter_file, redshift):
     '''Return wave and photon-flux of filtered spectrum.
@@ -88,6 +88,23 @@ def gal_image(gparam, b_PSF, d_PSF, im_fac):
                   flux=gparam['d_flux'].value)
     return im_fac.get_image([(bulge, b_PSF), (disk, d_PSF)])
 
+def gal_overimage(gparam, b_PSF, d_PSF, im_fac):
+    bulge = Sersic(gparam['b_y0'].value,
+                   gparam['b_x0'].value,
+                   gparam['b_n'].value,
+                   r_e=gparam['b_r_e'].value,
+                   gmag=gparam['b_gmag'].value,
+                   phi=gparam['b_phi'].value,
+                   flux=gparam['b_flux'].value)
+    disk = Sersic(gparam['d_y0'].value,
+                  gparam['d_x0'].value,
+                  gparam['d_n'].value,
+                  r_e=gparam['d_r_e'].value,
+                  gmag=gparam['d_gmag'].value,
+                  phi=gparam['d_phi'].value,
+                  flux=gparam['d_flux'].value)
+    return im_fac.get_overimage([(bulge, b_PSF), (disk, d_PSF)])
+
 def target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac):
     gen_init_param = init_param_generator(gparam)
 
@@ -153,6 +170,34 @@ def ellip_measurement_generator(c_PSF, im_fac):
         return c_ellip
     return measure_ellip
 
+def FWHM(data, scale=1.0):
+    height = data.max()
+    w = np.where(data == height)
+    y0, x0 = w[0][0], w[1][0]
+    xs = np.arange(data.shape[0], dtype=np.float64)/scale
+    low = np.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
+    high = np.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
+    return abs(high-low)
+
+def set_fwhm_ratio(gparam, rpg, circ_c_PSF, im_fac):
+    FWHM_psf = FWHM(im_fac.get_PSF_image(circ_c_PSF), scale=im_fac.oversample_factor)
+    gparam2 = copy.deepcopy(gparam)
+    gparam2['b_gmag'].value = 0.0
+    gparam2['b_x0'].value = 0.0
+    gparam2['b_y0'].value = 0.0
+    gparam2['d_gmag'].value = 0.0
+    gparam2['d_x0'].value = 0.0
+    gparam2['d_y0'].value = 0.0
+    def f(scale):
+        gparam2['b_r_e'].value = gparam['b_r_e'].value * scale
+        gparam2['d_r_e'].value = gparam['d_r_e'].value * scale
+        image = gal_overimage(gparam2, circ_c_PSF, circ_c_PSF, im_fac)
+        FWHM_gal = FWHM(image, scale=im_fac.oversample_factor)
+        return FWHM_gal - rpg * FWHM_psf
+    scale = newton(f, 1.0)
+    gparam['b_r_e'].value *= scale
+    gparam['d_r_e'].value *= scale
+
 if __name__ == '__main__':
     from lmfit import Parameter, Parameters, Minimizer, minimize
 
@@ -185,6 +230,7 @@ if __name__ == '__main__':
                                                  disk_SED_file, 0.9, PSF_ellip=0.05)
     # im_fac = VoigtImageFactory(size=51, oversample_factor=3)
     im_fac = VoigtImageFactory()
+    set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
     gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
     gen_init_param = init_param_generator(gparam)
     measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
