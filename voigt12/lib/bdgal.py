@@ -5,7 +5,7 @@ from Voigt12PSF import Voigt12PSF
 from scipy.integrate import simps
 from sersic import Sersic
 from scipy.optimize import newton
-from lmfit import minimize
+from lmfit import minimize, report_errors
 
 def get_SED_photons(SED_file, filter_file, redshift):
     '''Return wave and photon-flux of filtered spectrum.
@@ -111,6 +111,9 @@ def target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac):
 
     def f(gamma, beta):
         gparam1 = gen_init_param(gamma, beta)
+        #if gamma == 0j and beta == 0.0:
+            #report_errors(gparam, show_correl=False)
+            #import pdb; pdb.set_trace()
         return gal_image(gparam1, b_PSF, d_PSF, im_fac)
     return f
 
@@ -160,7 +163,6 @@ def init_param_generator(gparam):
         return gparam1
     return gen_init_param
 
-
 def fit_image_fn_generator(c_PSF, im_fac):
     def f(gparam):
         return gal_image(gparam, c_PSF, c_PSF, im_fac)
@@ -186,8 +188,8 @@ def FWHM(data, scale=1.0):
     high = np.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
     return abs(high-low)
 
-def set_fwhm_ratio(gparam, rpg, circ_c_PSF, im_fac):
-    FWHM_psf = FWHM(im_fac.get_PSF_image(circ_c_PSF), scale=im_fac.oversample_factor)
+def set_FWHM_ratio(gparam, rpg, circ_c_PSF, im_fac):
+    FWHM_PSF = FWHM(im_fac.get_PSF_image(circ_c_PSF), scale=im_fac.oversample_factor)
     gparam2 = copy.deepcopy(gparam)
     gparam2['b_gmag'].value = 0.0
     gparam2['b_x0'].value = 0.0
@@ -195,13 +197,16 @@ def set_fwhm_ratio(gparam, rpg, circ_c_PSF, im_fac):
     gparam2['d_gmag'].value = 0.0
     gparam2['d_x0'].value = 0.0
     gparam2['d_y0'].value = 0.0
-    def f(scale):
+    def FWHM_gal(scale):
         gparam2['b_r_e'].value = gparam['b_r_e'].value * scale
         gparam2['d_r_e'].value = gparam['d_r_e'].value * scale
         image = gal_overimage(gparam2, circ_c_PSF, circ_c_PSF, im_fac)
-        FWHM_gal = FWHM(image, scale=im_fac.oversample_factor)
-        return FWHM_gal - rpg * FWHM_psf
+        return FWHM(image, scale=im_fac.oversample_factor)
+    def f(scale):
+        return FWHM_gal(scale) - rpg * FWHM_PSF
     scale = newton(f, 1.0)
+    #report_errors(gparam)
+    #import ipdb; ipdb.set_trace()
     gparam['b_r_e'].value *= scale
     gparam['d_r_e'].value *= scale
 
@@ -237,7 +242,7 @@ if __name__ == '__main__':
                                                  disk_SED_file, 0.9, PSF_ellip=0.05)
     # im_fac = VoigtImageFactory(size=51, oversample_factor=3)
     im_fac = VoigtImageFactory()
-    set_fwhm_ratio(gparam, 1.4, circ_c_PSF, im_fac)
+    set_FWHM_ratio(gparam, 1.4, circ_c_PSF, im_fac)
     gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
     gen_init_param = init_param_generator(gparam)
     measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
