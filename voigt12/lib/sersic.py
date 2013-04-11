@@ -32,10 +32,21 @@ class Sersic(object):
         ---------
         y0, x0 -- center of profile
         n -- Sersic index
-        r_e -- the effective radius (half-light radius)
+        r_e -- the effective radius (half-light radius) (for a circular profile)
         peak -- peak surface brightness
-        axis_ratio -- minor axis / major axis
-        phi -- position angle measured anticlockwise from postive x axis
+        flux -- integrated (over all space) surface brightness
+        b_over_a -- minor axis / major axis ratio
+        phi -- position angle measured anticlockwise from postive x axis (radians)
+        C11, C12, C22 -- elements of the C-matrix as defined in Voigt+12 for example
+        a, b -- the semimajor and semiminor halflight axes of distribution
+                normalized such that for a circular profile, a * b = r_e**2
+        FWHM -- the full-width at half maximum (for a circular profile)
+        emag -- ellipticity in units of (a^2 - b^2)/(a^2 + b^2)
+        gmag -- ellipticity in units of (a - b)/(a +b)
+        e1, e2 -- cartesian representation of ellipticity also specifiable by (emag, 2*phi)
+        g1, g2 -- cartesian representation of ellipticity also specifiable by (gmag, 2*phi)
+
+        Read the comments below to figure out the hierarchy of all these possible specifications.
         '''
 
         # required things...
@@ -52,18 +63,17 @@ class Sersic(object):
             self.C11 = C11
             self.C12 = C12
             self.C22 = C22
-            # want to keep some bookkeepping parameters around though...
+            # want to keep some additional bookkeepping parameters around as well...
             one_over_a_squared = 0.5 * (C11 + C22 + np.sqrt((C11 - C22)**2 + 4 * C12**2))
             one_over_b_squared = C11 + C22 - one_over_a_squared
             #there's degeneracy between a, b and phi at this point so enforce a > b
             if one_over_a_squared > one_over_b_squared:
                 one_over_a_squared, one_over_b_squared = one_over_b_squared, one_over_a_squared
-            self.a = np.sqrt(1. / one_over_a_squared)
-            self.b = np.sqrt(1. / one_over_b_squared)
+            self.a = np.sqrt(1.0 / one_over_a_squared)
+            self.b = np.sqrt(1.0 / one_over_b_squared)
             self.r_e = np.sqrt(self.a * self.b)
-            twophi = np.arctan2(2 * C12 / (one_over_a_squared - one_over_b_squared),
-                                (C11 - C22) / (one_over_a_squared - one_over_b_squared))
-            self.phi = twophi/2.0 # radians
+            self.phi = 0.5 * np.arctan2(2.0 * C12 / (one_over_a_squared - one_over_b_squared),
+                                        (C11 - C22) / (one_over_a_squared - one_over_b_squared))
         else:
             # goal for this block is to determine a, b, phi
             # first check the direct case
@@ -72,15 +82,15 @@ class Sersic(object):
                 self.b = b
                 self.phi = phi
                 self.r_e = np.sqrt(a * b)
-            else: # now check a hierarchy of size + ellip
-                # first the size
+            else: # now check a hierarchy of size & ellip possibilities
+                # first the size must be either FWHM or r_e
                 if FWHM is not None:
                     self.r_e = 0.5 * FWHM * (self.kappa / np.log(2.0))**n
                 else:
                     assert r_e is not None, "need to specify a size parameter"
                     self.r_e = r_e
-                # goal here is to determine the axis ratio b_over_a, and phi
-                if phi is not None: #doing a polar decomposition
+                # goal here is to determine the axis ratio b_over_a, and position angle phi
+                if phi is not None: #must be doing a polar decomposition
                     self.phi = phi
                     if gmag is not None:
                         b_over_a = (1.0 - gmag)/(1.0 + gmag)
@@ -117,19 +127,19 @@ class Sersic(object):
             self.peak = self.compute_peak(n, self.r_e, flux)
 
     def __call__(self, y, x):
-        ''' Return the surface brightness at (y,x).'''
+        '''Return the surface brightness at (y,x)'''
         xp = x - self.x0
         yp = y - self.y0
-        exponent = self.C11*xp**2 + 2*self.C12*xp*yp + self.C22*yp**2
-        exponent = exponent**(0.5/self.n)
+        exponent = self.C11 * xp**2.0 + 2.0 * self.C12 * xp * yp + self.C22 * yp**2.0
+        exponent **= 0.5 / self.n
         exponent *= -self.kappa
         return self.peak * np.exp(exponent)
 
     @staticmethod
     def compute_kappa(n):
         '''Compute Sersic exponent factor kappa from the Sersic index'''
-        kguess = 1.9992*n - 0.3271
-        return newton(lambda k: gammainc(2*n, k) - 0.5, kguess)
+        kguess = 1.9992 * n - 0.3271
+        return newton(lambda k: gammainc(2.0 * n, k) - 0.5, kguess)
 
     @classmethod
     def compute_FWHM(cls, n, r_e, kappa=None):
