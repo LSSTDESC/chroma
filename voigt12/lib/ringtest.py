@@ -2,6 +2,21 @@ import numpy as np
 from astropy.utils.console import ProgressBar
 
 def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
+    ''' Performs a shear calibration ringtest.
+
+    Produces "true" images uniformly spread along a ring in ellipticity space using the supplied
+    `gen_target_image` function.  Then tries to fit these images, (returning ellipticity estimates)
+    using the supplied `measure_ellip` function with the fit initialized by the supplied
+    `gen_init_param` function.
+
+    The "true" images are sheared by `gamma` (handled by passing through to `gen_target_image`).
+    Images are generated in pairs separated by 180 degrees on the ellipticity plane to minimize shape
+    noise.
+
+    Ultimately returns an estimate of the applied shear (`gamma_hat`), which can then be compared to
+    the input shear `gamma` in an external function to estimate shear calibration parameters.
+    '''
+
     betas = np.linspace(0.0, 2.0 * np.pi, n_ring, endpoint=False)
     ellip0s = []
     ellip180s = []

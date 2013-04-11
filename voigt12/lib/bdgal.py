@@ -1,3 +1,6 @@
+''' Functions for handling Bulge+Disk galaxies such as used in Voigt+12.
+'''
+
 import numpy as np
 import copy
 from VoigtImageFactory import VoigtImageFactory
@@ -13,12 +16,12 @@ def get_SED_photons(SED_file, filter_file, redshift):
     Arguments
     ---------
     SED_file -- filename containing two column data:
-                column 1 is wavelength in nm
-                column 2 is flux proportional to erg/s/cm^2/Ang
+                column 1 -- wavelength in nm
+                column 2 -- flux proportional to erg/s/cm^2/Ang
     filter_file -- filename containing two column data:
-                   column 1 is wavelength in nm
-                   column 2 is fraction of above-atmosphere photons eventually accepted.
-    redshift -- duhh...
+                   column 1 -- wavelength in nm
+                   column 2 -- fraction of above-atmosphere photons eventually accepted.
+    redshift -- redshift the SED (assumed to be initially rest-frame) this amount
     '''
     fdata = np.genfromtxt(filter_file)
     fwave, throughput = fdata[:,0], fdata[:,1]
@@ -36,6 +39,18 @@ def get_composite_SED_photons(SED_files, weights, filter_file, redshift):
     Composite here means different SEDs are added together with corresponding `weights`.
     The weights are applied after normalizing by number of surviving photons for each
     SED. Inputs are similar to get_SED_photons.
+
+    Arguments
+    ---------
+    SED_files -- iterable of strings, each a filename containing a two-column SED
+                 column 1 -- wavelength in nm
+                 column 2 -- flux proportional to ers/s/cm^2/A
+    weights -- iterable containing fraction of spatially integrated flux for each SED component.
+               note that weights are applied after redshifting
+    filter_file -- filename for file containing two-columns:
+                 column 1 -- wavelength in nm
+                 column 2 -- fraction of above-atmosphere photons eventually accepted.
+    redshift -- redshift each of the (rest-frame!) SEDs this amount.
     '''
     fdata = np.genfromtxt(filter_file)
     fwave, throughput = fdata[:,0], fdata[:,1]
@@ -57,7 +72,11 @@ def build_PSFs(filter_file, bulge_flux,
                bulge_SED_file, disk_SED_file,
                redshift,
                PSF_ellip=0.0, PSF_phi=0.0):
-    ''' Build bulge, disk, and composite PSFs from SEDs and filter function.'''
+    ''' Build bulge, disk, and composite PSFs from SEDs and filter function.
+
+    Assume that disk_flux = 1.0 - bulge_flux.
+    Forwards arguments to get(_composite)_SED_photons, and Voigt12PSF init.
+    '''
     bwave, bphotons = get_SED_photons(bulge_SED_file, filter_file, redshift)
     b_PSF = Voigt12PSF(bwave, bphotons, ellipticity=PSF_ellip, phi=PSF_phi)
     dwave, dphotons = get_SED_photons(disk_SED_file, filter_file, redshift)
@@ -70,9 +89,22 @@ def build_PSFs(filter_file, bulge_flux,
     return b_PSF, d_PSF, c_PSF, circ_c_PSF
 
 def shear_galaxy(c_ellip, c_gamma):
+    '''Compute complex ellipticity after shearing by complex shear `c_gamma`.'''
     return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
 
 def gal_image(gparam, b_PSF, d_PSF, im_fac):
+    '''Use image_factory `im_fac` to make a galaxy image from params in gparam and using
+    the bulge and disk psfs `b_PSF` and `d_PSF`.
+
+    Arguments
+    ---------
+    gparam -- lmfit.Parameters object with Sersic parameters for both the bulge and disk:
+              `b_` prefix for bulge, `d_` prefix for disk.
+              Suffixes are all init arguments for the Sersic object.
+
+    Note that you can specify the composite PSF `c_PSF` for both bulge and disk PSF when using during
+    ringtest fits.
+    '''
     bulge = Sersic(gparam['b_y0'].value,
                    gparam['b_x0'].value,
                    gparam['b_n'].value,
@@ -90,6 +122,11 @@ def gal_image(gparam, b_PSF, d_PSF, im_fac):
     return im_fac.get_image([(bulge, b_PSF), (disk, d_PSF)])
 
 def gal_overimage(gparam, b_PSF, d_PSF, im_fac):
+    '''Compute oversampled galaxy image.  Similar to `gal_image()`.
+
+    Useful for computing FWHM of galaxy image at higher resolution than available from just
+    `gal_image()`.
+    '''
     bulge = Sersic(gparam['b_y0'].value,
                    gparam['b_x0'].value,
                    gparam['b_n'].value,
@@ -107,19 +144,25 @@ def gal_overimage(gparam, b_PSF, d_PSF, im_fac):
     return im_fac.get_overimage([(bulge, b_PSF), (disk, d_PSF)])
 
 def target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac):
-    gen_init_param = init_param_generator(gparam)
+    '''Return a function that can be passed to `ringtest()` which produces a target image as a
+    function of applied shear `gamma` and angle along the ring `beta`.
 
+    Arguments are passed through to `gal_image()`
+    '''
+
+    gen_init_param = init_param_generator(gparam)
     def f(gamma, beta):
         gparam1 = gen_init_param(gamma, beta)
-        #if gamma == 0j and beta == 0.0:
-            #report_errors(gparam, show_correl=False)
-            #import pdb; pdb.set_trace()
         return gal_image(gparam1, b_PSF, d_PSF, im_fac)
     return f
 
 def init_param_generator(gparam):
-    #parameters which will change with applied shear gamma or angle along ring beta
-    #extract their initial values here
+    '''Return a function that can be passed to `ringtest()` which generates initial conditions for
+    fit to the "true image" using the incorrect PSF as a function of applied shear `gamma` and angle
+    along the ring `beta`.
+    '''
+    # parameters which will change with applied shear gamma or angle along ring beta
+    # extract their initial values here
     b_y0 = gparam['b_y0'].value
     b_x0 = gparam['b_x0'].value
     b_gmag = gparam['b_gmag'].value
@@ -135,19 +178,19 @@ def init_param_generator(gparam):
         gparam1 = copy.deepcopy(gparam)
         b_phi_ring = b_phi + beta/2.0
         d_phi_ring = d_phi + beta/2.0
-        #bulge complex ellipticity
+        # bulge complex ellipticity
         b_c_ellip = b_gmag * complex(np.cos(2.0 * b_phi_ring), np.sin(2.0 * b_phi_ring))
-        #bulge sheared complex ellipticity
+        # bulge sheared complex ellipticity
         b_s_c_ellip = shear_galaxy(b_c_ellip, gamma)
         b_s_gmag = abs(b_s_c_ellip)
         b_s_phi = np.angle(b_s_c_ellip) / 2.0
-        #disk complex ellipticity
+        # disk complex ellipticity
         d_c_ellip = d_gmag * complex(np.cos(2.0 * d_phi_ring), np.sin(2.0 * d_phi_ring))
-        #disk sheared complex ellipticity
+        # disk sheared complex ellipticity
         d_s_c_ellip = shear_galaxy(d_c_ellip, gamma)
         d_s_gmag = abs(d_s_c_ellip)
         d_s_phi = np.angle(d_s_c_ellip) / 2.0
-        #radius rescaling
+        # radius rescaling
         rescale = np.sqrt(1.0 - abs(gamma)**2.0)
 
         gparam1['b_y0'].value = b_y0 * np.sin(beta / 2.0) + b_x0 * np.cos(beta / 2.0)
@@ -169,6 +212,10 @@ def fit_image_fn_generator(c_PSF, im_fac):
     return f
 
 def ellip_measurement_generator(c_PSF, im_fac):
+    '''Return a function that can be passed to `ringtest()` which computes the best-fit ellipticity
+    of a sheared galaxy along the ring as a function of the "true" image `target_image` and some
+    initial parameters for the fit.
+    '''
     def measure_ellip(target_image, init_param):
         image_gen = fit_image_fn_generator(c_PSF, im_fac)
         resid = lambda param: (image_gen(param) - target_image).flatten()
@@ -180,6 +227,10 @@ def ellip_measurement_generator(c_PSF, im_fac):
     return measure_ellip
 
 def FWHM(data, scale=1.0):
+    '''Compute the full-width at half maximum of a symmetric 2D distribution.  Assumes that measuring
+    along the x-axis is sufficient (ignores all but one row, the one containing the distribution
+    maximum).  Scales result by scale for non-unit width pixels.
+    '''
     height = data.max()
     w = np.where(data == height)
     y0, x0 = w[0][0], w[1][0]
@@ -189,6 +240,11 @@ def FWHM(data, scale=1.0):
     return abs(high-low)
 
 def set_FWHM_ratio(gparam, rpg, circ_c_PSF, im_fac):
+    '''Set the effective radii of the bulge+disk galaxy specified in `gparam` such that the ratio
+    of the FWHM of the PSF-convolved galaxy image is `rpg` times the FWHM of the PSF itself. The
+    galaxy is circularized and centered at the origin for this computation (ellip -> 0.0) and
+    (x0, y0 -> 0.0, 0.0).  The supplied PSF `circ_c_PSF` is assumed to be circularly symmetric.
+    '''
     FWHM_PSF = FWHM(im_fac.get_PSF_image(circ_c_PSF), scale=im_fac.oversample_factor)
     gparam2 = copy.deepcopy(gparam)
     gparam2['b_gmag'].value = 0.0
@@ -205,16 +261,18 @@ def set_FWHM_ratio(gparam, rpg, circ_c_PSF, im_fac):
     def f(scale):
         return FWHM_gal(scale) - rpg * FWHM_PSF
     scale = newton(f, 1.0)
-    #report_errors(gparam)
-    #import ipdb; ipdb.set_trace()
+    # report_errors(gparam)
+    # import ipdb; ipdb.set_trace()
     gparam['b_r_e'].value *= scale
     gparam['d_r_e'].value *= scale
 
 if __name__ == '__main__':
+    # Returns some objects that can be passed to ringtest for interactively checking that the code
+    # is working as expected.
     from lmfit import Parameter, Parameters, Minimizer, minimize
 
     gparam = Parameters()
-    #bulge
+    # bulge
     gparam.add('b_x0', value=2.1)
     gparam.add('b_y0', value=3.3)
     gparam.add('b_n', value=4.0, vary=False)
@@ -222,7 +280,7 @@ if __name__ == '__main__':
     gparam.add('b_flux', value=0.25)
     gparam.add('b_gmag', value=0.4)
     gparam.add('b_phi', value=0.0)
-    #disk
+    # disk
     gparam.add('d_x0', expr='b_x0')
     gparam.add('d_y0', expr='b_y0')
     gparam.add('d_n', value=1.0, vary=False)
