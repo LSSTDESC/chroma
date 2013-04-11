@@ -67,7 +67,7 @@ def fig4_bulge_sersic_index(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    fil = open('fig4_bulge_sersic_index.dat', 'w')
+    fil = open('output/fig4_bulge_sersic_index.dat', 'w')
     for bulge_n in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         gparam = fiducial_galaxy()
         gparam['b_n'].value = bulge_n
@@ -88,7 +88,7 @@ def fig4_bulge_flux(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    fil = open('fig4_bulge_flux.dat', 'w')
+    fil = open('output/fig4_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         gparam = fiducial_galaxy()
         gparam['b_flux'].value = bulge_flux
@@ -110,7 +110,7 @@ def fig4_gal_ellip(im_fac=None):
     disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
-    fil = open('fig4_gal_ellip.dat', 'w')
+    fil = open('output/fig4_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
         gparam = fiducial_galaxy()
         gparam['b_gmag'].value = gal_ellip
@@ -132,7 +132,7 @@ def fig4_y0(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    fil = open('fig4_y0.dat', 'w')
+    fil = open('output/fig4_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
         gparam = fiducial_galaxy()
         gparam['b_y0'].value = y0
@@ -215,7 +215,7 @@ def fig4plot():
 
     calib = {'bulge_n':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig4_bulge_sersic_index.dat') as fil:
+        with open('output/fig4_bulge_sersic_index.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -239,7 +239,7 @@ def fig4plot():
 
     calib = {'bulge_flux':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig4_bulge_flux.dat') as fil:
+        with open('output/fig4_bulge_flux.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -264,7 +264,7 @@ def fig4plot():
 
     calib = {'gal_ellip':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig4_gal_ellip.dat') as fil:
+        with open('output/fig4_gal_ellip.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -288,7 +288,7 @@ def fig4plot():
 
     calib = {'y0':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig4_y0.dat') as fil:
+        with open('output/fig4_y0.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -308,7 +308,7 @@ def fig4plot():
     ax4.plot(calib['y0'], abs(np.array(calib['m2'])), 'x', mfc='None', mec='red', mew=1.3)
     ax4.plot(calib['y0'], abs(np.array(calib['m2'])), color='red', ls='--')
 
-    plt.savefig('fig4.pdf')
+    plt.savefig('output/fig4.pdf')
 
 if __name__ == '__main__':
     fig4data()

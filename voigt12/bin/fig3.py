@@ -71,7 +71,7 @@ def fig3_fiducial(im_fac=None):
     print 'Running on fiducial galaxy parameters'
     print
 
-    fil = open('fig3_fiducial.dat', 'w')
+    fil = open('output/fig3_fiducial.dat', 'w')
 #    for fw in [350]:
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
@@ -97,7 +97,7 @@ def fig3_redshift(im_fac=None):
     print 'Varying the redshift'
     print
 
-    fil = open('fig3_redshift.dat', 'w')
+    fil = open('output/fig3_redshift.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
@@ -122,7 +122,7 @@ def fig3_bulge_radius(im_fac=None):
     print 'Varying the bulge radius'
     print
 
-    fil = open('fig3_bulge_radius.dat', 'w')
+    fil = open('output/fig3_bulge_radius.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
         gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
@@ -148,7 +148,7 @@ def fig3_disk_spectrum(im_fac=None):
     print 'Varying the disk spectrum'
     print
 
-    fil = open('fig3_disk_spectrum.dat', 'w')
+    fil = open('output/fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
         filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
@@ -199,7 +199,7 @@ def fig3plot():
 
     calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig3_fiducial.dat', 'r') as fil:
+        with open('output/fig3_fiducial.dat', 'r') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -227,7 +227,7 @@ def fig3plot():
 
     calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig3_redshift.dat', 'r') as fil:
+        with open('output/fig3_redshift.dat', 'r') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -256,7 +256,7 @@ def fig3plot():
 
     calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig3_bulge_radius.dat', 'r') as fil:
+        with open('output/fig3_bulge_radius.dat', 'r') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -285,7 +285,7 @@ def fig3plot():
 
     calib = {'width':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('fig3_disk_spectrum.dat', 'r') as fil:
+        with open('output/fig3_disk_spectrum.dat', 'r') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
@@ -310,7 +310,7 @@ def fig3plot():
     ax2.plot(calib['width'], abs(np.array(calib['c2'])), color='black', linestyle=':')
 
 
-    plt.savefig('fig3.pdf')
+    plt.savefig('output/fig3.pdf')
 
 if __name__ == '__main__':
     fig3data()
