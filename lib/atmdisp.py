@@ -122,10 +122,12 @@ if __name__ == '__main__':
     fdata = np.genfromtxt('../data/filters/LSST_r.dat')
     wave, fthroughput = fdata[:,0], fdata[:,1]
     sdata = np.genfromtxt('../data/SEDs/ukg5v.ascii')
-    swave, flux = sdata[:,0] * (1.0 + 0.5), sdata[:,1]
+    swave, flux = sdata[:,0], sdata[:,1]
     flux_i = np.interp(wave, swave, flux)
     photons = flux_i * fthroughput * wave
     M = disp_moments(wave, photons, zenith=45.0 * np.pi/180.0)
+    print 'First and second moments of ukg5v star through LSST_r filter at 45 degrees zenith'
+    print 'Computing these two ways.  Better match!'
     print M[0] * 206265, M[1] * 206265**2
     M = disp_moments_R(wave, photons, zenith=45.0 * np.pi/180.0)
     print M[0] * 206265, M[1] * 206265**2
