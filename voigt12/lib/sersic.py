@@ -12,18 +12,18 @@ class Sersic(object):
     '''
 
     def __init__(self,
-                 y0, x0, n, #required
-                 peak=None, flux=None, #one of these is required
-                 C11=None, C12=None, C22=None, #one possibility for size/ellipticity
-                 a=None, b=None, phi=None, #another possibility for size/ellipticity
-                 #if neither of the above two triplets is provided, then one of the following size
-                 #parameters must be provided
+                 y0, x0, n, # required
+                 peak=None, flux=None, # one of these is required
+                 C11=None, C12=None, C22=None, # one possibility for size/ellipticity
+                 a=None, b=None, phi=None, # another possibility for size/ellipticity
+                 # if neither of the above two triplets is provided, then one of the following size
+                 # parameters must be provided
                  FWHM=None, r_e=None,
-                 #if specifying ellipticity in polar units (together with phi above), then
-                 #one of the following three is required
+                 # if specifying ellipticity in polar units (together with phi above), then
+                 # one of the following three is required
                  b_over_a=None, emag=None, gmag=None,
-                 #if specifying ellipticity in complex components, then one of the following pairs
-                 #is required
+                 # if specifying ellipticity in complex components, then one of the following pairs
+                 # is required
                  e1=None, e2=None,
                  g1=None, g2=None):
         ''' Create a Sersic object.
@@ -64,9 +64,9 @@ class Sersic(object):
             self.C12 = C12
             self.C22 = C22
             # want to keep some additional bookkeepping parameters around as well...
-            one_over_a_squared = 0.5 * (C11 + C22 + np.sqrt((C11 - C22)**2 + 4 * C12**2))
+            one_over_a_squared = 0.5 * (C11 + C22 + np.sqrt((C11 - C22)**2 + 4.0 * C12**2))
             one_over_b_squared = C11 + C22 - one_over_a_squared
-            #there's degeneracy between a, b and phi at this point so enforce a > b
+            # there's degeneracy between a, b and phi at this point so enforce a > b
             if one_over_a_squared > one_over_b_squared:
                 one_over_a_squared, one_over_b_squared = one_over_b_squared, one_over_a_squared
             self.a = np.sqrt(1.0 / one_over_a_squared)
@@ -90,7 +90,7 @@ class Sersic(object):
                     assert r_e is not None, "need to specify a size parameter"
                     self.r_e = r_e
                 # goal here is to determine the axis ratio b_over_a, and position angle phi
-                if phi is not None: #must be doing a polar decomposition
+                if phi is not None:  #must be doing a polar decomposition
                     self.phi = phi
                     if gmag is not None:
                         b_over_a = (1.0 - gmag)/(1.0 + gmag)
@@ -98,7 +98,7 @@ class Sersic(object):
                         b_over_a = np.sqrt((1.0 - emag)/(1.0 + emag))
                     else:
                         assert b_over_a is not None, "need to specify ellipticity magnitude"
-                else: #doing a complex components decomposition
+                else: # doing a complex components decomposition
                     if g1 is not None and g2 is not None:
                         self.phi = 0.5 * np.arctan2(g2, g1)
                         gmag = np.sqrt(g1**2.0 + g2**2.0)
