@@ -35,8 +35,8 @@ class AtmDispPSF(object):
             y1 = y
             x1 = x
         R, angle_dens = atmdisp.wave_dens_to_angle_dens(self.wave, self.photons, **self.kwargs)
-        R660 = atmdisp.atm_refrac(660, **self.kwargs)
-        pixels = (R - R660) * 206265 / self.plate_scale
+        R685 = atmdisp.atm_refrac(685.0, **self.kwargs)
+        pixels = (R - R685) * 206265 / self.plate_scale
         sort = np.argsort(pixels)
         pixels = pixels[sort]
         angle_dens = angle_dens[sort]
@@ -45,3 +45,33 @@ class AtmDispPSF(object):
         assert self.xloc in x
         PSF *= (x == self.xloc)
         return PSF
+
+if __name__ == '__main__':
+    fdata = np.genfromtxt('../data/filters/LSST_r.dat')
+    wave, fthroughput = fdata[:,0], fdata[:,1]
+    sdata = np.genfromtxt('../data/SEDs/ukk5v.ascii')
+    swave, flux = sdata[:,0], sdata[:,1]
+    flux_i = np.interp(wave, swave, flux)
+    photons = flux_i * fthroughput * wave
+
+    plate_scale = 0.2
+    zenith = 50.*np.pi/180
+    over = 21.0
+
+    psf = AtmDispPSF(wave, photons, zenith=zenith, plate_scale=plate_scale)
+    x = np.r_[0]
+    y = np.arange(15 * over)
+    y /= over
+    y -= np.median(y)
+    x, y = np.meshgrid(x, y)
+    psfim = psf(y, x).flatten()
+    yflat = y.flatten()
+    norm = simps(psfim, yflat)
+    Rrel = simps(psfim * yflat, yflat)/norm
+    V = simps(psfim * (yflat-Rrel)**2, yflat)/norm * plate_scale**2
+    R = Rrel * plate_scale + atmdisp.atm_refrac(685, zenith=zenith)*206265
+    m = atmdisp.disp_moments(wave, photons, zenith=zenith)
+    print '{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment')
+    print '{:15s} {:15.7f} {:15.7f}'.format('simulated', R, V)
+    print '{:15s} {:15.7f} {:15.7f}'.format('analytic', m[0]*206265, m[1]*206265**2)
+    print '{:15s} {:15.7f} {:15.7f}'.format('difference', R - m[0]*206265, V - m[1]*206265**2)
