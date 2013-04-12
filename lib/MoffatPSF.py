@@ -1,3 +1,4 @@
+import hashlib
 import numpy as np
 
 class MoffatPSF(object):
@@ -81,6 +82,15 @@ class MoffatPSF(object):
 
         det = self.C11 * self.C22 - self.C12**2.0
         self.norm = self.flux * (self.beta - 1.0) / (np.pi / np.sqrt(abs(det)))
+
+        self.key = self.hash()
+
+    def hash(self):
+        m = hashlib.md5()
+        m.update(str((self.x0, self.y0, self.beta)))
+        m.update(str((self.C11, self.C12, self.C22)))
+        m.update(str(self.flux))
+        return m.hexdigest()
 
     def __call__(self, y, x):
         xp = x - self.x0
