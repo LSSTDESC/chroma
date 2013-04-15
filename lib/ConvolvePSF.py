@@ -62,9 +62,9 @@ if __name__ == '__main__':
     fdata = np.genfromtxt('../data/filters/LSST_r.dat')
     sdata = np.genfromtxt('../data/SEDs/CWW_E_ext.ascii')
     plate_scale = 0.2
-    zenith = 70.0 * np.pi / 180
-    size = 17
-    factor1 = 27
+    zenith = 10.0 * np.pi / 180
+    size = 25
+    factor1 = 9
 
     wave, fthroughput = fdata[:,0], fdata[:,1]
     swave, flux = sdata[:,0], sdata[:,1]
@@ -72,7 +72,8 @@ if __name__ == '__main__':
     photons = flux_i * fthroughput * wave
 
     aPSF = AtmDispPSF.AtmDispPSF(wave, photons, zenith=zenith, plate_scale=plate_scale)
-    mPSF = MoffatPSF.MoffatPSF(0.0, 0.0, beta=4.6, flux=1.0, FWHM=0.6, gmag=0.0, phi=0.0)
+    mPSF = MoffatPSF.MoffatPSF(0.0, 0.0, beta=4.6, flux=1.0, FWHM=0.6 / plate_scale,
+                               gmag=0.0, phi=0.0)
     cPSF = ConvolvePSF([aPSF, mPSF])
 
     oversize = size * factor1
