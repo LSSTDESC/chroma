@@ -42,8 +42,9 @@ class AtmDispPSF(object):
         angle_dens = angle_dens[sort]
         angle_dens /= simps(angle_dens, pixels)
         PSF = np.interp(y, pixels, angle_dens, left=0.0, right=0.0)
-        assert self.xloc in x
-        PSF *= (x == self.xloc)
+        minx = abs(self.xloc - x).min()
+        assert minx < 1.e-10
+        PSF *= (abs(self.xloc - x) < 1.e-10)
         return PSF
 
 if __name__ == '__main__':
