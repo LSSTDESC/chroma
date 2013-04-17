@@ -1,6 +1,25 @@
 import numpy
 from astropy.utils.console import ProgressBar
 
+def get_photons(SED_files, filter_file, redshift, oob_thresh=1.e-5):
+    fdata = numpy.genfromtxt(filter_file)
+    fwave, throughput = fdata[:,0], fdata[:,1]
+    photons = numpy.zeros((len(SED_files), len(fwave)))
+    wmin = len(fwave)-1
+    wmax = 0
+    for i, SED_file in enumerate(SED_files):
+        sdata = numpy.genfromtxt(SED_file)
+        swave, flux = sdata[:,0] * (1.0 + redshift), sdata[:,1]
+        flux_i = numpy.interp(fwave, swave, flux)
+        photons[i,:] = flux_i * throughput * fwave
+        w = numpy.where(photons[i,:] > oob_thresh * photons[i,:].max())[0]
+        if w.min() < wmin:
+            wmin = w.min()
+        if w.max() > wmax:
+            wmax = w.max()
+    return fwave[wmin:wmax], photons[:,wmin:wmax]
+
+
 def get_SED_photons(SED_file, filter_file, redshift, oob_thresh=1.e-5):
     '''Return wave and photon-flux of filtered spectrum.
 
@@ -101,3 +120,16 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
     gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
     gamma_hat = numpy.mean(gamma_hats)
     return gamma_hat
+
+def FWHM(data, scale=1.0):
+    '''Compute the full-width at half maximum of a symmetric 2D distribution.  Assumes that measuring
+    along the x-axis is sufficient (ignores all but one row, the one containing the distribution
+    maximum).  Scales result by scale for non-unit width pixels.
+    '''
+    height = data.max()
+    w = numpy.where(data == height)
+    y0, x0 = w[0][0], w[1][0]
+    xs = numpy.arange(data.shape[0], dtype=numpy.float64)/scale
+    low = numpy.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
+    high = numpy.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
+    return abs(high-low)

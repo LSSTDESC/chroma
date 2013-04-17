@@ -33,28 +33,33 @@ def fiducial_galaxy():
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
                         im_fac):
-    b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-                                                 gparam['b_flux'].value,
-                                                 bulge_SED_file, disk_SED_file,
-                                                 redshift, PSF_ellip, PSF_phi)
-    map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-    set_FWHM_ratio(gparam, 1.4, circ_c_PSF, im_fac)
-    gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
-    gen_init_param = init_param_generator(gparam)
-    measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
+    # b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
+    #                                              gparam['b_flux'].value,
+    #                                              bulge_SED_file, disk_SED_file,
+    #                                              redshift, PSF_ellip, PSF_phi)
+    wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
+                                             filter_file, redshift)
+    bulge_photons, disk_photons = photons
+    gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
+                               PSF_ellip, PSF_phi, im_fac)
+    # map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
+    gal.set_FWHM_ratio(1.4)
+    gen_target_image = gal.target_image_fn_generator()
+    gen_init_param = gal.init_param_generator()
+    measure_ellip = gal.ellip_measurement_generator()
 
     gamma0 = 0.0 + 0.0j
-    gamma0_hat = ringtest.ringtest(gamma0, 3,
-                                   gen_target_image,
-                                   gen_init_param,
-                                   measure_ellip)
+    gamma0_hat = chroma.utils.ringtest(gamma0, 3,
+                                       gen_target_image,
+                                       gen_init_param,
+                                       measure_ellip)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
-    gamma1_hat = ringtest.ringtest(gamma1, 3,
-                                   gen_target_image,
-                                   gen_init_param,
-                                   measure_ellip)
+    gamma1_hat = chroma.utils.ringtest(gamma1, 3,
+                                       gen_target_image,
+                                       gen_init_param,
+                                       measure_ellip)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
@@ -66,8 +71,8 @@ def fig3_fiducial(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
     print
@@ -80,7 +85,7 @@ def fig3_fiducial(im_fac=None):
 #    for fw in [350]:
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
-        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -94,8 +99,8 @@ def fig3_redshift(im_fac=None):
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 1.4
 
     print
@@ -107,7 +112,7 @@ def fig3_redshift(im_fac=None):
     fil = open('output/fig3_redshift.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
-        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -121,8 +126,8 @@ def fig3_bulge_radius(im_fac=None):
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
     print
@@ -135,7 +140,7 @@ def fig3_bulge_radius(im_fac=None):
     for fw in filter_widths:
         gparam = fiducial_galaxy()
         gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
-        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -149,8 +154,8 @@ def fig3_disk_spectrum(im_fac=None):
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Im_ext.ascii'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Im_ext.ascii'
     redshift = 0.9
 
     print
@@ -162,7 +167,7 @@ def fig3_disk_spectrum(im_fac=None):
     fil = open('output/fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
-        filter_file = '../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, im_fac)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -325,3 +330,4 @@ def fig3plot():
 
 if __name__ == '__main__':
     fig3data()
+    fig3plot()
