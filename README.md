@@ -1,4 +1,4 @@
 chroma
 ======
 
-Josh's investigations of chromatic effects for LSST
+Investigations of the effects of differential chromatic dispersion on the LSST PSF.
