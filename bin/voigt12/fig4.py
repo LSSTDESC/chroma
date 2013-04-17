@@ -1,13 +1,15 @@
-import _mypath
+import os
+
 import numpy as np
-import ringtest
 from lmfit import Parameters, Minimizer
-from VoigtImageFactory import VoigtImageFactory
-from bdgal import *
 import matplotlib.pyplot as plt
+
+import _mypath
+import chroma
 
 def fiducial_galaxy():
     gparam = Parameters()
+    #bulge
     gparam.add('b_x0', value=0.1)
     gparam.add('b_y0', value=0.3)
     gparam.add('b_n', value=4.0, vary=False)
@@ -23,6 +25,7 @@ def fiducial_galaxy():
     gparam.add('d_flux', expr='1.0 - b_flux')
     gparam.add('d_gmag', expr='b_gmag')
     gparam.add('d_phi', expr='b_phi')
+    #initialize constrained variables
     dummyfit = Minimizer(lambda x: 0, gparam)
     dummyfit.prepare_fit()
     return gparam
@@ -30,28 +33,26 @@ def fiducial_galaxy():
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
                         im_fac):
-    b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-                                                 gparam['b_flux'].value,
-                                                 bulge_SED_file, disk_SED_file,
-                                                 redshift, PSF_ellip, PSF_phi)
-    map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
-    set_FWHM_ratio(gparam, 1.4, circ_c_PSF, im_fac)
-    gen_target_image = target_image_fn_generator(gparam, b_PSF, d_PSF, im_fac)
-    gen_init_param = init_param_generator(gparam)
-    measure_ellip = ellip_measurement_generator(c_PSF, im_fac)
+    wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
+                                             filter_file, redshift)
+    bulge_photons, disk_photons = photons
+    gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
+                               PSF_ellip, PSF_phi, im_fac)
+    map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
+    gal.set_FWHM_ratio(1.4)
 
     gamma0 = 0.0 + 0.0j
-    gamma0_hat = ringtest.ringtest(gamma0, 3,
-                                   gen_target_image,
-                                   gen_init_param,
-                                   measure_ellip)
+    gamma0_hat = chroma.utils.ringtest(gamma0, 3,
+                                       gal.gen_target_image,
+                                       gal.gen_init_param,
+                                       gal.measure_ellip)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
-    gamma1_hat = ringtest.ringtest(gamma1, 3,
-                                   gen_target_image,
-                                   gen_init_param,
-                                   measure_ellip)
+    gamma1_hat = chroma.utils.ringtest(gamma1, 3,
+                                       gal.gen_target_image,
+                                       gal.gen_init_param,
+                                       gal.measure_ellip)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
@@ -59,14 +60,16 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
 
 def fig4_bulge_sersic_index(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
-    filter_file = '../data/filters/voigt12_350.dat'
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+        im_fac = chroma.voigt12.ImageFactory()
+    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig4_bulge_sersic_index.dat', 'w')
     for bulge_n in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         gparam = fiducial_galaxy()
@@ -80,14 +83,16 @@ def fig4_bulge_sersic_index(im_fac=None):
 
 def fig4_bulge_flux(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
-    filter_file = '../data/filters/voigt12_350.dat'
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+        im_fac = chroma.voigt12.ImageFactory()
+    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig4_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         gparam = fiducial_galaxy()
@@ -102,14 +107,16 @@ def fig4_bulge_flux(im_fac=None):
 
 def fig4_gal_ellip(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
+        im_fac = chroma.voigt12.ImageFactory()
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    filter_file = '../data/filters/voigt12_350.dat'
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig4_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
         gparam = fiducial_galaxy()
@@ -124,14 +131,16 @@ def fig4_gal_ellip(im_fac=None):
 
 def fig4_y0(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
-    filter_file = '../data/filters/voigt12_350.dat'
-    bulge_SED_file = '../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../data/SEDs/CWW_Sbc_ext.ascii'
+        im_fac = chroma.voigt12.ImageFactory()
+    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig4_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
         gparam = fiducial_galaxy()
@@ -145,7 +154,7 @@ def fig4_y0(im_fac=None):
     fil.close()
 
 def fig4data():
-    im_fac = VoigtImageFactory()
+    im_fac = chroma.voigt12.ImageFactory()
     fig4_bulge_sersic_index(im_fac)
     fig4_bulge_flux(im_fac)
     fig4_gal_ellip(im_fac)
@@ -312,3 +321,4 @@ def fig4plot():
 
 if __name__ == '__main__':
     fig4data()
+    fig4plot()
