@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from lmfit import Parameters, Minimizer
 import matplotlib.pyplot as plt
@@ -7,6 +9,7 @@ import chroma
 
 def fiducial_galaxy():
     gparam = Parameters()
+    #bulge
     gparam.add('b_x0', value=0.1)
     gparam.add('b_y0', value=0.3)
     gparam.add('b_n', value=4.0, vary=False)
@@ -22,6 +25,7 @@ def fiducial_galaxy():
     gparam.add('d_flux', expr='1.0 - b_flux')
     gparam.add('d_gmag', expr='b_gmag')
     gparam.add('d_phi', expr='b_phi')
+    #initialize constrained variables
     dummyfit = Minimizer(lambda x: 0, gparam)
     dummyfit.prepare_fit()
     return gparam
@@ -70,6 +74,8 @@ def fig3_fiducial(im_fac=None):
     print 'Running on fiducial galaxy parameters'
     print
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig3_fiducial.dat', 'w')
 #    for fw in [350]:
     for fw in [150, 250, 350, 450]:
@@ -96,6 +102,8 @@ def fig3_redshift(im_fac=None):
     print 'Varying the redshift'
     print
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig3_redshift.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
@@ -121,6 +129,8 @@ def fig3_bulge_radius(im_fac=None):
     print 'Varying the bulge radius'
     print
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig3_bulge_radius.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
@@ -147,6 +157,8 @@ def fig3_disk_spectrum(im_fac=None):
     print 'Varying the disk spectrum'
     print
 
+    if not os.path.isdir('./output/'):
+        os.mkdir('output/')
     fil = open('output/fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:
         gparam = fiducial_galaxy()
