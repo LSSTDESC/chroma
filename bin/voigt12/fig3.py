@@ -33,16 +33,11 @@ def fiducial_galaxy():
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
                         im_fac):
-    # b_PSF, d_PSF, c_PSF, circ_c_PSF = build_PSFs(filter_file,
-    #                                              gparam['b_flux'].value,
-    #                                              bulge_SED_file, disk_SED_file,
-    #                                              redshift, PSF_ellip, PSF_phi)
     wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
                                              filter_file, redshift)
     bulge_photons, disk_photons = photons
     gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
                                PSF_ellip, PSF_phi, im_fac)
-    # map(im_fac.load_PSF, [b_PSF, d_PSF, c_PSF, circ_c_PSF])
     gal.set_FWHM_ratio(1.4)
     gen_target_image = gal.target_image_fn_generator()
     gen_init_param = gal.init_param_generator()
