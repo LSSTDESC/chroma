@@ -38,23 +38,21 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     bulge_photons, disk_photons = photons
     gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
                                PSF_ellip, PSF_phi, im_fac)
+    map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
     gal.set_FWHM_ratio(1.4)
-    gen_target_image = gal.target_image_fn_generator()
-    gen_init_param = gal.init_param_generator()
-    measure_ellip = gal.ellip_measurement_generator()
 
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
-                                       gen_target_image,
-                                       gen_init_param,
-                                       measure_ellip)
+                                       gal.gen_target_image,
+                                       gal.gen_init_param,
+                                       gal.measure_ellip)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
-                                       gen_target_image,
-                                       gen_init_param,
-                                       measure_ellip)
+                                       gal.gen_target_image,
+                                       gal.gen_init_param,
+                                       gal.measure_ellip)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1

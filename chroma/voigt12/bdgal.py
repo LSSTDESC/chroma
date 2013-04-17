@@ -82,68 +82,50 @@ class bdgal(object):
                                        flux=gparam['d_flux'].value)
         return self.im_fac.get_overimage([(bulge, b_PSF), (disk, d_PSF)])
 
-    def target_image_fn_generator(self):
-        '''Return a function that can be passed to `ringtest()` which produces a target image as a
-        function of applied shear `gamma` and angle along the ring `beta`.
+    def gen_target_image(self, gamma, beta):
+        gparam1 = self.gen_init_param(gamma, beta)
+        return self.gal_image(gparam1, self.bulge_PSF, self.disk_PSF)
 
-        Arguments are passed through to `gal_image()`
-        '''
+    def gen_init_param(self, gamma, beta):
+        gparam1 = copy.deepcopy(self.gparam0)
+        b_phi_ring = self.gparam0['b_phi'].value + beta/2.0
+        d_phi_ring = self.gparam0['d_phi'].value + beta/2.0
+        # bulge complex ellipticity
+        b_c_ellip = self.gparam0['b_gmag'].value * \
+          complex(numpy.cos(2.0 * b_phi_ring), numpy.sin(2.0 * b_phi_ring))
+        # bulge sheared complex ellipticity
+        b_s_c_ellip = chroma.utils.shear_galaxy(b_c_ellip, gamma)
+        b_s_gmag = abs(b_s_c_ellip)
+        b_s_phi = numpy.angle(b_s_c_ellip) / 2.0
+        # disk complex ellipticity
+        d_c_ellip = self.gparam0['d_gmag'].value * \
+          complex(numpy.cos(2.0 * d_phi_ring), numpy.sin(2.0 * d_phi_ring))
+        # disk sheared complex ellipticity
+        d_s_c_ellip = chroma.utils.shear_galaxy(d_c_ellip, gamma)
+        d_s_gmag = abs(d_s_c_ellip)
+        d_s_phi = numpy.angle(d_s_c_ellip) / 2.0
+        # radius rescaling
+        rescale = numpy.sqrt(1.0 - abs(gamma)**2.0)
 
-        gen_init_param = self.init_param_generator()
-        def f(gamma, beta):
-            gparam1 = gen_init_param(gamma, beta)
-            return self.gal_image(gparam1, self.bulge_PSF, self.disk_PSF)
-        return f
-
-    def init_param_generator(self):
-        '''Return a function that can be passed to `ringtest()` which generates initial conditions
-        for a fit to the "true image" using the incorrect PSF as a function of applied shear
-        `gamma` and angle along the ring `beta`.
-        '''
-        # parameters which will change with applied shear gamma or angle along ring beta
-        # extract their initial values here
-        b_y0 = self.gparam0['b_y0'].value
-        b_x0 = self.gparam0['b_x0'].value
-        b_gmag = self.gparam0['b_gmag'].value
-        b_phi = self.gparam0['b_phi'].value
-        b_r_e = self.gparam0['b_r_e'].value
-        d_y0 = self.gparam0['d_y0'].value
-        d_x0 = self.gparam0['d_x0'].value
-        d_gmag = self.gparam0['d_gmag'].value
-        d_phi = self.gparam0['d_phi'].value
-        d_r_e = self.gparam0['d_r_e'].value
-
-        def gen_init_param(gamma, beta):
-            gparam1 = copy.deepcopy(self.gparam0)
-            b_phi_ring = b_phi + beta/2.0
-            d_phi_ring = d_phi + beta/2.0
-            # bulge complex ellipticity
-            b_c_ellip = b_gmag * complex(numpy.cos(2.0 * b_phi_ring), numpy.sin(2.0 * b_phi_ring))
-            # bulge sheared complex ellipticity
-            b_s_c_ellip = chroma.utils.shear_galaxy(b_c_ellip, gamma)
-            b_s_gmag = abs(b_s_c_ellip)
-            b_s_phi = numpy.angle(b_s_c_ellip) / 2.0
-            # disk complex ellipticity
-            d_c_ellip = d_gmag * complex(numpy.cos(2.0 * d_phi_ring), numpy.sin(2.0 * d_phi_ring))
-            # disk sheared complex ellipticity
-            d_s_c_ellip = chroma.utils.shear_galaxy(d_c_ellip, gamma)
-            d_s_gmag = abs(d_s_c_ellip)
-            d_s_phi = numpy.angle(d_s_c_ellip) / 2.0
-            # radius rescaling
-            rescale = numpy.sqrt(1.0 - abs(gamma)**2.0)
-
-            gparam1['b_y0'].value = b_y0 * numpy.sin(beta / 2.0) + b_x0 * numpy.cos(beta / 2.0)
-            gparam1['b_x0'].value = b_y0 * numpy.cos(beta / 2.0) - b_x0 * numpy.sin(beta / 2.0)
-            gparam1['d_y0'].value = d_y0 * numpy.sin(beta / 2.0) + d_x0 * numpy.cos(beta / 2.0)
-            gparam1['d_x0'].value = d_y0 * numpy.cos(beta / 2.0) - d_x0 * numpy.sin(beta / 2.0)
-            gparam1['b_gmag'].value = b_s_gmag
-            gparam1['d_gmag'].value = d_s_gmag
-            gparam1['b_phi'].value = b_s_phi
-            gparam1['d_phi'].value = d_s_phi
-            gparam1['b_r_e'].value = b_r_e * rescale
-            gparam1['d_r_e'].value = d_r_e * rescale
-            return gparam1
-        return gen_init_param
+        gparam1['b_y0'].value \
+          = self.gparam0['b_y0'].value * numpy.sin(beta / 2.0) \
+          + self.gparam0['b_x0'].value * numpy.cos(beta / 2.0)
+        gparam1['b_x0'].value \
+          = self.gparam0['b_y0'].value * numpy.cos(beta / 2.0) \
+          - self.gparam0['b_x0'].value * numpy.sin(beta / 2.0)
+        gparam1['d_y0'].value \
+          = self.gparam0['d_y0'].value * numpy.sin(beta / 2.0) \
+          + self.gparam0['d_x0'].value * numpy.cos(beta / 2.0)
+        gparam1['d_x0'].value \
+          = self.gparam0['d_y0'].value * numpy.cos(beta / 2.0) \
+          - self.gparam0['d_x0'].value * numpy.sin(beta / 2.0)
+        gparam1['b_gmag'].value = b_s_gmag
+        gparam1['d_gmag'].value = d_s_gmag
+        gparam1['b_phi'].value = b_s_phi
+        gparam1['d_phi'].value = d_s_phi
+        gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * rescale
+        gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * rescale
+        return gparam1
 
     def gal_image(self, gparam, bulge_PSF, disk_PSF):
         '''Use image_factory `im_fac` to make a galaxy image from params in gparam and using
@@ -174,21 +156,15 @@ class bdgal(object):
                                        flux=gparam['d_flux'].value)
         return self.im_fac.get_image([(bulge, bulge_PSF), (disk, disk_PSF)])
 
-    def ellip_measurement_generator(self):
-        '''Return a function that can be passed to `ringtest()` which computes the best-fit
-        ellipticity of a sheared galaxy along the ring as a function of the "true" image
-        `target_image` and some initial parameters for the fit.
-        '''
-        def measure_ellip(target_image, init_param):
-            def resid(param):
-                im = self.gal_image(param, self.composite_PSF, self.composite_PSF)
-                return (im - target_image).flatten()
-            result = minimize(resid, init_param)
-            gmag = result.params['d_gmag'].value
-            phi = result.params['d_phi'].value
-            c_ellip = gmag * complex(numpy.cos(2.0  * phi), numpy.sin(2.0 * phi))
-            return c_ellip
-        return measure_ellip
+    def measure_ellip(self, target_image, init_param):
+        def resid(param):
+            im = self.gal_image(param, self.composite_PSF, self.composite_PSF)
+            return (im - target_image).flatten()
+        result = minimize(resid, init_param)
+        gmag = result.params['d_gmag'].value
+        phi = result.params['d_phi'].value
+        c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
+        return c_ellip
 
 # if __name__ == '__main__':
 #     # Returns some objects that can be passed to ringtest for interactively checking that the code
