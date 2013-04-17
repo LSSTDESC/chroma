@@ -1,10 +1,9 @@
-import _mypath
 import numpy as np
-import ringtest
 from lmfit import Parameters, Minimizer
-from VoigtImageFactory import VoigtImageFactory
-from bdgal import *
 import matplotlib.pyplot as plt
+
+import _mypath
+import chroma
 
 def fiducial_galaxy():
     gparam = Parameters()
@@ -59,7 +58,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
 
 def fig3_fiducial(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
+        im_fac = chroma.voigt12.ImageFactory()
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
@@ -85,7 +84,7 @@ def fig3_fiducial(im_fac=None):
 
 def fig3_redshift(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
+        im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -110,7 +109,7 @@ def fig3_redshift(im_fac=None):
 
 def fig3_bulge_radius(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
+        im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -136,7 +135,7 @@ def fig3_bulge_radius(im_fac=None):
 
 def fig3_disk_spectrum(im_fac=None):
     if im_fac is None:
-        im_fac = VoigtImageFactory()
+        im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
@@ -160,7 +159,7 @@ def fig3_disk_spectrum(im_fac=None):
     fil.close()
 
 def fig3data():
-    im_fac = VoigtImageFactory()
+    im_fac = chroma.voigt12.ImageFactory()
     fig3_fiducial(im_fac)
     fig3_redshift(im_fac)
     fig3_bulge_radius(im_fac)

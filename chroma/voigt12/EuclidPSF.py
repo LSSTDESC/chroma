@@ -1,13 +1,14 @@
-from sersic import Sersic
 from scipy.integrate import trapz
-import numpy as np
 from astropy.utils.console import ProgressBar
+import numpy
 import hashlib
 
-class Voigt12PSF(object):
+from chroma.SBProfile import Sersic
+
+class EuclidPSF(object):
     '''Class to handle the Euclid-like chromatic PSF defined in the Voigt+12 color gradient paper.'''
     def __init__(self, wave, photons, ellipticity=0.0, phi=0.0, y0=0.0, x0=0.0):
-        '''Initialize a Voigt12PSF instance.
+        '''Initialize a EuclidPSF instance.
 
         Arguments
         ---------
@@ -74,17 +75,17 @@ class Voigt12PSF(object):
         if self._monochromatic_PSFs is None:
             self._load_monochromatic_PSFs()
         if isinstance(y, int) or isinstance(y, float):
-            y1 = np.array([y])
-            x1 = np.array([x])
+            y1 = numpy.array([y])
+            x1 = numpy.array([x])
         if isinstance(y, list) or isinstance(y, tuple):
-            y1 = np.array(y)
-            x1 = np.array(x)
-        if isinstance(y, np.ndarray):
+            y1 = numpy.array(y)
+            x1 = numpy.array(x)
+        if isinstance(y, numpy.ndarray):
             y1 = y
             x1 = x
         shape = list(y1.shape)
         shape.append(len(self._monochromatic_PSFs))
-        psfcube = np.empty(shape, dtype=np.float64)
+        psfcube = numpy.empty(shape, dtype=numpy.float64)
         print "Evaluating PSF"
         with ProgressBar(len(self._monochromatic_PSFs)) as bar:
             for i, mpsf in enumerate(self._monochromatic_PSFs):
@@ -105,15 +106,15 @@ class Voigt12PSF(object):
 if __name__ == '__main__':
     # this just tests that it's possible for the code to run, nothing about the accuracy of the code
     sed_file = '../data/SEDs/CWW_E_ext.ascii'
-    sed_data = np.genfromtxt(sed_file)
+    sed_data = numpy.genfromtxt(sed_file)
     sed_wave, sed_flux = sed_data[:,0], sed_data[:,1]
     filter_file = "../data/filters/voigt12_350.dat"
-    filter_data = np.genfromtxt(filter_file)
+    filter_data = numpy.genfromtxt(filter_file)
     wave, filter_tp = filter_data[:,0], filter_data[:,1]
-    sed_flux_int = np.interp(wave, sed_wave, sed_flux)
+    sed_flux_int = numpy.interp(wave, sed_wave, sed_flux)
     photons = sed_flux_int * filter_tp * wave
     photons /= photons.max()
-    w = np.where(photons > 1.e-5)[0]
+    w = numpy.where(photons > 1.e-5)[0]
     wave = wave[w.min():w.max()]
     photons = photons[w.min():w.max()]
-    v = Voigt12PSF(wave, photons)
+    v = EuclidPSF(wave, photons)

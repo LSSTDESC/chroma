@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import fftconvolve
 
-class VoigtImageFactory(object):
+class ImageFactory(object):
     ''' Class to create 15x15 pixel postage stamp images of galaxies as described in Voigt+12.
 
     Procedure is:
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     # data directory.
     from sersic import Sersic
     import pyfits
-    image_factory = VoigtImageFactory()
-    image_factory_extreme = VoigtImageFactory(pad=3, oversample_factor=25, HD_size=75, HD_factor=35)
+    image_factory = ImageFactory()
+    image_factory_extreme = ImageFactory(pad=3, oversample_factor=25, HD_size=75, HD_factor=35)
 
     gmag = 0.2
     phi = 30 * np.pi/180.0
