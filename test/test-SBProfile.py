@@ -235,3 +235,8 @@ def test_ConvolvePSF():
     print '{:15s} {:15.7f} {:15.7f}'.format('difference',
                                             (ybar-ybar0) * plate_scale - m[0]*206265,
                                             (Vy-Vy0) * plate_scale**2 - m[1]*206265**2)
+
+if __name__ == '__main__':
+    test_Sersic()
+    test_AtmDispPSF()
+    test_ConvolvePSF()
