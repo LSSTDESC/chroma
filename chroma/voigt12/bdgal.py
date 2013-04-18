@@ -34,25 +34,25 @@ class bdgal(object):
                                   ellipticity=0.0, phi=0.0)
 
     def set_FWHM_ratio(self, rpg):
-        '''Set the effective radii of the bulge+disk galaxy specified in `gparam` such that the
+        '''Set the effective radii of the bulge+disk galaxy specified in `self.gparam0` such that the
         ratio of the FWHM of the PSF-convolved galaxy image is `rpg` times the FWHM of the PSF
-        itself. The galaxy is circularized and centered at the origin for this computation
-        (ellip -> 0.0) and (x0, y0 -> 0.0, 0.0).  The supplied PSF `circ_c_PSF` is assumed to be
-        circularly symmetric.
+        itself.  The galaxy is circularized and centered at the origin for this computation
+        (ellip -> 0.0) and (x0, y0 -> 0.0, 0.0), and the PSF derived from the composite spectrum and
+        set to be circular.
         '''
         FWHM_PSF = chroma.utils.FWHM(self.im_fac.get_PSF_image(self.circ_PSF),
                                      scale=self.im_fac.oversample_factor)
-        gparam2 = copy.deepcopy(self.gparam0)
-        gparam2['b_gmag'].value = 0.0
-        gparam2['b_x0'].value = 0.0
-        gparam2['b_y0'].value = 0.0
-        gparam2['d_gmag'].value = 0.0
-        gparam2['d_x0'].value = 0.0
-        gparam2['d_y0'].value = 0.0
+        gparam1 = copy.deepcopy(self.gparam0)
+        gparam1['b_gmag'].value = 0.0
+        gparam1['b_x0'].value = 0.0
+        gparam1['b_y0'].value = 0.0
+        gparam1['d_gmag'].value = 0.0
+        gparam1['d_x0'].value = 0.0
+        gparam1['d_y0'].value = 0.0
         def FWHM_gal(scale):
-            gparam2['b_r_e'].value = self.gparam0['b_r_e'].value * scale
-            gparam2['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            image = self.gal_overimage(gparam2, self.circ_PSF, self.circ_PSF)
+            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+            image = self.gal_overimage(gparam1, self.circ_PSF, self.circ_PSF)
             return chroma.utils.FWHM(image, scale=self.im_fac.oversample_factor)
         def f(scale):
             return FWHM_gal(scale) - rpg * FWHM_PSF
@@ -128,8 +128,8 @@ class bdgal(object):
         return gparam1
 
     def gal_image(self, gparam, bulge_PSF, disk_PSF):
-        '''Use image_factory `im_fac` to make a galaxy image from params in gparam and using
-        the bulge and disk psfs `b_PSF` and `d_PSF`.
+        '''Use image_factory `self.im_fac` to make a galaxy image from params in gparam and using
+        the bulge and disk psfs `bulge_PSF` and `disk_PSF`.
 
         Arguments
         ---------
@@ -137,8 +137,8 @@ class bdgal(object):
                   `b_` prefix for bulge, `d_` prefix for disk.
                   Suffixes are all init arguments for the Sersic object.
 
-        Note that you can specify the composite PSF `c_PSF` for both bulge and disk PSF when using
-        during ringtest fits.
+        Note that you can specify the composite PSF `composite_PSF` for both bulge and disk PSF when
+        using during ringtest fits.
         '''
         bulge = chroma.SBProfile.Sersic(gparam['b_y0'].value,
                                         gparam['b_x0'].value,
