@@ -1,5 +1,6 @@
 from atmdisp import *
-import voigt12
 import SBProfile
 import utils
-from GalSimBDGal import GalSimBDGal
+from BDGal import BDGal
+from GalSimBDGal import GalSimBDGal, GalSimBDGalInt
+import voigt12

@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 from lmfit import Parameters, Minimizer
@@ -32,13 +33,30 @@ def fiducial_galaxy():
 
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
-                        im_fac):
+                        im_fac, argv=None):
     wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
                                              filter_file, redshift)
     bulge_photons, disk_photons = photons
-    gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
-                               PSF_ellip, PSF_phi, im_fac)
-    map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
+    use=None
+    if argv is None:
+        use = 'voigt'
+    elif len(argv) == 1:
+        use = 'voigt'
+    else:
+        use = argv[1]
+    if use == 'voigt':
+        gal = chroma.voigt12.VoigtBDGal(gparam, wave, bulge_photons, disk_photons,
+                                        PSF_ellip, PSF_phi, im_fac)
+        map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
+    elif use == 'gsfull':
+        gal = chroma.GalSimBDGal(gparam, wave, bulge_photons, disk_photons,
+                                 PSF_ellip, PSF_phi)
+    elif use == 'gs':
+        gal = chroma.GalSimBDGalInt(gparam, wave, bulge_photons, disk_photons,
+                                    PSF_ellip, PSF_phi)
+    else:
+        print 'error'
+        sys.exit()
     gal.set_FWHM_ratio(1.4)
 
     gamma0 = 0.0 + 0.0j
@@ -58,7 +76,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     m = m0, m1
     return m, c
 
-def fig3_fiducial(im_fac=None):
+def fig3_fiducial(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     PSF_ellip = 0.05
@@ -80,13 +98,13 @@ def fig3_fiducial(im_fac=None):
         gparam = fiducial_galaxy()
         filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
     fil.close()
 
-def fig3_redshift(im_fac=None):
+def fig3_redshift(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
@@ -107,13 +125,13 @@ def fig3_redshift(im_fac=None):
         gparam = fiducial_galaxy()
         filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
     fil.close()
 
-def fig3_bulge_radius(im_fac=None):
+def fig3_bulge_radius(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
@@ -135,13 +153,13 @@ def fig3_bulge_radius(im_fac=None):
         gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
         filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
     fil.close()
 
-def fig3_disk_spectrum(im_fac=None):
+def fig3_disk_spectrum(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_widths = [150, 250, 350, 450]
@@ -162,20 +180,20 @@ def fig3_disk_spectrum(im_fac=None):
         gparam = fiducial_galaxy()
         filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(fw, c, m))
     fil.close()
 
-def fig3data():
+def fig3data(argv):
     im_fac = chroma.voigt12.ImageFactory()
-    fig3_fiducial(im_fac)
-    fig3_redshift(im_fac)
-    fig3_bulge_radius(im_fac)
-    fig3_disk_spectrum(im_fac)
+    fig3_fiducial(argv, im_fac)
+    fig3_redshift(argv, im_fac)
+    fig3_bulge_radius(argv, im_fac)
+    fig3_disk_spectrum(argv, im_fac)
 
-def fig3plot():
+def fig3plot(argv):
     #setup plots
     fig = plt.figure(figsize=(5.5,7), dpi=100)
     fig.subplots_adjust(left=0.18)
@@ -322,5 +340,5 @@ def fig3plot():
     plt.savefig('output/fig3.pdf')
 
 if __name__ == '__main__':
-    fig3data()
-    fig3plot()
+    fig3data(sys.argv)
+    fig3plot(sys.argv)
