@@ -20,23 +20,13 @@ def GSEuclidPSF(wave, photons, ellipticity=0.0, phi=0.0):
     return PSF
 
 class GalSimBDGal(BDGal):
-    def __init__(self, gparam0, wave, bulge_photons, disk_photons,
-                 PSF_ellip=0.0, PSF_phi=0.0,
+    def __init__(self, gparam0, wave, bulge_photons, disk_photons, PSF_model=None, PSF_kwargs=None,
                  oversample_factor=7.0):
+        if PSF_model is None:
+            PSF_model = GSEuclidPSF
         self.oversample_factor = oversample_factor
         super(GalSimBDGal, self).__init__(gparam0, wave, bulge_photons, disk_photons,
-                                          PSF_ellip=PSF_ellip, PSF_phi=PSF_phi)
-        self.build_PSFs()
-
-    def build_PSFs(self):
-        self.bulge_PSF = GSEuclidPSF(self.wave, self.bulge_photons,
-                                     ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.disk_PSF = GSEuclidPSF(self.wave, self.disk_photons,
-                                    ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.composite_PSF = GSEuclidPSF(self.wave, self.composite_photons,
-                                         ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.circ_PSF = GSEuclidPSF(self.wave, self.composite_photons,
-                                    ellipticity=0.0, phi=0.0)
+                                          PSF_model=PSF_model, PSF_kwargs=PSF_kwargs)
 
     def PSF_image(self, PSF):
         PSF_image = galsim.ImageD(119,119)
@@ -109,12 +99,8 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     return PSF
 
 class GalSimBDGalInt(GalSimBDGal):
-    def build_PSFs(self):
-        self.bulge_PSF = GSEuclidPSFInt(self.wave, self.bulge_photons,
-                                        ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.disk_PSF = GSEuclidPSFInt(self.wave, self.disk_photons,
-                                       ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.composite_PSF = GSEuclidPSFInt(self.wave, self.composite_photons,
-                                            ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.circ_PSF = GSEuclidPSFInt(self.wave, self.composite_photons,
-                                       ellipticity=0.0, phi=0.0)
+    def __init__(self, gparam0, wave, bulge_photons, disk_photons, PSF_kwargs=None,
+                 oversample_factor=7.0):
+        PSF_model = GSEuclidPSFInt
+        super(GalSimBDGalInt, self).__init__(gparam0, wave, bulge_photons, disk_photons,
+                                             PSF_model=PSF_model, PSF_kwargs=PSF_kwargs)

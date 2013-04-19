@@ -44,16 +44,15 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
         use = 'voigt'
     else:
         use = argv[1]
+    PSF_kwargs = {'ellipticity':PSF_ellip, 'phi':PSF_phi}
     if use == 'voigt':
         gal = chroma.voigt12.VoigtBDGal(gparam, wave, bulge_photons, disk_photons,
-                                        PSF_ellip, PSF_phi, im_fac)
+                                        PSF_kwargs=PSF_kwargs, im_fac=im_fac)
         map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
     elif use == 'gsfull':
-        gal = chroma.GalSimBDGal(gparam, wave, bulge_photons, disk_photons,
-                                 PSF_ellip, PSF_phi)
+        gal = chroma.GalSimBDGal(gparam, wave, bulge_photons, disk_photons, PSF_kwargs=PSF_kwargs)
     elif use == 'gs':
-        gal = chroma.GalSimBDGalInt(gparam, wave, bulge_photons, disk_photons,
-                                    PSF_ellip, PSF_phi)
+        gal = chroma.GalSimBDGalInt(gparam, wave, bulge_photons, disk_photons, PSF_kwargs=PSF_kwargs)
     else:
         print 'error'
         sys.exit()

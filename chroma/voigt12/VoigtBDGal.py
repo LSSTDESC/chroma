@@ -8,28 +8,17 @@ from lmfit import minimize, report_errors
 import chroma.SBProfile
 from chroma import BDGal
 from EuclidPSF import EuclidPSF
+from ImageFactory import ImageFactory
 
 class VoigtBDGal(BDGal):
     def __init__(self, gparam0, wave, bulge_photons, disk_photons,
-                 PSF_ellip=0.0, PSF_phi=0.0, im_fac=None):
+                 PSF_kwargs=None, im_fac=None):
         if im_fac is None:
             im_fac = ImageFactory()
         self.im_fac = im_fac
         self.oversample_factor = im_fac.oversample_factor
         super(VoigtBDGal, self).__init__(gparam0, wave, bulge_photons, disk_photons,
-                                         PSF_ellip=PSF_ellip, PSF_phi=PSF_phi)
-        self.build_PSFs()
-
-    def build_PSFs(self):
-        ''' Build bulge, disk, and composite PSFs from SEDs.'''
-        self.bulge_PSF = EuclidPSF(self.wave, self.bulge_photons,
-                                   ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.disk_PSF = EuclidPSF(self.wave, self.disk_photons,
-                                  ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.composite_PSF = EuclidPSF(self.wave, self.composite_photons,
-                                       ellipticity=self.PSF_ellip, phi=self.PSF_phi)
-        self.circ_PSF = EuclidPSF(self.wave, self.composite_photons,
-                                  ellipticity=0.0, phi=0.0)
+                                         PSF_model=EuclidPSF, PSF_kwargs=PSF_kwargs)
 
     def gal_overimage(self, gparam, b_PSF, d_PSF):
         '''Compute oversampled galaxy image.  Similar to `gal_image()`.
