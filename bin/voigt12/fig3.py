@@ -89,7 +89,7 @@ def fig3_fiducial(argv, im_fac=None):
     print 'Running on fiducial galaxy parameters'
     print
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig3_fiducial.dat', 'w')
 #    for fw in [350]:
@@ -117,7 +117,7 @@ def fig3_redshift(argv, im_fac=None):
     print 'Varying the redshift'
     print
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig3_redshift.dat', 'w')
     for fw in filter_widths:
@@ -144,7 +144,7 @@ def fig3_bulge_radius(argv, im_fac=None):
     print 'Varying the bulge radius'
     print
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig3_bulge_radius.dat', 'w')
     for fw in filter_widths:
@@ -172,7 +172,7 @@ def fig3_disk_spectrum(argv, im_fac=None):
     print 'Varying the disk spectrum'
     print
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig3_disk_spectrum.dat', 'w')
     for fw in filter_widths:

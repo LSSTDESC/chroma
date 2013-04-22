@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 from lmfit import Parameters, Minimizer
@@ -32,13 +33,29 @@ def fiducial_galaxy():
 
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
-                        im_fac):
+                        im_fac, argv=None):
     wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
                                              filter_file, redshift)
     bulge_photons, disk_photons = photons
-    gal = chroma.voigt12.bdgal(gparam, wave, bulge_photons, disk_photons,
-                               PSF_ellip, PSF_phi, im_fac)
-    map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
+    use=None
+    if argv is None:
+        use = 'voigt'
+    elif len(argv) == 1:
+        use = 'voigt'
+    else:
+        use = argv[1]
+    PSF_kwargs = {'ellipticity':PSF_ellip, 'phi':PSF_phi}
+    if use == 'voigt':
+        gal = chroma.voigt12.VoigtBDGal(gparam, wave, bulge_photons, disk_photons,
+                                        PSF_kwargs=PSF_kwargs, im_fac=im_fac)
+        map(im_fac.load_PSF, [gal.bulge_PSF, gal.disk_PSF, gal.composite_PSF, gal.circ_PSF])
+    elif use == 'gsfull':
+        gal = chroma.GalSimBDGal(gparam, wave, bulge_photons, disk_photons, PSF_kwargs=PSF_kwargs)
+    elif use == 'gs':
+        gal = chroma.GalSimBDGalInt(gparam, wave, bulge_photons, disk_photons, PSF_kwargs=PSF_kwargs)
+    else:
+        print 'error'
+        sys.exit()
     gal.set_FWHM_ratio(1.4)
 
     gamma0 = 0.0 + 0.0j
@@ -58,7 +75,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     m = m0, m1
     return m, c
 
-def fig4_bulge_sersic_index(im_fac=None):
+def fig4_bulge_sersic_index(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_file = '../../data/filters/voigt12_350.dat'
@@ -68,20 +85,20 @@ def fig4_bulge_sersic_index(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig4_bulge_sersic_index.dat', 'w')
     for bulge_n in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         gparam = fiducial_galaxy()
         gparam['b_n'].value = bulge_n
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(bulge_n, c, m))
     fil.close()
 
-def fig4_bulge_flux(im_fac=None):
+def fig4_bulge_flux(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_file = '../../data/filters/voigt12_350.dat'
@@ -91,7 +108,7 @@ def fig4_bulge_flux(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig4_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
@@ -99,13 +116,13 @@ def fig4_bulge_flux(im_fac=None):
         gparam['b_flux'].value = bulge_flux
         gparam['d_flux'].value = 1.0 - bulge_flux
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(bulge_flux, c, m))
     fil.close()
 
-def fig4_gal_ellip(im_fac=None):
+def fig4_gal_ellip(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     PSF_ellip = 0.05
@@ -115,7 +132,7 @@ def fig4_gal_ellip(im_fac=None):
     disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig4_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
@@ -123,13 +140,13 @@ def fig4_gal_ellip(im_fac=None):
         gparam['b_gmag'].value = gal_ellip
         gparam['d_gmag'].value = gal_ellip
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(gal_ellip, c, m))
     fil.close()
 
-def fig4_y0(im_fac=None):
+def fig4_y0(argv, im_fac=None):
     if im_fac is None:
         im_fac = chroma.voigt12.ImageFactory()
     filter_file = '../../data/filters/voigt12_350.dat'
@@ -139,7 +156,7 @@ def fig4_y0(im_fac=None):
     PSF_ellip = 0.05
     PSF_phi = 0.0
 
-    if not os.path.isdir('./output/'):
+    if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig4_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
@@ -147,20 +164,20 @@ def fig4_y0(im_fac=None):
         gparam['b_y0'].value = y0
         gparam['d_y0'].value = y0
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, im_fac)
+                                   PSF_ellip, PSF_phi, im_fac, argv)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(y0, c, m))
     fil.close()
 
-def fig4data():
+def fig4data(argv):
     im_fac = chroma.voigt12.ImageFactory()
-    fig4_bulge_sersic_index(im_fac)
-    fig4_bulge_flux(im_fac)
-    fig4_gal_ellip(im_fac)
-    fig4_y0(im_fac)
+    fig4_bulge_sersic_index(argv, im_fac)
+    fig4_bulge_flux(argv, im_fac)
+    fig4_gal_ellip(argv, im_fac)
+    fig4_y0(argv, im_fac)
 
-def fig4plot():
+def fig4plot(argv):
     #setup plots
     fig = plt.figure(figsize=(10.0, 7.5), dpi=60)
     fig.subplots_adjust(left=0.1, right=0.9, wspace=0.3)
@@ -320,5 +337,5 @@ def fig4plot():
     plt.savefig('output/fig4.pdf')
 
 if __name__ == '__main__':
-    fig4data()
-    fig4plot()
+    fig4data(sys.argv)
+    fig4plot(sys.argv)
