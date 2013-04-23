@@ -1,5 +1,5 @@
-import numpy as np
-from scipy.integrate import simps
+import numpy
+import scipy
 
 def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067):
     '''Return the refractive index of air as function of wavelength.
@@ -45,7 +45,7 @@ def atm_refrac(wave, zenith, **kwargs):
 
     n_squared = air_refractive_index(wave, **kwargs)**2.0
     r0 = (n_squared - 1.0) / (2.0 * n_squared)
-    return r0 * np.tan(zenith)
+    return r0 * numpy.tan(zenith)
 
 def disp_moments(wave, photons, **kwargs):
     '''Compute the first and second central moments of refraction distribution from SED.
@@ -71,9 +71,9 @@ def disp_moments(wave, photons, **kwargs):
     '''
 
     R = atm_refrac(wave, **kwargs)
-    norm = simps(photons, wave)
-    Rbar = simps(photons * R, wave) / norm
-    V = simps(photons * ((R - Rbar)**2.0), wave) / norm
+    norm = scipy.integrate.simps(photons, wave)
+    Rbar = scipy.integrate.simps(photons * R, wave) / norm
+    V = scipy.integrate.simps(photons * ((R - Rbar)**2.0), wave) / norm
     return Rbar, V
 
 def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
@@ -103,31 +103,31 @@ def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
     '''
 
     R = atm_refrac(wave, **kwargs)
-    dR = np.diff(R)
-    dwave = np.diff(wave)
+    dR = numpy.diff(R)
+    dwave = numpy.diff(wave)
     dwave_dR = dwave / dR #Jacobian
-    dwave_dR = np.append(dwave_dR, dwave_dR[-1]) #fudge the last array element
-    angle_dens = wave_dens * np.abs(dwave_dR)
+    dwave_dR = numpy.append(dwave_dR, dwave_dR[-1]) #fudge the last array element
+    angle_dens = wave_dens * numpy.abs(dwave_dR)
     return R, angle_dens
 
 def disp_moments_R(wave, photons, **kwargs):
     '''Same as disp_moments, but integrates against refraction instead of wavelength; sanity check'''
     R, photons_per_dR = wave_dens_to_angle_dens(wave, photons, **kwargs)
-    norm = simps(photons_per_dR, R)
-    Rbar = simps(R * photons_per_dR, R)/norm
-    V = simps((R - Rbar)**2.0 * photons_per_dR, R)/norm
+    norm = scipy.integrate.simps(photons_per_dR, R)
+    Rbar = scipy.integrate.simps(R * photons_per_dR, R)/norm
+    V = scipy.integrate.simps((R - Rbar)**2.0 * photons_per_dR, R)/norm
     return Rbar, V
 
 if __name__ == '__main__':
-    fdata = np.genfromtxt('../data/filters/LSST_r.dat')
+    fdata = numpy.genfromtxt('../data/filters/LSST_r.dat')
     wave, fthroughput = fdata[:,0], fdata[:,1]
-    sdata = np.genfromtxt('../data/SEDs/ukg5v.ascii')
+    sdata = numpy.genfromtxt('../data/SEDs/ukg5v.ascii')
     swave, flux = sdata[:,0], sdata[:,1]
-    flux_i = np.interp(wave, swave, flux)
+    flux_i = numpy.interp(wave, swave, flux)
     photons = flux_i * fthroughput * wave
-    M = disp_moments(wave, photons, zenith=45.0 * np.pi/180.0)
+    M = disp_moments(wave, photons, zenith=45.0 * numpy.pi/180.0)
     print 'First and second moments of ukg5v star through LSST_r filter at 45 degrees zenith'
     print 'Computing these two ways.  Better match!'
     print M[0] * 206265, M[1] * 206265**2
-    M = disp_moments_R(wave, photons, zenith=45.0 * np.pi/180.0)
+    M = disp_moments_R(wave, photons, zenith=45.0 * numpy.pi/180.0)
     print M[0] * 206265, M[1] * 206265**2

@@ -1,7 +1,92 @@
-import numpy as np
-from scipy.signal import fftconvolve
+import numpy
+import scipy.signal
+import galsim
 
-class ImageFactory(object):
+import chroma
+
+class GalSimEngine(object):
+    '''Class to use `galsim` to create postage stamp images of multi-component galaxies.
+
+    Idea is to be able to hot-swap this class with the VoigtEngine below which reconstructs the
+    postage stamp generation used by Voigt+12.
+    '''
+    def __init__(self, size=15, oversample_factor=7):
+        '''Initialize the image engine
+
+        Arguments
+        ---------
+        size -- output postage stamp image is `size` x `size` pixels (default 15)
+        oversample_factor -- For FWHM calculations, oversample the image by this factor (default 7)
+        '''
+        self.size=size
+        self.oversample_factor=oversample_factor
+        self.oversize=size*oversample_factor
+
+    def PSF_FWHM(self, PSF):
+        '''Estimate the FWHM of a PSF given by `PSF` (must be galsim.SBProfile object)
+        Measures along a single row, so assumes that PSF is circularly symmetric.
+        '''
+        PSF_image = galsim.ImageD(self.oversize, self.oversize)
+        PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
+        return chroma.utils.FWHM(PSF_image.array, scale=self.oversample_factor)
+
+    def _get_gal(self, obj_list, pixsize):
+        '''Create galsim.SBProfile object from list of galaxy profiles, associated PSFs, and a pixel
+        scale.
+        '''
+        pixel = galsim.Pixel(pixsize)
+        cvls = [galsim.Convolve(gal, PSF, pixel) for gal, PSF in obj_list]
+        gal = galsim.Add(cvls)
+        return gal
+
+    def galcvl_FWHM(self, obj_list):
+        '''Estimate FWHM of galaxy convolved with PSF.
+        '''
+        return chroma.utils.FWHM(self.gal_image(obj_list, pixsize=1.0/self.oversample_factor),
+                                 scale=self.oversample_factor)
+
+    def gal_image(self, obj_list, pixsize=1.0):
+        '''Create postage stamp image of galaxy.
+        '''
+        gal = self._get_gal(obj_list, pixsize)
+        gal_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
+        gal.draw(image=gal_image, dx=pixsize)
+        return gal_image.array
+
+class GalSimBDEngine(GalSimEngine):
+    def gparam_to_galsim(self, gparam):
+        bulge = galsim.Sersic(n=gparam['b_n'].value, half_light_radius=gparam['b_r_e'].value)
+        bulge.applyShift(gparam['b_x0'].value, gparam['b_y0'].value)
+        bulge.applyShear(g=gparam['b_gmag'].value, beta=gparam['b_phi'].value * galsim.radians)
+        bulge.setFlux(gparam['b_flux'].value)
+
+        disk = galsim.Sersic(n=gparam['d_n'].value, half_light_radius=gparam['d_r_e'].value)
+        disk.applyShift(gparam['d_x0'].value, gparam['d_y0'].value)
+        disk.applyShear(g=gparam['d_gmag'].value, beta=gparam['d_phi'].value * galsim.radians)
+        disk.setFlux(gparam['d_flux'].value)
+        return bulge, disk
+
+    def bdcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
+        bulge, disk = self.gparam_to_galsim(gparam)
+        return self.galcvl_FWHM([(bulge, bulge_PSF), (disk, disk_PSF)])
+
+    def bd_image(self, gparam, bulge_PSF, disk_PSF):
+        '''Use galsim to make a galaxy image from params in gparam and using the bulge and disk
+        PSFs `bulge_PSF` and `disk_PSF`.
+
+        Arguments
+        ---------
+        gparam -- lmfit.Parameters object with Sersic parameters for both the bulge and disk:
+                  `b_` prefix for bulge, `d_` prefix for disk.
+                  Suffixes are all init arguments for the Sersic object.
+
+        Note that you can specify the composite PSF `c_PSF` for both bulge and disk PSF when using
+        during ringtest fits.
+        '''
+        bulge, disk = self.gparam_to_galsim(gparam)
+        return self.gal_image([(bulge, bulge_PSF), (disk, disk_PSF)])
+
+class VoigtEngine(object):
     ''' Class to create 15x15 pixel postage stamp images of galaxies as described in Voigt+12.
 
     Procedure is:
@@ -16,7 +101,7 @@ class ImageFactory(object):
     9. Clip 17x17 pixel image to 15x15 pixels.
     This class generalizes the above procedure to arbitrary oversampling sizes, regions and paddings.
     '''
-    def __init__(self, size=15, pad=1, oversample_factor=7, HD_size=5, HD_factor=25):
+    def __init__(self, size=15, oversample_factor=7, pad=1, HD_size=5, HD_factor=25):
         '''Initialize the image factory
 
         Arguments
@@ -68,6 +153,18 @@ class ImageFactory(object):
         if key not in self.PSF_image_dict:
             self.PSF_image_dict[key] = PSF(self.ysub, self.xsub)/(self.oversample_factor**2.0)
 
+    def PSF_FWHM(self, PSF):
+        '''Estimate the FWHM of a PSF given by `PSF` (must be galsim.SBProfile object)
+        Measures along a single row, so assumes that PSF is circularly symmetric.
+        '''
+        PSF_image = self.get_PSF_image(PSF)
+        return chroma.utils.FWHM(PSF_image, scale=self.oversample_factor)
+
+    def galcvl_FWHM(self, obj_list):
+        '''Estimate FWHM of galaxy convolved with PSF.
+        '''
+        return chroma.utils.FWHM(self.get_overimage(obj_list), scale=self.oversample_factor)
+
     def _get_subpix_centers(self):
         '''Calculate the coordinates of the centers of each subpixel.
 
@@ -77,9 +174,9 @@ class ImageFactory(object):
         pix_end = (self.padded_size - 1.0) / 2.0 # center of the last full pixel
         subpix_start = pix_start - (self.oversample_factor - 1.0) / (2.0 * self.oversample_factor)
         subpix_end = pix_end + (self.oversample_factor - 1.0) / (2.0 * self.oversample_factor)
-        subpix_centers = np.linspace(subpix_start, subpix_end, self.padded_oversize)
-        # note tricksy x, y convention for np.meshgrid
-        xsub, ysub = np.meshgrid(subpix_centers, subpix_centers)
+        subpix_centers = numpy.linspace(subpix_start, subpix_end, self.padded_oversize)
+        # note tricksy x, y convention for numpy.meshgrid
+        xsub, ysub = numpy.meshgrid(subpix_centers, subpix_centers)
         return ysub, xsub
 
     def _get_subsubpix_centers(self, HD_center_coord):
@@ -96,10 +193,10 @@ class ImageFactory(object):
         ylow = HD_center_coord[0] - reg_size / 2.0 + 0.5 * subsubpix_size
         xhigh = HD_center_coord[1] + reg_size / 2.0 - 0.5 * subsubpix_size
         yhigh = HD_center_coord[0] + reg_size / 2.0 - 0.5 * subsubpix_size
-        xsubsub = np.linspace(xlow, xhigh, self.HD_size * self.HD_factor)
-        ysubsub = np.linspace(ylow, yhigh, self.HD_size * self.HD_factor)
-        # note tricksy x, y convention for np.meshgrid
-        xsubsub, ysubsub = np.meshgrid(xsubsub, ysubsub)
+        xsubsub = numpy.linspace(xlow, xhigh, self.HD_size * self.HD_factor)
+        ysubsub = numpy.linspace(ylow, yhigh, self.HD_size * self.HD_factor)
+        # note tricksy x, y convention for numpy.meshgrid
+        xsubsub, ysubsub = numpy.meshgrid(xsubsub, ysubsub)
         return ysubsub, xsubsub
 
     def _get_HD_subpix_region(self, HD_center):
@@ -132,14 +229,14 @@ class ImageFactory(object):
         wavelength-dependent PSFs and galaxies with color gradients.  If the PSF is `None`,
         then the convolution for that component is skipped.
         '''
-        oversampled_image = np.zeros((self.padded_oversize, self.padded_oversize),
-                                     dtype=np.float64)
+        oversampled_image = numpy.zeros((self.padded_oversize, self.padded_oversize),
+                                        dtype=numpy.float64)
         for gal, PSF in obj_list:
             galim = gal(self.ysub, self.xsub)
             # do the high-def resampling if needed
             if self.HD_size > 0:
-                w=np.where(galim == galim.max()) # center high-def region on brightest subpixel
-                HD_center = np.array([w[0][0], w[1][0]])
+                w=numpy.where(galim == galim.max()) # center high-def region on brightest subpixel
+                HD_center = numpy.array([w[0][0], w[1][0]])
                 HD_reg = self._get_HD_subpix_region(HD_center)
                 # proceed only if HD region is not too close to the edges
                 if min(HD_reg) >= 0 and max(HD_reg) < self.padded_oversize:
@@ -150,7 +247,7 @@ class ImageFactory(object):
                       self._rebin(galHD, (self.HD_size, self.HD_size))
             if PSF is not None:
                 PSFim = self.get_PSF_image(PSF)
-                galim = fftconvolve(galim, PSFim, mode='same')
+                galim = scipy.signal.fftconvolve(galim, PSFim, mode='same')
             oversampled_image += galim
         return oversampled_image
 
@@ -166,40 +263,40 @@ class ImageFactory(object):
         im = padded_im[self.pad:-self.pad, self.pad:-self.pad]
         return im
 
-if __name__ == '__main__':
-    # compare our image generation to that produced by GalSim.
-    # The GalSim comparison image and yaml file for producing that image are in the
-    # data directory.
-    from sersic import Sersic
-    import pyfits
-    image_factory = ImageFactory()
-    image_factory_extreme = ImageFactory(pad=3, oversample_factor=25, HD_size=75, HD_factor=35)
+class VoigtBDEngine(VoigtEngine):
+    def gparam_to_voigt(self, gparam):
+        bulge = chroma.SBProfile.Sersic(gparam['b_y0'].value,
+                                        gparam['b_x0'].value,
+                                        gparam['b_n'].value,
+                                        flux=gparam['b_flux'].value,
+                                        r_e=gparam['b_r_e'].value,
+                                        gmag=gparam['b_gmag'].value,
+                                        phi=gparam['b_phi'].value)
+        disk = chroma.SBProfile.Sersic(gparam['d_y0'].value,
+                                       gparam['d_x0'].value,
+                                       gparam['d_n'].value,
+                                       flux=gparam['d_flux'].value,
+                                       r_e=gparam['d_r_e'].value,
+                                       gmag=gparam['d_gmag'].value,
+                                       phi=gparam['d_phi'].value)
+        return bulge, disk
 
-    gmag = 0.2
-    phi = 30 * np.pi/180.0
+    def bdcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
+        bulge, disk = self.gparam_to_voigt(gparam)
+        return self.galcvl_FWHM([(bulge, bulge_PSF), (disk, disk_PSF)])
 
-    bulge_flux = 0.25
-    bulge_rad = 2.0
-    bulge_n = 4.0
+    def bd_image(self, gparam, bulge_PSF, disk_PSF):
+        '''Use galsim to make a galaxy image from params in gparam and using the bulge and disk
+        PSFs `bulge_PSF` and `disk_PSF`.
 
-    disk_flux = 0.75
-    disk_rad = 3.0
-    disk_n = 1.0
+        Arguments
+        ---------
+        gparam -- lmfit.Parameters object with Sersic parameters for both the bulge and disk:
+                  `b_` prefix for bulge, `d_` prefix for disk.
+                  Suffixes are all init arguments for the Sersic object.
 
-    y0=0.3
-    x0=0.1
-
-    bulge = Sersic(y0, x0, bulge_n, r_e=bulge_rad, flux=bulge_flux, phi=phi, gmag=gmag)
-    disk = Sersic(y0, x0, disk_n, r_e=disk_rad, flux=disk_flux, phi=phi, gmag=gmag)
-
-    FWHM = 1.0 * np.sqrt(8.0 * np.log(2.0))
-    psf = Sersic(0.0, 0.0, 0.5, FWHM=FWHM, flux=1.0, phi=0.0, gmag=0.0)
-
-    image = image_factory.get_image([(disk, psf),(bulge, psf)])
-    gimage = pyfits.getdata('../data/galsim_test/galsim_test.fits')
-
-    print 'Comparing two images each with total flux=1.0.  The differences should be small'
-    print 'RMS difference with default settings: {}'.format(np.std(image-gimage))
-
-    image_extreme = image_factory_extreme.get_image([(disk, psf),(bulge, psf)])
-    print 'RMS difference with extreme settings: {}'.format(np.std(image_extreme-gimage))
+        Note that you can specify the composite PSF `c_PSF` for both bulge and disk PSF when using
+        during ringtest fits.
+        '''
+        bulge, disk = self.gparam_to_voigt(gparam)
+        return self.get_image([(bulge, bulge_PSF), (disk, disk_PSF)])

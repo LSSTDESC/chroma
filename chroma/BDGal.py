@@ -1,23 +1,24 @@
 import copy
 
 import numpy
-from scipy.integrate import simps
-from scipy.optimize import newton
-from lmfit import minimize, report_errors
+import scipy
+import lmfit
 
 import chroma.utils
 
 class BDGal(object):
-    def __init__(self, gparam0, wave, bulge_photons, disk_photons, PSF_model=None, PSF_kwargs=None):
+    def __init__(self, gparam0, wave, bulge_photons, disk_photons,
+                 PSF_model=None, PSF_kwargs=None,
+                 bd_engine=None):
         self.gparam0 = gparam0
         self.wave = wave
-        self.bulge_photons = bulge_photons / simps(bulge_photons, wave)
-        self.disk_photons = disk_photons / simps(disk_photons, wave)
+        self.bulge_photons = bulge_photons / scipy.integrate.simps(bulge_photons, wave)
+        self.disk_photons = disk_photons / scipy.integrate.simps(disk_photons, wave)
         self.PSF_model = PSF_model
         self.PSF_kwargs = PSF_kwargs
-
         self.composite_photons = self.bulge_photons * self.gparam0['b_flux'].value \
           + self.disk_photons * self.gparam0['d_flux'].value
+        self.bd_engine = bd_engine
         self.build_PSFs()
 
     def build_PSFs(self):
@@ -29,15 +30,6 @@ class BDGal(object):
         PSF_kwargs2['phi']=0.0
         self.circ_PSF = self.PSF_model(self.wave, self.composite_photons, **PSF_kwargs2)
 
-    def gal_overimage(self, gparam, bulge_PSF, disk_PSF):
-        raise NotImplementedError
-
-    def gal_image(self, gparam, bulge_PSF, disk_PSF):
-        raise NotImplementedError
-
-    def PSF_image(self, PSF):
-        raise NotImplementedError
-
     def set_FWHM_ratio(self, rpg):
         '''Set the effective radii of the bulge+disk galaxy specified in `self.gparam0` such that the
         ratio of the FWHM of the PSF-convolved galaxy image is `rpg` times the FWHM of the PSF
@@ -45,8 +37,7 @@ class BDGal(object):
         (ellip -> 0.0) and (x0, y0 -> 0.0, 0.0), and the PSF derived from the composite spectrum and
         set to be circular.
         '''
-        PSF_image = self.PSF_image(self.circ_PSF)
-        FWHM_PSF = chroma.utils.FWHM(PSF_image, scale=7.0)
+        FWHM_PSF = self.bd_engine.PSF_FWHM(self.circ_PSF)
         gparam1 = copy.deepcopy(self.gparam0)
         gparam1['b_gmag'].value = 0.0
         gparam1['b_x0'].value = 0.0
@@ -57,17 +48,16 @@ class BDGal(object):
         def FWHM_gal(scale):
             gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
             gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            image = self.gal_overimage(gparam1, self.circ_PSF, self.circ_PSF)
-            return chroma.utils.FWHM(image, scale=7.0)
+            return self.bd_engine.bdcvl_FWHM(gparam1, self.circ_PSF, self.circ_PSF)
         def f(scale):
             return FWHM_gal(scale) - rpg * FWHM_PSF
-        scale = newton(f, 1.0)
+        scale = scipy.optimize.newton(f, 1.0)
         self.gparam0['b_r_e'].value *= scale
         self.gparam0['d_r_e'].value *= scale
 
     def gen_target_image(self, gamma, beta):
         gparam1 = self.gen_init_param(gamma, beta)
-        return self.gal_image(gparam1, self.bulge_PSF, self.disk_PSF)
+        return self.bd_engine.bd_image(gparam1, self.bulge_PSF, self.disk_PSF)
 
     def gen_init_param(self, gamma, beta):
         gparam1 = copy.deepcopy(self.gparam0)
@@ -112,9 +102,9 @@ class BDGal(object):
 
     def measure_ellip(self, target_image, init_param):
         def resid(param):
-            im = self.gal_image(param, self.composite_PSF, self.composite_PSF)
+            im = self.bd_engine.bd_image(param, self.composite_PSF, self.composite_PSF)
             return (im - target_image).flatten()
-        result = minimize(resid, init_param)
+        result = lmfit.minimize(resid, init_param)
         gmag = result.params['d_gmag'].value
         phi = result.params['d_phi'].value
         c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))

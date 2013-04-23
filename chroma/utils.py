@@ -1,5 +1,7 @@
 import numpy
-from astropy.utils.console import ProgressBar
+import scipy
+
+import astropy.utils.console
 
 def get_photons(SED_files, filter_file, redshift, oob_thresh=1.e-5):
     fdata = numpy.genfromtxt(filter_file)
@@ -74,7 +76,7 @@ def get_composite_SED_photons(SED_files, weights, filter_file, redshift):
         photons1 = flux_i * throughput * fwave
         w = numpy.where(photons1 < 1.e-5 * photons1.max())[0]
         photons1[w] = 0.0
-        photons1 *= weight / simps(photons1, fwave)
+        photons1 *= weight / scipy.integrate.simps(photons1, fwave)
         photons += photons1
     w = numpy.where(photons > 0.0)[0]
     return fwave[w.min():w.max()], photons[w.min():w.max()]
@@ -102,7 +104,7 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
     betas = numpy.linspace(0.0, 2.0 * numpy.pi, n_ring, endpoint=False)
     ellip0s = []
     ellip180s = []
-    with ProgressBar(2 * n_ring) as bar:
+    with astropy.utils.console.ProgressBar(2 * n_ring) as bar:
         for beta in betas:
             #measure ellipticity at beta along the ring
             target_image0 = gen_target_image(gamma, beta)

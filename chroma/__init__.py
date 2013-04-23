@@ -1,6 +1,6 @@
 from atmdisp import *
+from BDGal import BDGal
 import SBProfile
 import utils
-from BDGal import BDGal
-from GalSimBDGal import GalSimBDGal, GalSimBDGalInt
-import voigt12
+import PSF_model
+import imgen
