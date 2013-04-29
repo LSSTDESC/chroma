@@ -50,7 +50,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
                                        gal.gen_target_image,
                                        gal.gen_init_param,
                                        gal.measure_ellip)
-    # c is just gamma_hat when input gamma_true = (0.0, 0.0)
+    # c is just gamma_hat when input gamma_true is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
@@ -58,7 +58,6 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
                                        gal.gen_target_image,
                                        gal.gen_init_param,
                                        gal.measure_ellip)
-
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
