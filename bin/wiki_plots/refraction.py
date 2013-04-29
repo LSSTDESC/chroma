@@ -39,7 +39,7 @@ for i, filter_file in enumerate(filter_files):
     filter_name = filter_file.split('/')[-1].replace('.dat', '') # get filter name from file name
     ax.fill_between(fwave, throughput * 80, 0, color=colors[i], alpha=0.3)
 ax.legend(fontsize='small', title='zenith angle')
-fig.savefig('absolute_refraction.png')
+fig.savefig('output/absolute_refraction.png')
 
 # Second plot: refraction relative to 500 nanometers vs. wavelength for same zenith angles
 
@@ -65,7 +65,7 @@ for i, filter_file in enumerate(filter_files):
     filter_name = filter_file.split('/')[-1].replace('.dat', '') # get filter name from file name
     ax.fill_between(fwave, throughput * 3.2 - 1, -1, color=colors[i], alpha=0.3)
 ax.legend(fontsize='small', title='zenith angle')
-fig.savefig('relative_refraction.png')
+fig.savefig('output/relative_refraction.png')
 
 # Third plot: refraction relative to 690 nanometers vs wavelength but only for weak lensing shape
 # measurement filters (r & i).
@@ -92,4 +92,4 @@ for i, filter_file in enumerate(filter_files[2:4]):
     filter_name = filter_file.split('/')[-1].replace('.dat', '') # get filter name from file name
     ax.fill_between(fwave, throughput * 1.6 - 0.5, -0.5, color=colors[2:4][i], alpha=0.3)
 ax.legend(fontsize='small', title='zenith angle')
-fig.savefig('relative_refraction - shape measurement.png')
+fig.savefig('output/relative_refraction_r_i.png')
