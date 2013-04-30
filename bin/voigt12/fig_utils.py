@@ -41,6 +41,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
                        PSF_model=PSF_model, PSF_kwargs=PSF_kwargs,
                        bd_engine=bd_engine)
 
+    gal.build_circ_PSF()
     gal.set_FWHM_ratio(1.4)
     # Do ring test with two values of gamma_true: (0.0, 0.0) and (0.01, 0.02). With these two
     # simulations, one can solve the shear calibration equation for `m` and `c`.

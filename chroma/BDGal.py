@@ -25,6 +25,8 @@ class BDGal(object):
         self.bulge_PSF = self.PSF_model(self.wave, self.bulge_photons, **self.PSF_kwargs)
         self.disk_PSF = self.PSF_model(self.wave, self.disk_photons, **self.PSF_kwargs)
         self.composite_PSF = self.PSF_model(self.wave, self.composite_photons, **self.PSF_kwargs)
+
+    def build_circ_PSF(self):
         PSF_kwargs2 = copy.deepcopy(self.PSF_kwargs)
         PSF_kwargs2['ellipticity']=0.0
         PSF_kwargs2['phi']=0.0
