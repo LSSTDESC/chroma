@@ -331,3 +331,20 @@ class VoigtAtmPSF(object):
 
     def __call__(self, y, x):
         return self.cPSF(y, x)
+
+def GSAtmPSF(wave, photons, aPSF_kwargs=None, mPSF_kwargs=None)
+    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
+    R685 = chroma.atm_refrac(685.0, **aPSF_kwargs)
+    pixels = (R - R685) * 206265 / plate_scale
+    sort = numpy.argsort(pixels)
+    pixels = pixels[sort]
+    angle_dens = angle_dens[sort]
+    angle_dens /= scipy.integrate.simps(angle_dens, pixels)
+    #should really be integrating next step, not interpolating
+    PSFim = numpy.interp(y, pixels, angle_dens, left=0.0, right=0.0)
+    aPSF = galsim.InterpolatedImage(im, dx=1.0/7)
+    mPSF = galsim.Moffat(beta=mPSF_kwargs['beta'],
+                         fwhm=mPSF_kwargs['FWHM'],
+                         flux=mPSF_kwargs['flux'])
+    PSF = galsim.Convolve([aPSF, mPSF])
+    return PSF
