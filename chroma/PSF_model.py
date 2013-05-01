@@ -261,7 +261,6 @@ class AtmDispPSF(object):
         sort = numpy.argsort(pixels)
         pixels = pixels[sort]
         angle_dens = angle_dens[sort]
-        angle_dens /= scipy.integrate.simps(angle_dens, pixels)
         PSF = numpy.interp(y, pixels, angle_dens, left=0.0, right=0.0)
         minx = abs(self.xloc - x).min()
         assert minx < 1.e-10
@@ -338,18 +337,27 @@ def GSAtmPSF(wave, photons, aPSF_kwargs=None, mPSF_kwargs=None):
         del aPSF_kwargs['plate_scale']
     else:
         plate_scale = 0.2
+    # get photon density binned by refraction angle
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **aPSF_kwargs)
+    # need to take out the huge zenith angle dependence:
+    # normalize to whatever the refraction is at 685 nm
     R685 = chroma.atm_refrac(685.0, **aPSF_kwargs)
-    pixels = (R - R685) * 206265 / plate_scale
+    pixels = (R - R685) * 206265 / plate_scale # degrees -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
     angle_dens = angle_dens[sort]
-    angle_dens /= scipy.integrate.simps(angle_dens, pixels)
-    #should really be integrating next step, not interpolating
-    y = numpy.arange(105, dtype=numpy.float64)
-    PSFim = numpy.interp(y, pixels, angle_dens, left=0.0, right=0.0)
-    #make PSFim 2 dimensional
-    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/7)
+    # now sample a size of 15 pixels oversampled by a factor of 7 => 105 subpixels
+    pixmin = -7.5 + 1./14
+    pixmax = 7.5 - 1./14
+    y = numpy.linspace(pixmin, pixmax, 105) # coords of subpixel centers
+    yboundaries = numpy.concatenate([numpy.array([y[0] - 1./14]), y + 1./14])
+    yunion = numpy.union1d(pixels, yboundaries)
+    angle_dens_interp = numpy.interp(yunion, pixels, angle_dens, left=0.0, right=0.0)
+    PSFim = galsim.ImageD(105,105)
+    for i in range(105):
+        w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
+        PSFim.array[i,52] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
+    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/7, flux=1.0)
     mPSF = galsim.Moffat(beta=mPSF_kwargs['beta'],
                          fwhm=mPSF_kwargs['FWHM'],
                          flux=mPSF_kwargs['flux'])
