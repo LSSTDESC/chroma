@@ -7,9 +7,32 @@ import lmfit
 import chroma.utils
 
 class BDGal(object):
-    def __init__(self, gparam0, wave, bulge_photons, disk_photons,
+    ''' Class to instantiate bulge+disk galaxies.'''
+    def __init__(self, gparam0,
+                 wave, bulge_photons, disk_photons,
                  PSF_model=None, PSF_kwargs=None,
                  bd_engine=None):
+        ''' Initialize BDGal with specificed bulge/disk parameters, specified bulge/disk spectra,
+        and specify which image engine and PSF model to use for creating images.
+
+        Arguments
+        ---------
+        gparam0 -- lmfit.Parameters object describing bulge+disk galaxy.  Params for each of the
+                   bulge and disk components include:
+                       `x0`, `y0` -- center of Sersic
+                       `r_e` -- half light radius of Sersic
+                       `gmag` -- magnitude of ellipticity
+                       `phi` -- position angle of ellipticity
+                       `flux` -- flux of component
+                   Bulge params carry a `b_` prefix, disk params carry a `d_` prefix.
+        wave -- wavelength array (in nm) for both bulge and disk spectra
+        bulge_photons -- Spectrum of bulge component, proportional to photons/s/cm^2/A
+        disk_photons -- Spectrum of disk component, proportional to photons/s/cm^2/A
+        PSF_model -- callable that will produce PSF given spectrum.  Possible instances
+                     are located in PSF_model.py
+        PSF_kwargs -- addition arguments for PSF_model
+        bd_engine -- image creation engine.  Possible instances are located in imgen.py
+        '''
         self.gparam0 = gparam0
         self.wave = wave
         self.bulge_photons = bulge_photons / scipy.integrate.simps(bulge_photons, wave)
@@ -22,11 +45,14 @@ class BDGal(object):
         self.build_PSFs()
 
     def build_PSFs(self):
+        ''' Use `self.PSF_model` to instantiate PSFs from bulge/disk spectra.'''
         self.bulge_PSF = self.PSF_model(self.wave, self.bulge_photons, **self.PSF_kwargs)
         self.disk_PSF = self.PSF_model(self.wave, self.disk_photons, **self.PSF_kwargs)
         self.composite_PSF = self.PSF_model(self.wave, self.composite_photons, **self.PSF_kwargs)
 
     def build_circ_PSF(self):
+        ''' Use `self.PSF_model` to instantiate a circularly symmetric PSF from composite
+        bulge+disk spectrum.  Requires that `ellipticity` and `phi` are part of the PSF_kwargs.'''
         PSF_kwargs2 = copy.deepcopy(self.PSF_kwargs)
         PSF_kwargs2['ellipticity']=0.0
         PSF_kwargs2['phi']=0.0
@@ -58,10 +84,21 @@ class BDGal(object):
         self.gparam0['d_r_e'].value *= scale
 
     def gen_target_image(self, gamma, beta):
+        ''' Generate a target "truth" image for ring test.
+
+        Arguments
+        ---------
+        gamma -- the input shear for the ring test.  Complex number.
+        beta -- angle around the ellipticity ring.
+        '''
         gparam1 = self.gen_init_param(gamma, beta)
         return self.bd_engine.bd_image(gparam1, self.bulge_PSF, self.disk_PSF)
 
     def gen_init_param(self, gamma, beta):
+        ''' Adjust bulge+disk parameters in self.gparam0 to reflect applied shear `gamma` and
+        angle around the ring `beta` in a ring test.  Returned parameters are good both for
+        creating the target image and for initializing the lmfit minimize routine.
+        '''
         gparam1 = copy.deepcopy(self.gparam0)
         b_phi_ring = self.gparam0['b_phi'].value + beta/2.0
         d_phi_ring = self.gparam0['d_phi'].value + beta/2.0
@@ -103,6 +140,9 @@ class BDGal(object):
         return gparam1
 
     def measure_ellip(self, target_image, init_param):
+        ''' Find the best fitting image to the "truth" target image by generating trial images
+        using the composite bulge+disk PSF.
+        '''
         def resid(param):
             im = self.bd_engine.bd_image(param, self.composite_PSF, self.composite_PSF)
             return (im - target_image).flatten()

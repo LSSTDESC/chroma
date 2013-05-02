@@ -42,16 +42,16 @@ class GalSimEngine(object):
     def galcvl_FWHM(self, obj_list):
         '''Estimate FWHM of galaxy convolved with PSF.
         '''
-        return chroma.utils.FWHM(self.gal_image(obj_list, pixsize=1.0/self.oversample_factor),
+        return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
                                  scale=self.oversample_factor)
 
-    def gal_image(self, obj_list, pixsize=1.0):
+    def get_image(self, obj_list, pixsize=1.0):
         '''Create postage stamp image of galaxy.
         '''
         gal = self._get_gal(obj_list, pixsize)
-        gal_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
-        gal.draw(image=gal_image, dx=pixsize)
-        return gal_image.array
+        get_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
+        gal.draw(image=get_image, dx=pixsize)
+        return get_image.array
 
 class GalSimBDEngine(GalSimEngine):
     def gparam_to_galsim(self, gparam):
@@ -84,7 +84,7 @@ class GalSimBDEngine(GalSimEngine):
         during ringtest fits.
         '''
         bulge, disk = self.gparam_to_galsim(gparam)
-        return self.gal_image([(bulge, bulge_PSF), (disk, disk_PSF)])
+        return self.get_image([(bulge, bulge_PSF), (disk, disk_PSF)])
 
 class VoigtEngine(object):
     ''' Class to create 15x15 pixel postage stamp images of galaxies as described in Voigt+12.
@@ -286,8 +286,8 @@ class VoigtBDEngine(VoigtEngine):
         return self.galcvl_FWHM([(bulge, bulge_PSF), (disk, disk_PSF)])
 
     def bd_image(self, gparam, bulge_PSF, disk_PSF):
-        '''Use galsim to make a galaxy image from params in gparam and using the bulge and disk
-        PSFs `bulge_PSF` and `disk_PSF`.
+        '''Use Voigt+12 procedure to make a galaxy image from params in gparam and using the bulge
+        and disk PSFs `bulge_PSF` and `disk_PSF`.
 
         Arguments
         ---------

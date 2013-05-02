@@ -150,7 +150,7 @@ def test_Sersic():
     print s9.C12
 
 def test_AtmDispPSF():
-    from chroma.SBProfile import AtmDispPSF
+    from chroma.PSF_model import AtmDispPSF
     from chroma import atmdisp
     from scipy.integrate import simps
 
@@ -185,7 +185,7 @@ def test_AtmDispPSF():
 
 def test_ConvolvePSF():
     from chroma import atmdisp
-    from chroma.SBProfile import MoffatPSF, AtmDispPSF, ConvolvePSF
+    from chroma.PSF_model import MoffatPSF, AtmDispPSF, ConvolvePSF
 
     fdata = np.genfromtxt('../data/filters/LSST_r.dat')
     sdata = np.genfromtxt('../data/SEDs/CWW_E_ext.ascii')

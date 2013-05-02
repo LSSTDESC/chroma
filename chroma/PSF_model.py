@@ -8,6 +8,9 @@ import astropy.utils.console
 import chroma
 
 def GSEuclidPSF(wave, photons, ellipticity=0.0, phi=0.0):
+    ''' Returns a Galsim SBProfile object representing the SED-dependent Euclid PSF as described in
+    Voigt+12.
+    '''
     hlr = lambda wave: 0.7 * (wave / 520.0)**0.6 # pixels
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
@@ -19,6 +22,10 @@ def GSEuclidPSF(wave, photons, ellipticity=0.0, phi=0.0):
     return PSF
 
 def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
+    ''' Returns a Galsim SBProfile object representing the SED-dependent Euclid PSF as described in
+    Voigt+12.  To make life faster, caches the result in a single 7 times oversampled image, instead
+    of carrying around a sum of thousands of Gaussians.
+    '''
     hlr = lambda wave: 0.7 * (wave / 520.0)**0.6 # pixels
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
@@ -27,7 +34,7 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     PSF = galsim.Add(mpsfs)
     beta = phi * galsim.radians
     PSF.applyShear(g=ellipticity, beta=beta)
-    im = galsim.ImageD(105, 105)
+    im = galsim.ImageD(105, 105) #arbitrary numbers!
     PSF.draw(image=im, dx=1.0/7)
     PSF = galsim.InterpolatedImage(im, dx=1.0/7)
     return PSF
