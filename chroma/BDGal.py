@@ -8,12 +8,16 @@ import chroma.utils
 
 class BDGal(object):
     ''' Class to instantiate bulge+disk galaxies.'''
-    def __init__(self, gparam0,
-                 wave, bulge_photons, disk_photons,
-                 PSF_model=None, PSF_kwargs=None,
-                 bd_engine=None):
-        ''' Initialize BDGal with specificed bulge/disk parameters, specified bulge/disk spectra,
-        and specify which image engine and PSF model to use for creating images.
+    def __init__(self, gparam0, bd_engine,
+                 bulge_PSF=None, disk_PSF=None, composite_PSF=None,
+                 wave=None, bulge_photons=None, disk_photons=None,
+                 composite_photons=None,
+                 PSF_model=None, PSF_kwargs=None):
+        ''' Initialize BDGal with specificed bulge/disk parameters.  PSFs may be specified directly
+        with `bulge_PSF`, `disk_PSF`, and `composite_PSF`, or alternatively by specifying a
+        `PSF_model` together with spectra for the bulge and disk.  If specifying spectra, then a
+        composite spectrum can either be specified directly with `composite_photons`, or will be
+        created from `bulge_photons`, `disk_photons`, and the b+d flux params in `gparam0`.
 
         Arguments
         ---------
@@ -25,24 +29,38 @@ class BDGal(object):
                        `phi` -- position angle of ellipticity
                        `flux` -- flux of component
                    Bulge params carry a `b_` prefix, disk params carry a `d_` prefix.
-        wave -- wavelength array (in nm) for both bulge and disk spectra
+        bd_engine -- image creation engine.  Possible instances are located in imgen.py
+        bulge_PSF, disk_PSF -- PSFs for the bulge/disk compatible with the specified bd_engine.
+        composite_PSF -- the PSF to use when fitting the target image constructed with the
+                         bulge/disk PSFs.
+        wave -- wavelength array (in nm) for both bulge, disk and possible composite spectra.
         bulge_photons -- Spectrum of bulge component, proportional to photons/s/cm^2/A
         disk_photons -- Spectrum of disk component, proportional to photons/s/cm^2/A
+        composite_photons -- Spectrum of bulge+disk.
         PSF_model -- callable that will produce PSF given spectrum.  Possible instances
                      are located in PSF_model.py
         PSF_kwargs -- addition arguments for PSF_model
-        bd_engine -- image creation engine.  Possible instances are located in imgen.py
         '''
         self.gparam0 = gparam0
-        self.wave = wave
-        self.bulge_photons = bulge_photons / scipy.integrate.simps(bulge_photons, wave)
-        self.disk_photons = disk_photons / scipy.integrate.simps(disk_photons, wave)
-        self.PSF_model = PSF_model
-        self.PSF_kwargs = PSF_kwargs
-        self.composite_photons = self.bulge_photons * self.gparam0['b_flux'].value \
-          + self.disk_photons * self.gparam0['d_flux'].value
         self.bd_engine = bd_engine
-        self.build_PSFs()
+        if bulge_PSF is not None:
+            self.bulge_PSF = bulge_PSF
+            self.disk_PSF = disk_PSF
+            self.composite_PSF = composite_PSF
+        else:
+            self.wave = wave
+            self.bulge_photons = bulge_photons / scipy.integrate.simps(bulge_photons, wave)
+            self.disk_photons = disk_photons / scipy.integrate.simps(disk_photons, wave)
+            self.bulge_photons = bulge_photons / scipy.integrate.simps(bulge_photons, wave)
+            self.disk_photons = disk_photons / scipy.integrate.simps(disk_photons, wave)
+            self.PSF_model = PSF_model
+            self.PSF_kwargs = PSF_kwargs
+            if composite_photons is not None:
+                self.composite_photons = composite_photons
+            else:
+                self.composite_photons = self.bulge_photons * self.gparam0['b_flux'].value \
+                  + self.disk_photons * self.gparam0['d_flux'].value
+            self.build_PSFs()
 
     def build_PSFs(self):
         ''' Use `self.PSF_model` to instantiate PSFs from bulge/disk spectra.'''

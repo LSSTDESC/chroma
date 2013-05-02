@@ -41,9 +41,9 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     aPSF_kwargs = {'zenith':numpy.pi * 25.0 / 180.0}
     mPSF_kwargs = {'gmag':PSF_ellip, 'phi':PSF_phi, 'beta':2.5, 'FWHM':3.0, 'flux':1.0}
     PSF_kwargs = {'aPSF_kwargs':aPSF_kwargs, 'mPSF_kwargs':mPSF_kwargs}
-    gal = chroma.BDGal(gparam, wave, bulge_photons, disk_photons,
-                       PSF_model=PSF_model, PSF_kwargs=PSF_kwargs,
-                       bd_engine=bd_engine)
+    gal = chroma.BDGal(gparam, bd_engine,
+                       wave=wave, bulge_photons=bulge_photons, disk_photons=disk_photons,
+                       PSF_model=PSF_model, PSF_kwargs=PSF_kwargs)
 
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,

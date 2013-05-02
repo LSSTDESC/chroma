@@ -37,9 +37,9 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     use=None
     PSF_kwargs = {'ellipticity':PSF_ellip, 'phi':PSF_phi}
 
-    gal = chroma.BDGal(gparam, wave, bulge_photons, disk_photons,
-                       PSF_model=PSF_model, PSF_kwargs=PSF_kwargs,
-                       bd_engine=bd_engine)
+    gal = chroma.BDGal(gparam, bd_engine,
+                       wave=wave, bulge_photons=bulge_photons, disk_photons=disk_photons,
+                       PSF_model=PSF_model, PSF_kwargs=PSF_kwargs)
 
     gal.build_circ_PSF()
     gal.set_FWHM_ratio(1.4)
