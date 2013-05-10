@@ -135,3 +135,27 @@ def FWHM(data, scale=1.0):
     low = numpy.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
     high = numpy.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
     return abs(high-low)
+
+def moments(data, scale=1.0):
+    xs = numpy.arange(data.shape[0], dtype=numpy.float64)/scale
+    ys = numpy.arange(data.shape[1], dtype=numpy.float64)/scale
+    total = data.sum()
+    xbar = (data * xs).sum() / total
+    ybar = (data * ys).sum() / total
+    Ixx = (data * (xs-xbar)**2).sum() / total
+    Iyy = (data * (ys-ybar)**2).sum() / total
+    Ixy = (data * (xs - xbar) * (y - ybar)).sum() / total
+    return xbar, ybar, Ixx, Iyy, Ixy
+
+def AHM(data, scale=1.0, height=None):
+    ''' Compute area above half maximum as a potential replacement for FWHM.
+
+    Arguments
+    ---------
+    data -- array to analyze
+    scale -- linear size of a pixel
+    height -- optional maximum height of data (defaults to sample maximum).
+    '''
+    if height is None:
+        height = data.max()
+    return data > (0.5 * height) * scale**2
