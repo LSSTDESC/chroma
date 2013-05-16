@@ -31,8 +31,8 @@ class GalSimEngine(object):
         return chroma.utils.FWHM(PSF_image.array, scale=self.oversample_factor)
 
     def _get_gal(self, obj_list, pixsize):
-        '''Create galsim.SBProfile object from list of galaxy profiles, associated PSFs, and a pixel
-        scale.
+        '''Create galsim.SBProfile object from list of galaxy profiles and associated PSFs.
+        Also convolves in a square pixel.
         '''
         pixel = galsim.Pixel(pixsize)
         cvls = [galsim.Convolve(gal, PSF, pixel) for gal, PSF in obj_list]
@@ -66,25 +66,44 @@ class GalSimBDEngine(GalSimEngine):
         disk.setFlux(gparam['d_flux'].value)
         return bulge, disk
 
-    def bdcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
+    def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
         bulge, disk = self.gparam_to_galsim(gparam)
-        return self.galcvl_FWHM([(bulge, bulge_PSF), (disk, disk_PSF)])
+        im = self.get_image(gparam, bulge_PSF, disk_PSF, pixsize=1.0/self.oversample_factor)
+        return chroma.utils.FWHM(im, scale=self.oversample_factor)
 
-    def bd_image(self, gparam, bulge_PSF, disk_PSF):
-        '''Use galsim to make a galaxy image from params in gparam and using the bulge and disk
-        PSFs `bulge_PSF` and `disk_PSF`.
-
-        Arguments
-        ---------
-        gparam -- lmfit.Parameters object with Sersic parameters for both the bulge and disk:
-                  `b_` prefix for bulge, `d_` prefix for disk.
-                  Suffixes are all init arguments for the Sersic object.
-
-        Note that you can specify the composite PSF `c_PSF` for both bulge and disk PSF when using
-        during ringtest fits.
-        '''
+    def get_image(self, gparam, bulge_PSF, disk_PSF, pixsize=1.0):
         bulge, disk = self.gparam_to_galsim(gparam)
-        return self.get_image([(bulge, bulge_PSF), (disk, disk_PSF)])
+        return super(GalSimBDEngine, self).get_image([(bulge, bulge_PSF), (disk, disk_PSF)],
+                                                     pixsize=pixsize)
+
+class GalSimSEngine(GalSimEngine):
+    def gparam_to_galsim(self, gparam):
+        gal = galsim.Sersic(n=gparam['n'].value, half_light_radius=gparam['r_e'].value)
+        gal.applyShift(gparam['x0'].value, gparam['y0'].value)
+        gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
+        gal.setFlux(gparam['flux'].value)
+        return gal
+
+    def galcvl_FWHM(self, gparam, PSF):
+        gal = self.gparam_to_galsim(gparam)
+        return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
+                                 scale=self.oversample_factor)
+
+    def gal_uncvl_image(self, gparam):
+        gal = self.gparam_to_galsim(gparam)
+        oversize = self.size * self.oversample_factor
+        im = galsim.ImageD(oversize, oversize)
+        gal.draw(image=im, dx=1./self.oversample_factor)
+        return im.array
+
+    def gal_m2(self, gparam):
+        im = self.gal_uncvl_image(gparam)
+        xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, scale=self.oversample_factor)
+        return Ixx + Iyy
+
+    def get_image(self, gparam, PSF, pixsize=1.0):
+        gal = self.gparam_to_galsim(gparam)
+        return super(GalSimSEngine, self).get_image([(gal, PSF)], pixsize=pixsize)
 
 class VoigtEngine(object):
     ''' Class to create 15x15 pixel postage stamp images of galaxies as described in Voigt+12.
@@ -281,11 +300,12 @@ class VoigtBDEngine(VoigtEngine):
                                        phi=gparam['d_phi'].value)
         return bulge, disk
 
-    def bdcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
+    def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
         bulge, disk = self.gparam_to_voigt(gparam)
-        return self.galcvl_FWHM([(bulge, bulge_PSF), (disk, disk_PSF)])
+        overim = self.get_overimage([(bulge, bulge_PSF), (disk, disk_PSF)])
+        return chroma.utils.FWHM(overim, scale=self.oversample_factor)
 
-    def bd_image(self, gparam, bulge_PSF, disk_PSF):
+    def get_image(self, gparam, bulge_PSF, disk_PSF):
         '''Use Voigt+12 procedure to make a galaxy image from params in gparam and using the bulge
         and disk PSFs `bulge_PSF` and `disk_PSF`.
 
@@ -299,4 +319,4 @@ class VoigtBDEngine(VoigtEngine):
         during ringtest fits.
         '''
         bulge, disk = self.gparam_to_voigt(gparam)
-        return self.get_image([(bulge, bulge_PSF), (disk, disk_PSF)])
+        return super(VoigtBDEngine, self).get_image([(bulge, bulge_PSF), (disk, disk_PSF)])

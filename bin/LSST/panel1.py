@@ -37,7 +37,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
                                              filter_file, redshift)
     bulge_photons, disk_photons = photons
-    use=None
+
     aPSF_kwargs = {'zenith':numpy.pi * 25.0 / 180.0}
     mPSF_kwargs = {'gmag':PSF_ellip, 'phi':PSF_phi, 'beta':2.5, 'FWHM':3.0, 'flux':1.0}
     PSF_kwargs = {'aPSF_kwargs':aPSF_kwargs, 'mPSF_kwargs':mPSF_kwargs}

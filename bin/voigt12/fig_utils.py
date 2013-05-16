@@ -1,3 +1,5 @@
+import numpy
+import scipy.integrate
 import lmfit
 
 import _mypath
@@ -27,40 +29,80 @@ def fiducial_galaxy():
     dummyfit.prepare_fit()
     return gparam
 
+def PSF_SEDs(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift):
+    # get surviving photons given filter and SEDs
+    bulge_wave, bulge_photons = chroma.utils.get_photons(bulge_SED_file, filter_file, redshift)
+    disk_wave, disk_photons = chroma.utils.get_photons(disk_SED_file, filter_file, redshift)
+    bulge_photons /= scipy.integrate.simps(bulge_photons, bulge_wave)
+    disk_photons /= scipy.integrate.simps(disk_photons, disk_wave)
+    composite_wave = numpy.union1d(bulge_wave, disk_wave)
+    composite_wave.sort()
+    composite_photons = numpy.interp(composite_wave, bulge_wave, bulge_photons,
+                                     left=0.0, right=0.0) * gparam['b_flux'].value \
+                        + numpy.interp(composite_wave, disk_wave, disk_photons,
+                                       left=0.0, right=0.0) * gparam['d_flux'].value
+    waves = bulge_wave, disk_wave, composite_wave
+    photonses = bulge_photons, disk_photons, composite_photons
+    return waves, photonses
+
 def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                         PSF_ellip, PSF_phi,
                         PSF_model, bd_engine):
     '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
-    wave, photons = chroma.utils.get_photons([bulge_SED_file, disk_SED_file],
-                                             filter_file, redshift)
-    bulge_photons, disk_photons = photons
-    use=None
-    PSF_kwargs = {'ellipticity':PSF_ellip, 'phi':PSF_phi}
 
-    gal = chroma.BDGal(gparam, bd_engine,
-                       wave=wave, bulge_photons=bulge_photons, disk_photons=disk_photons,
-                       PSF_model=PSF_model, PSF_kwargs=PSF_kwargs)
+    waves, photonses = PSF_SEDs(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift)
+    bulge_wave, disk_wave, composite_wave = waves
+    bulge_photons, disk_photons, composite_photons = photonses
 
-    gal.build_circ_PSF()
-    gal.set_FWHM_ratio(1.4)
-    # Do ring test with two values of gamma_true: (0.0, 0.0) and (0.01, 0.02). With these two
-    # simulations, one can solve the shear calibration equation for `m` and `c`.
+    # construct PSFs from surviving photons
+    bulge_PSF = PSF_model(bulge_wave, bulge_photons, ellipticity=PSF_ellip, phi=PSF_phi)
+    disk_PSF = PSF_model(disk_wave, disk_photons, ellipticity=PSF_ellip, phi=PSF_phi)
+    composite_PSF = PSF_model(composite_wave, composite_photons, ellipticity=PSF_ellip, phi=PSF_phi)
+    circ_bulge_PSF = PSF_model(bulge_wave, bulge_photons)
+    circ_disk_PSF = PSF_model(disk_wave, disk_photons)
+    circ_composite_PSF = PSF_model(composite_wave, composite_photons)
 
+    # create galaxy
+    gal = chroma.BDGal(gparam, bd_engine)
+
+    # adjust FWHM such that FWHM(gal convolved with PSF) / FWHM(PSF) = 1.4
+    # use circularized PSFs for this (set_cvl_FWHM will also temporarily circularize the galaxy)
+    PSF_FWHM = bd_engine.PSF_FWHM(circ_composite_PSF)
+    gal.set_cvl_FWHM(1.4 * PSF_FWHM, circ_bulge_PSF, circ_disk_PSF)
+
+    # wrapping galaxy gen_target_image using appropriate PSFs
+    def gen_target_image(gamma, beta):
+        return gal.gen_target_image(gamma, beta, bulge_PSF, disk_PSF)
+
+    # function to measure ellipticity of target_image by trying to match the pixels
+    # but using the "wrong" PSF (the composite PSF for both bulge and disk).
+    def measure_ellip(target_image, init_param):
+        def resid(param):
+            im = bd_engine.get_image(param, composite_PSF, composite_PSF)
+            return (im - target_image).flatten()
+        result = lmfit.minimize(resid, init_param)
+        gmag = result.params['d_gmag'].value
+        phi = result.params['d_phi'].value
+        c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
+        return c_ellip
+
+    # Ring test for two values of gamma, solve for m and c.
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
-                                       gal.gen_target_image,
+                                       gen_target_image,
                                        gal.gen_init_param,
-                                       gal.measure_ellip)
+                                       measure_ellip)
     # c is just gamma_hat when input gamma_true is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
-                                       gal.gen_target_image,
+                                       gen_target_image,
                                        gal.gen_init_param,
-                                       gal.measure_ellip)
+                                       measure_ellip)
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
+
     return m, c
