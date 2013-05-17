@@ -33,7 +33,7 @@ def integrated_flux(wave, flambda, f_wave, f_throughput, exptime=15.0, eff_diam=
 
     hc = 1.98644521e-9 # (PlanckConstant * speedOfLight) in erg nm
     integrand = flambda_i * throughput_i * wave_union * 10 / hc
-    photon_rate = scipy.integrate.simps(integrand, wave_union)
+    photon_rate = scipy.integrate.trapz(integrand, wave_union)
     return photon_rate * numpy.pi * (eff_diam / 2)**2 * exptime # total photons
 
 
