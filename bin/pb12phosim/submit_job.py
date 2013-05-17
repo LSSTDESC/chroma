@@ -28,3 +28,13 @@ def submit_job(SED_type, filter_name, zenith, seed, redshift, test=False):
     print full_command
     if not test:
         subprocess.call(full_command, shell=True)
+
+if __name__ == '__main__':
+    import numpy as np
+    for z in np.arange(0.0, 3.0, 0.03):
+        submit_job('gal', 'r', 30.0, 1000, z)
+        submit_job('gal', 'i', 30.0, 1000, z)
+    submit_job('star', 'r', 30.0, 1000, 0.0)
+    submit_job('star', 'i', 30.0, 1000, 0.0)
+    submit_job('G5v', 'r', 30.0, 1000, 0.0)
+    submit_job('G5v', 'i', 30.0, 1000, 0.0)

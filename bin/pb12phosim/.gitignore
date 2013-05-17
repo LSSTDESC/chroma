@@ -18,6 +18,7 @@ lib64
 doc
 output
 catalogs
+stdout
 
 # Installer logs
 pip-log.txt

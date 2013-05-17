@@ -58,7 +58,7 @@ def mag_norm_to_LSST_flux(SED_file, filter_file, mag_norm, redshift=0.0):
 
     AB_val = AB(wave, flambda, 500.0)
     flux = integrated_flux(wave * (1.0 + redshift), flambda / (1.0 + redshift), f_wave, f_throughput)
-    return flux * 10**(-0.4 * (mag_norm - AB_val)) * 0.805 #empirical fudge factor!
+    return flux * 10**(-0.4 * (mag_norm - AB_val)) * 0.706 #empirical fudge factor!
 
 def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
     SED_types = {'G5v':'1', 'star':'2', 'gal':'3'}
