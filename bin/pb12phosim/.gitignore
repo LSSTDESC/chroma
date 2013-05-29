@@ -20,6 +20,7 @@ output
 catalogs
 stdout
 batch_sextract
+relative_moments.pik
 
 # Installer logs
 pip-log.txt
