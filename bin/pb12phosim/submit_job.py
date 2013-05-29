@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
@@ -17,6 +18,10 @@ def submit_job(SED_type, filter_name, zenith, seed, redshift, test=False):
     cat_dir = sub_dir + 'catalogs/'
     cat_file = cat_dir + 'stargrid_' + obshistid
     extra_file = cat_file + '_extra'
+    if not os.path.exists('output/'):
+        os.mkdir('output/')
+    if not os.path.exists('stdout/'):
+        os.mkdir('stdout/')
     out_dir = '/nfs/slac/g/ki/ki19/jmeyers3/chroma/bin/pb12phosim/output/'
     command = '"cd {} && ./phosim {} -c {} -e0 -sR22_S11 -o {}"'.format(phosim_dir,
                                                                        cat_file,

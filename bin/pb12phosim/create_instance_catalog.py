@@ -1,7 +1,7 @@
+import os
+
 import numpy
 import scipy.integrate
-
-
 
 def AB(wave, flambda, AB_wave):
     """Returns the AB magnitude at `AB_wave` (nm) of spectrum specified by
@@ -144,6 +144,9 @@ SIM_NSNAP 1
             id_ = iRA + 0.1 * iDEC
             outstring += write_object_outstring(id_, 'PB12/' + spec, redshift, mag_norm, RA, DEC)
         outstring += '\n'
+
+    if not os.path.exists('catalogs/'):
+        os.mkdir('catalogs/')
     f = open('catalogs/' + outfilename, 'w')
     f.write(outstring)
     f.close()
