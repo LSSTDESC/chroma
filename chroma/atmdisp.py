@@ -118,6 +118,56 @@ def disp_moments_R(wave, photons, **kwargs):
     V = scipy.integrate.simps((R - Rbar)**2.0 * photons_per_dR, R)/norm
     return Rbar, V
 
+def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
+    def moffat1d(FWHM, beta):
+        alpha = FWHM / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
+        def f(x):
+            u = (x/alpha)**2.0
+            p = 1.0 / ((u + 1.0)**beta)
+            return p / p.max()
+        return f
+
+    def gaussian1d(sigma, center):
+        return lambda x: numpy.exp(-0.5 * ((x - center) / sigma)**2.0)
+
+    def zenith_PSF(wave, flux, moffat_FWHM=0.705, moffat_beta=2.67,
+                   Rbar=None, V=None,
+                   **kwargs):
+        # the dispersion contribution to the PSF
+        R, photons_per_dR = wave_dens_to_angle_dens(wave, photons, **kwargs)
+        asort = R.argsort()
+        R, photons_per_dR = R[asort], photons_per_dR[asort]
+        #scale output range using larger of moffatFWHM and FWHM of dispersion component
+        if Rbar is None or V is None:
+            M = disp_moments(wave, photons, **kwargs)
+            Rbar = M[0]
+            V = M[1]
+        #scale in radians
+        scale = numpy.sqrt(numpy.log(256.0) * V) # radians
+        moffat_FWHM_rad = moffat_FWHM * numpy.pi / 180.0 / 3600
+        if moffat_FWHM_rad > scale : scale = moffat_FWHM_rad
+        r_min = Rbar - 2.5 * scale #radians
+        r_max = Rbar + 2.5 * scale #radians
+        R_fine = numpy.arange(r_min, r_max, 0.001 * numpy.pi / 180.0 / 3600) #radians
+        photons_per_dR_fine = numpy.interp(R_fine, R, photons_per_dR)
+        #check units below
+        moffat = moffat1d(moffat_FWHM_rad, moffat_beta)
+        moffat_PSF = moffat(R_fine - 0.5 * (R_fine[0] + R_fine[-1])) #center in window
+        moffat_PSF /= moffat_PSF.sum()
+        zen_PSF = numpy.convolve(photons_per_dR_fine, moffat_PSF, mode="same")
+        return R_fine, zen_PSF
+
+    if Rbar is None or V is None:
+        M = disp_moments(wave, photons, **kwargs)
+        Rbar = M[0]
+        V = M[1]
+    R, zen_PSF = zenith_PSF(wave, photons, Rbar=Rbar, V=V, **kwargs)
+    sigma_rad = sigma * numpy.pi / 180 / 3600
+    gaussian = gaussian1d(sigma_rad, Rbar)
+    norm = scipy.integrate.simps(gaussian(R) * zen_PSF, R)
+    return scipy.integrate.simps(gaussian(R) * zen_PSF * (R - Rbar)**2, R)/norm
+
+
 if __name__ == '__main__':
     fdata = numpy.genfromtxt('../data/filters/LSST_r.dat')
     wave, fthroughput = fdata[:,0], fdata[:,1]
