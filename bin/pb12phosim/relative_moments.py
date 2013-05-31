@@ -6,7 +6,6 @@ import pickle
 
 import numpy
 import pyfits
-
 import astropy.utils.console
 
 def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
@@ -18,6 +17,13 @@ def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
     seed_digit = str(seed - 1000)
     redshift_digits = '{:02d}'.format(int(round((redshift / 0.03))))
     return SED_digit + filter_digit + zenith_digit + seed_digit + redshift_digits
+
+def encode_obstypeid(filter_name, zenith, seed):
+    filter_number = {'u':'0','g':'1','r':'2','i':'3','z':'4','Y':'5'}
+    filter_digit = filter_number[filter_name]
+    zenith_digit = str(int(round((zenith / 10.0))))
+    seed_digit = str(seed - 1000)
+    return filter_digit + zenith_digit + seed_digit
 
 def relative_moments(filter_name, zenith, seed):
     RAs = [-0.035, -0.025, -0.015, -0.005, 0.005, 0.015, 0.025, 0.035]
@@ -37,9 +43,11 @@ def relative_moments(filter_name, zenith, seed):
 
     G5v_obshistid = encode_obshistid('G5v', filter_name, zenith, seed, 0.0)
     G5v_cat = pyfits.getdata('output/{}_cat_V.fits.gz'.format(G5v_obshistid))
+    G5v_cat['ALPHAWIN_SKY'][G5v_cat['ALPHAWIN_SKY'] > 180.0] -= 360.0
 
     star_obshistid = encode_obshistid('star', filter_name, zenith, seed, 0.0)
     star_cat = pyfits.getdata('output/{}_cat_V.fits.gz'.format(star_obshistid))
+    star_cat['ALPHAWIN_SKY'][star_cat['ALPHAWIN_SKY'] > 180.0] -= 360.0
     star_types = ['uko5v',
                   'ukb5iii',
                   'uka5v',
@@ -90,6 +98,7 @@ def relative_moments(filter_name, zenith, seed):
             bar.update()
             gal_obshistid = encode_obshistid('gal', filter_name, zenith, seed, z)
             gal_cat = pyfits.getdata('output/{}_cat_V.fits.gz'.format(gal_obshistid))
+            gal_cat['ALPHAWIN_SKY'][gal_cat['ALPHAWIN_SKY'] > 180.0] -= 360.0
             for RA, gal_type in zip(RAs, gal_types):
                 collect_columns = {}
                 for col in output_columns:
@@ -107,4 +116,8 @@ def relative_moments(filter_name, zenith, seed):
                 for col in output_columns:
                     gal_diffs[gal_type][col].append(numpy.array(collect_columns[col]).mean())
 
-    pickle.dump((star_diffs, gal_diffs), open('relative_moments.pik', 'wb'))
+    obstypeid = encode_obstypeid(filter_name, zenith, seed)
+    pickle.dump((star_diffs, gal_diffs), open('relative_moments.{}.pik'.format(obstypeid), 'wb'))
+
+#if __name__ == '__main__':
+#    relative_moments('r', 30.0, 1000)

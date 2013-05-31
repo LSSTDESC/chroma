@@ -72,12 +72,14 @@ for c in inCat:
     xint = numpy.rint(x)
     yint = numpy.rint(y)
 
+    gaussian_sigma = 1.0 / 2.35 * 5.0 # 1 arcsec FWHM -> pixels sigma
+
     #10 pixel wide box
     xlow = xint - 5
     ylow = yint - 5
     thumb = im[ylow:ylow+11, xlow:xlow+11]
     x2, y2, xy = quadrupole(thumb, (y-ylow, x-xlow))
-    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), 1.0/2.35*5.0)
+    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), gaussian_sigma)
     Vx10.append(x2*(0.2/3600)**2)
     Vy10.append(y2*(0.2/3600)**2)
     wVx10.append(wx2*(0.2/3600)**2)
@@ -88,7 +90,7 @@ for c in inCat:
     ylow = yint - 10
     thumb = im[ylow:ylow+21, xlow:xlow+21]
     x2, y2, xy = quadrupole(thumb, (y-ylow, x-xlow))
-    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), 1.0/2.35*5.0)
+    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), gaussian_sigma)
     Vx20.append(x2*(0.2/3600)**2)
     Vy20.append(y2*(0.2/3600)**2)
     wVx20.append(wx2*(0.2/3600)**2)
@@ -99,7 +101,7 @@ for c in inCat:
     ylow = yint - 20
     thumb = im[ylow:ylow+41, xlow:xlow+41]
     x2, y2, xy = quadrupole(thumb, (y-ylow, x-xlow))
-    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), 1.0/2.35*5.0)
+    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), gaussian_sigma)
     Vx40.append(x2*(0.2/3600)**2)
     Vy40.append(y2*(0.2/3600)**2)
     wVx40.append(wx2*(0.2/3600)**2)
@@ -110,7 +112,7 @@ for c in inCat:
     ylow = yint - 40
     thumb = im[ylow:ylow+81, xlow:xlow+81]
     x2, y2, xy = quadrupole(thumb, (y-ylow, x-xlow))
-    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), 1.0/2.35*5.0)
+    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), gaussian_sigma)
     Vx80.append(x2*(0.2/3600)**2)
     Vy80.append(y2*(0.2/3600)**2)
     wVx80.append(wx2*(0.2/3600)**2)
@@ -121,7 +123,7 @@ for c in inCat:
     ylow = yint - 60
     thumb = im[ylow:ylow+121, xlow:xlow+121]
     x2, y2, xy = quadrupole(thumb, (y-ylow, x-xlow))
-    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), 1.0/2.35*5.0)
+    wx2, wy2, wxy = weighted_quadrupole(thumb, (y-ylow, x-xlow), gaussian_sigma)
     Vx120.append(x2*(0.2/3600)**2)
     Vy120.append(y2*(0.2/3600)**2)
     wVx120.append(wx2*(0.2/3600)**2)
