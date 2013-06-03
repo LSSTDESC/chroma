@@ -161,7 +161,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     ax1.set_ylim(yrange1[0], yrange1[1])
     ax2.set_ylim(yrange2[0], yrange2[1])
 
-    f.savefig('plots/Rbar.{}.pdf'.format(obstypeid))
+    f.savefig('plots/Rbar.{}.png'.format(obstypeid))
 
     # V plot, unweighted
     ####################
@@ -233,7 +233,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     ax1.set_ylim(yrange1[0], yrange1[1])
     ax2.set_ylim(yrange2[0], yrange2[1])
 
-    f.savefig('plots/V.{}.pdf'.format(obstypeid))
+    f.savefig('plots/V.{}.png'.format(obstypeid))
 
 
     # V plot, weighted
@@ -306,7 +306,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     ax1.set_ylim(yrange1[0], yrange1[1])
     ax2.set_ylim(yrange2[0], yrange2[1])
 
-    f.savefig('plots/wV.{}.pdf'.format(obstypeid))
+    f.savefig('plots/wV.{}.png'.format(obstypeid))
 
 if __name__ == '__main__':
     plot_relative_moments('r', 30.0, 1000)
