@@ -20,8 +20,8 @@ def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure
     sigma_squared = 1.0 / wave**2.0
     n_minus_one = (64.328 + (29498.1e-6 / (146e-6 - sigma_squared))
                    + (255.4e-6 / (41e-6 - sigma_squared))) * 1.e-6
-    p_ref = 101.325 #kPA
-    t_ref = 288.15 #K
+    p_ref = 101.325 # kPA
+    t_ref = 288.15 # K
     n_minus_one *= (pressure / p_ref) / (temperature / t_ref)
     n_minus_one -= 43.49e-6 * (1 - 7.956e3 * sigma_squared) * H2O_pressure / p_ref
     return n_minus_one + 1.0
@@ -58,7 +58,7 @@ def disp_moments(wave, photons, **kwargs):
     Arguments
     ---------
     wave -- wavelength array in nanometers
-    photons -- object SED*throughput*wave.  Units proportional to photons/sec/cm^2/A
+    photons -- SED*throughput*wave.  Units proportional to photons/sec/cm^2/A
 
     **kwargs
     --------
@@ -105,8 +105,8 @@ def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
     R = atm_refrac(wave, **kwargs)
     dR = numpy.diff(R)
     dwave = numpy.diff(wave)
-    dwave_dR = dwave / dR #Jacobian
-    dwave_dR = numpy.append(dwave_dR, dwave_dR[-1]) #fudge the last array element
+    dwave_dR = dwave / dR # Jacobian
+    dwave_dR = numpy.append(dwave_dR, dwave_dR[-1]) # fudge the last array element
     angle_dens = wave_dens * numpy.abs(dwave_dR)
     return R, angle_dens
 
@@ -119,6 +119,24 @@ def disp_moments_R(wave, photons, **kwargs):
     return Rbar, V
 
 def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
+    ''' Compute the weighted second moment of the PSF along the zenith direction, including
+    atmospheric dispersion and seeing described by a Moffat profile.  The weight function is a
+    Gaussian.
+
+    Arguments
+    ---------
+    wave -- SED wavelengths in nanometers.
+    photons -- the distribution of surviving photons (binned by wavelength)
+               SED*throughput*wave, units proportional to photons/sec/cm^2/A
+    sigma -- the width of the Gaussian weight function
+    Rbar -- the first moment of the surviving photon refraction distribution
+    V -- the second moment of the surviving photon refraction distribution
+
+    **kwargs
+    -----------------
+
+
+    '''
     def moffat1d(FWHM, beta):
         alpha = FWHM / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
         def f(x):
@@ -137,22 +155,22 @@ def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
         R, photons_per_dR = wave_dens_to_angle_dens(wave, photons, **kwargs)
         asort = R.argsort()
         R, photons_per_dR = R[asort], photons_per_dR[asort]
-        #scale output range using larger of moffatFWHM and FWHM of dispersion component
+        # scale output range using larger of moffatFWHM and FWHM of dispersion component
         if Rbar is None or V is None:
             M = disp_moments(wave, photons, **kwargs)
             Rbar = M[0]
             V = M[1]
-        #scale in radians
+        # scale in radians
         scale = numpy.sqrt(numpy.log(256.0) * V) # radians
         moffat_FWHM_rad = moffat_FWHM * numpy.pi / 180.0 / 3600
         if moffat_FWHM_rad > scale : scale = moffat_FWHM_rad
-        r_min = Rbar - 2.5 * scale #radians
-        r_max = Rbar + 2.5 * scale #radians
-        R_fine = numpy.arange(r_min, r_max, 0.001 * numpy.pi / 180.0 / 3600) #radians
+        r_min = Rbar - 2.5 * scale # radians
+        r_max = Rbar + 2.5 * scale # radians
+        R_fine = numpy.arange(r_min, r_max, 0.001 * numpy.pi / 180.0 / 3600) # radians
         photons_per_dR_fine = numpy.interp(R_fine, R, photons_per_dR)
-        #check units below
+        # check units below
         moffat = moffat1d(moffat_FWHM_rad, moffat_beta)
-        moffat_PSF = moffat(R_fine - 0.5 * (R_fine[0] + R_fine[-1])) #center in window
+        moffat_PSF = moffat(R_fine - 0.5 * (R_fine[0] + R_fine[-1])) # center in window
         moffat_PSF /= moffat_PSF.sum()
         zen_PSF = numpy.convolve(photons_per_dR_fine, moffat_PSF, mode="same")
         return R_fine, zen_PSF
@@ -167,12 +185,9 @@ def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
     norm = scipy.integrate.simps(gaussian(R) * zen_PSF, R)
     return scipy.integrate.simps(gaussian(R) * zen_PSF * (R - Rbar)**2, R)/norm
 
-
 if __name__ == '__main__':
-    fdata = numpy.genfromtxt('../data/filters/LSST_r.dat')
-    wave, fthroughput = fdata[:,0], fdata[:,1]
-    sdata = numpy.genfromtxt('../data/SEDs/ukg5v.ascii')
-    swave, flux = sdata[:,0], sdata[:,1]
+    wave, fthroughput = numpy.genfromtxt('../data/filters/LSST_r.dat').T
+    swave, flux = numpy.genfromtxt('../data/SEDs/ukg5v.ascii').T
     flux_i = numpy.interp(wave, swave, flux)
     photons = flux_i * fthroughput * wave
     M = disp_moments(wave, photons, zenith=45.0 * numpy.pi/180.0)
