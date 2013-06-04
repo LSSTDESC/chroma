@@ -4,10 +4,9 @@ import scipy
 import astropy.utils.console
 
 def get_photons(SED_file, filter_file, redshift):
-    fdata = numpy.genfromtxt(filter_file)
-    fwave, throughput = fdata[:,0], fdata[:,1]
-    sdata = numpy.genfromtxt(SED_file)
-    swave, flux = sdata[:,0] * (1.0 + redshift), sdata[:,1]
+    fwave, throughput = numpy.genfromtxt(filter_file).T
+    swave, flux = numpy.genfromtxt(SED_file).T
+    swave *= (1.0 + redshift)
     flux_i = numpy.interp(fwave, swave, flux)
     photons = flux_i * throughput * fwave
     return fwave, photons
@@ -54,22 +53,35 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
     gamma_hat = numpy.mean(gamma_hats)
     return gamma_hat
 
-def FWHM(data, scale=1.0):
+def FWHM(data, pixsize=1.0):
     '''Compute the full-width at half maximum of a symmetric 2D distribution.  Assumes that measuring
     along the x-axis is sufficient (ignores all but one row, the one containing the distribution
-    maximum).  Scales result by scale for non-unit width pixels.
+    maximum).  Scales result by `pixsize` for non-unit width pixels.
+
+    Arguments
+    ---------
+    data -- array to analyze
+    pixsize -- linear size of a pixel
     '''
     height = data.max()
     w = numpy.where(data == height)
     y0, x0 = w[0][0], w[1][0]
-    xs = numpy.arange(data.shape[0], dtype=numpy.float64)/scale
+    xs = numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize
     low = numpy.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
     high = numpy.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
     return abs(high-low)
 
-def moments(data, scale=1.0):
-    xs, ys = numpy.meshgrid(numpy.arange(data.shape[0], dtype=numpy.float64)/scale,
-                            numpy.arange(data.shape[0], dtype=numpy.float64)/scale)
+def moments(data, pixsize=1.0):
+    '''Compute first and second (quadrupole) moments of `data`.  Scales result by `pixsize` for
+    non-unit width pixels.
+
+    Arguments
+    ---------
+    data -- array to analyze
+    pixsize -- linear size of a pixel
+    '''
+    xs, ys = numpy.meshgrid(numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize,
+                            numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize)
     total = data.sum()
     xbar = (data * xs).sum() / total
     ybar = (data * ys).sum() / total
@@ -78,15 +90,15 @@ def moments(data, scale=1.0):
     Ixy = (data * (xs - xbar) * (ys - ybar)).sum() / total
     return xbar, ybar, Ixx, Iyy, Ixy
 
-def AHM(data, scale=1.0, height=None):
+def AHM(data, pixsize=1.0, height=None):
     ''' Compute area above half maximum as a potential replacement for FWHM.
 
     Arguments
     ---------
     data -- array to analyze
-    scale -- linear size of a pixel
+    pixsize -- linear size of a pixel
     height -- optional maximum height of data (defaults to sample maximum).
     '''
     if height is None:
         height = data.max()
-    return data > (0.5 * height) / scale**2
+    return (data > (0.5 * height)).sum() * scale**2
