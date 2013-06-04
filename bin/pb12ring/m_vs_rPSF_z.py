@@ -1,6 +1,4 @@
 import os
-import sys
-import copy
 
 import numpy
 import scipy.integrate
@@ -13,12 +11,8 @@ def fiducial_galaxy():
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
     gparam.add('y0', value=0.3)
-#    gparam.add('n', value=0.5, vary=False)
-#    gparam.add('r_e', value=0.2248/0.2)
-#    gparam.add('n', value=1.0, vary=False)
-#    gparam.add('r_e', value=0.184/0.2)
-    gparam.add('n', value=4.0, vary=False)
-    gparam.add('r_e', value=0.058/0.2)
+    gparam.add('n', value=0.5, vary=False)
+    gparam.add('r_e', value=1.0)
     gparam.add('flux', value=1.0, vary=False)
     gparam.add('gmag', value=0.2)
     gparam.add('phi', value=0.0)
@@ -65,7 +59,10 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     m = m0, m1
     return m, c
 
-def m_vs_redshift(s_engine, PSF_model):
+def m_vs_rPSF_z():
+    s_engine = chroma.imgen.GalSimSEngine(size=41, oversample_factor=41)
+    PSF_model = chroma.PSF_model.GSGaussAtmPSF
+
     PSF_ellip = 0.0
     PSF_phi = 0.0
     filter_file = '../../data/filters/LSST_r.dat'
@@ -79,36 +76,29 @@ def m_vs_redshift(s_engine, PSF_model):
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    fil = open('output/m_vs_redshift.dat', 'w')
-    gparam = fiducial_galaxy()
-    # normalize size to second moment (before PSF convolution)
-    gal = chroma.SGal(gparam, s_engine)
-    gal.set_m2((0.27/0.2)**2) ## (0.27 arcsec)^2 -> pixels^2
-    gparam = gal.gparam0
-    print gparam['n'].value
-    print gparam['r_e'].value * 0.2 #pixels -> arcsec
-    print
-    print
+    fil = open('output/m_vs_rPSF_z.dat', 'w')
 
-    for z in numpy.arange(0.0, 2.01, 0.02):
-        print z
-        gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
-        gphotons /= scipy.integrate.simps(gphotons, gwave)
-        gal_PSF = make_PSF(gwave, gphotons, PSF_ellip, PSF_phi, PSF_model)
-        m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
-        print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
-        print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
 
-        gmom = chroma.disp_moments(gwave, gphotons, zenith=45.0 * numpy.pi / 180)
-        m_analytic = (smom[1] - gmom[1]) * 206265**2 / (0.27**2)
-        print 'm_analytic: {:10g}'.format(m_analytic)
-        fil.write('{} {} {} {}\n'.format(z, c, m, m_analytic))
+    r2s = (numpy.linspace(0.2, 0.5, 21) / 0.2)**2 #arcsec -> pixels
+
+    for r2 in r2s:
+        gparam = fiducial_galaxy()
+        gal = chroma.SGal(gparam, s_engine)
+        gal.set_r2(r2 / 0.2)
+        print 'for r2 of {}, r_e is {}'.format(r2, gal.gparam0['r_e'].value)
+        for z in numpy.arange(0.0, 3.0, 0.03):
+            gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
+            gphotons /= scipy.integrate.simps(gphotons, gwave)
+            gal_PSF = make_PSF(gwave, gphotons, PSF_ellip, PSF_phi, PSF_model)
+            m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
+            print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
+            print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
+
+            gmom = chroma.disp_moments(gwave, gphotons, zenith=45.0 * numpy.pi / 180)
+            m_analytic = (smom[1] - gmom[1]) * 206265**2 / (0.27**2)
+            print 'm_analytic: {:10g}'.format(m_analytic)
+            fil.write('{} {} : {} {} {}\n'.format(z, r2, c, m, m_analytic))
     fil.close()
 
-def main(argv):
-    s_engine = chroma.imgen.GalSimSEngine(size=41, oversample_factor=41)
-    PSF_model = chroma.PSF_model.GSGaussAtmPSF
-    m_vs_redshift(s_engine, PSF_model)
-
 if __name__ == '__main__':
-    main(sys.argv)
+    m_vs_rPSF_z()

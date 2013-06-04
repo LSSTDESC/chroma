@@ -96,7 +96,9 @@ class GalSimSEngine(GalSimEngine):
         gal.draw(image=im, dx=1./self.oversample_factor)
         return im.array
 
-    def gal_m2(self, gparam):
+    def gal_r2(self, gparam):
+        '''Return unconvolved galaxy sum of orthogonal second moments, as used to normalize shape
+        measurements quadrupole moments.'''
         im = self.gal_uncvl_image(gparam)
         xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, scale=self.oversample_factor)
         return Ixx + Iyy

@@ -25,12 +25,12 @@ class SGal(object):
         scale = scipy.optimize.newton(f, 1.0)
         self.gparam0['r_e'].value *= scale
 
-    def set_m2(self, target_m2):
+    def set_r2(self, target_r2):
         gparam1 = copy.deepcopy(self.gparam0)
-        def m2_gal(scale):
+        def r2_gal(scale):
             gparam1['r_e'].value = self.gparam0['r_e'].value * scale
-            return self.s_engine.gal_m2(gparam1)
-        scale = scipy.optimize.newton(lambda s: m2_gal(s) - target_m2, 1.0)
+            return self.s_engine.gal_r2(gparam1)
+        scale = scipy.optimize.newton(lambda s: r2_gal(s) - target_r2, 1.0)
         self.gparam0['r_e'].value = self.gparam0['r_e'].value * scale
 
     def gen_init_param(self, gamma, beta):
