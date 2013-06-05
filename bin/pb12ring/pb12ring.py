@@ -13,10 +13,6 @@ def fiducial_galaxy():
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
     gparam.add('y0', value=0.3)
-#    gparam.add('n', value=0.5, vary=False)
-#    gparam.add('r_e', value=0.2248/0.2)
-#    gparam.add('n', value=1.0, vary=False)
-#    gparam.add('r_e', value=0.184/0.2)
     gparam.add('n', value=4.0, vary=False)
     gparam.add('r_e', value=0.058/0.2)
     gparam.add('flux', value=1.0, vary=False)
@@ -32,7 +28,7 @@ def make_PSF(wave, photons, PSF_ellip, PSF_phi, PSF_model):
     return PSF
 
 def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
-    gal = chroma.SGal(gparam, s_engine)
+    gal = chroma.gal_model.SGal(gparam, s_engine)
     def gen_target_image(gamma, beta):
         return gal.gen_target_image(gamma, beta, gal_PSF)
 
@@ -52,14 +48,14 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
                                        gen_target_image,
                                        gal.gen_init_param,
-                                       measure_ellip)
+                                       measure_ellip, silent=True)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
                                        gen_target_image,
                                        gal.gen_init_param,
-                                       measure_ellip)
+                                       measure_ellip, silent=True)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
@@ -82,8 +78,8 @@ def m_vs_redshift(s_engine, PSF_model):
     fil = open('output/m_vs_redshift.dat', 'w')
     gparam = fiducial_galaxy()
     # normalize size to second moment (before PSF convolution)
-    gal = chroma.SGal(gparam, s_engine)
-    gal.set_m2((0.27/0.2)**2) ## (0.27 arcsec)^2 -> pixels^2
+    gal = chroma.gal_model.SGal(gparam, s_engine)
+    gal.set_uncvl_r2((0.27/0.2)**2) ## (0.27 arcsec)^2 -> pixels^2
     gparam = gal.gparam0
     print gparam['n'].value
     print gparam['r_e'].value * 0.2 #pixels -> arcsec

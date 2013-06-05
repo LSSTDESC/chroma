@@ -15,7 +15,7 @@ def shear_galaxy(c_ellip, c_gamma):
     '''Compute complex ellipticity after shearing by complex shear `c_gamma`.'''
     return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
 
-def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
+def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, silent=False):
     ''' Performs a shear calibration ringtest.
 
     Produces "true" images uniformly spread along a ring in ellipticity space using the supplied
@@ -34,22 +34,38 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip):
     betas = numpy.linspace(0.0, 2.0 * numpy.pi, n_ring, endpoint=False)
     ellip0s = []
     ellip180s = []
-    with astropy.utils.console.ProgressBar(2 * n_ring) as bar:
+    if not silent:
+        with astropy.utils.console.ProgressBar(2 * n_ring) as bar:
+            for beta in betas:
+                #measure ellipticity at beta along the ring
+                target_image0 = gen_target_image(gamma, beta)
+                init_param0 = gen_init_param(gamma, beta)
+                ellip0 = measure_ellip(target_image0, init_param0)
+                ellip0s.append(ellip0)
+                bar.update()
+
+                #repeat with beta on opposite side of the ring (i.e. +180 deg)
+                target_image180 = gen_target_image(gamma, beta + numpy.pi)
+                init_param180 = gen_init_param(gamma, beta + numpy.pi)
+                ellip180 = measure_ellip(target_image180, init_param180)
+                ellip180s.append(ellip180)
+                bar.update()
+                gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
+    else:
         for beta in betas:
             #measure ellipticity at beta along the ring
             target_image0 = gen_target_image(gamma, beta)
             init_param0 = gen_init_param(gamma, beta)
             ellip0 = measure_ellip(target_image0, init_param0)
             ellip0s.append(ellip0)
-            bar.update()
 
             #repeat with beta on opposite side of the ring (i.e. +180 deg)
             target_image180 = gen_target_image(gamma, beta + numpy.pi)
             init_param180 = gen_init_param(gamma, beta + numpy.pi)
             ellip180 = measure_ellip(target_image180, init_param180)
             ellip180s.append(ellip180)
-            bar.update()
-    gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
+            gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
+
     gamma_hat = numpy.mean(gamma_hats)
     return gamma_hat
 

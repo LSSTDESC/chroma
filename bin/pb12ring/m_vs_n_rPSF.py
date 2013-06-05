@@ -3,6 +3,7 @@ import os
 import numpy
 import scipy.integrate
 import lmfit
+import astropy.utils.console
 
 import _mypath
 import chroma
@@ -26,7 +27,7 @@ def make_PSF(wave, photons, PSF_ellip, PSF_phi, PSF_model):
     return PSF
 
 def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
-    gal = chroma.SGal(gparam, s_engine)
+    gal = chroma.gal_model.SGal(gparam, s_engine)
     def gen_target_image(gamma, beta):
         return gal.gen_target_image(gamma, beta, gal_PSF)
 
@@ -46,14 +47,14 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
                                        gen_target_image,
                                        gal.gen_init_param,
-                                       measure_ellip)
+                                       measure_ellip, silent=True)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
                                        gen_target_image,
                                        gal.gen_init_param,
-                                       measure_ellip)
+                                       measure_ellip, silent=True)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
@@ -81,25 +82,25 @@ def m_vs_n_rPSF():
 
 
     r2s = (numpy.linspace(0.2, 0.5, 21) / 0.2)**2 #arcsec -> pixels
-
+    ns = numpy.linspace(0.5, 4.0, 21)
     gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
     gphotons /= scipy.integrate.simps(gphotons, gwave)
     gal_PSF = make_PSF(gwave, gphotons, PSF_ellip, PSF_phi, PSF_model)
 
-    for r2 in r2s:
-        for n in numpy.linspace(0.5, 4.0, 21):
-            gparam = fiducial_galaxy()
-            gparam['n'].value = n
-            gal = chroma.SGal(gparam, s_engine)
-            gal.set_r2(r2 / 0.2)
-            print 'for r2, n of {}, {}, r_e is {}'.format(r2, n, gal.gparam0['r_e'].value)
+    with astropy.utils.console.ProgressBar(len(r2s) * len(ns)) as bar:
+        for r2 in r2s:
+            for n in ns:
+                gparam = fiducial_galaxy()
+                gparam['n'].value = n
+                gal = chroma.gal_model.SGal(gparam, s_engine)
+                gal.set_uncvl_r2(r2 / 0.2)
 
-            m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
-            print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
-            print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
+                m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
 
-            gmom = chroma.disp_moments(gwave, gphotons, zenith=45.0 * numpy.pi / 180)
-            fil.write('{} {} : {} {}\n'.format(r2, n, c, m))
+                gmom = chroma.disp_moments(gwave, gphotons, zenith=45.0 * numpy.pi / 180)
+                fil.write('{} {} : {} {}\n'.format(r2, n, c, m))
+                bar.update()
+
     fil.close()
 
 if __name__ == '__main__':

@@ -1,8 +1,7 @@
 from atmdisp import *
-from BDGal import BDGal
-from SGal import SGal
+from chroma_fill_plot import chroma_fill_plot
+import gal_model
+import PSF_model
 import SBProfile
 import utils
-from chroma_fill_plot import chroma_fill_plot
-import PSF_model
 import imgen

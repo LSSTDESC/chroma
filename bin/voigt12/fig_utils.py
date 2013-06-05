@@ -63,12 +63,12 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     circ_composite_PSF = PSF_model(composite_wave, composite_photons)
 
     # create galaxy
-    gal = chroma.BDGal(gparam, bd_engine)
+    gal = chroma.gal_model.BDGal(gparam, bd_engine)
 
     # adjust FWHM such that FWHM(gal convolved with PSF) / FWHM(PSF) = 1.4
-    # use circularized PSFs for this (set_cvl_FWHM will also temporarily circularize the galaxy)
+    # use circularized PSFs for this (set_circ_FWHM will also temporarily circularize the galaxy)
     PSF_FWHM = bd_engine.PSF_FWHM(circ_composite_PSF)
-    gal.set_cvl_FWHM(1.4 * PSF_FWHM, circ_bulge_PSF, circ_disk_PSF)
+    gal.set_circ_FWHM(1.4 * PSF_FWHM, circ_bulge_PSF, circ_disk_PSF)
 
     # wrapping galaxy gen_target_image using appropriate PSFs
     def gen_target_image(gamma, beta):

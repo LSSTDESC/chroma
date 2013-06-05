@@ -2,10 +2,13 @@ import numpy
 import scipy.signal
 import galsim
 
-import chroma
+import chroma.utils
+import chroma.SBProfile
 
 class GalSimEngine(object):
-    '''Class to use `galsim` to create postage stamp images of multi-component galaxies.
+    '''Class to use `galsim` to create postage stamp images of multi-component galaxies.  Really
+    an abstract base class that needs to be subclassed and have a .get_image() method defined which
+    is used by methods defined here in the ABC.
 
     Idea is to be able to hot-swap this class with the VoigtEngine below which reconstructs the
     postage stamp generation used by Voigt+12.
@@ -18,17 +21,10 @@ class GalSimEngine(object):
         size -- output postage stamp image is `size` x `size` pixels (default 15)
         oversample_factor -- For FWHM calculations, oversample the image by this factor (default 7)
         '''
-        self.size=size
-        self.oversample_factor=oversample_factor
-        self.oversize=size*oversample_factor
-
-    def PSF_FWHM(self, PSF):
-        '''Estimate the FWHM of a PSF given by `PSF` (must be galsim.SBProfile object)
-        Measures along a single row, so assumes that PSF is circularly symmetric.
-        '''
-        PSF_image = galsim.ImageD(self.oversize, self.oversize)
-        PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
-        return chroma.utils.FWHM(PSF_image.array, pixsize=1.0/self.oversample_factor)
+        self.size = size
+        self.oversample_factor = oversample_factor
+        self.oversize = size * oversample_factor
+        self.overpixsize = 1.0 / oversample_factor
 
     def _get_gal(self, obj_list, pixsize):
         '''Create galsim.SBProfile object from list of galaxy profiles and associated PSFs.
@@ -39,19 +35,40 @@ class GalSimEngine(object):
         gal = galsim.Add(cvls)
         return gal
 
-    def galcvl_FWHM(self, obj_list):
-        '''Estimate FWHM of galaxy convolved with PSF.
-        '''
-        return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
-                                 pixsize=1.0/self.oversample_factor)
+    def _get_uncvl_gal(self, obj_list, pixsize):
+        '''Adds together list of galsim.SBProfile objects, without convolving by any PSFs, but
+        still convolves by a square pixel.'''
+        pixel = galsim.Pixel(pixsize)
+        total = galsim.Add(obj_list)
+        gal = galsim.Convolve(total, pixel)
+        return gal
 
-    def get_image(self, obj_list, pixsize=1.0):
-        '''Create postage stamp image of galaxy.
+    def PSF_FWHM(self, PSF):
+        '''Estimate the FWHM of a PSF given by `PSF` (must be galsim.SBProfile object)
+        Measures along a single row, so assumes that PSF is circularly symmetric.
         '''
-        gal = self._get_gal(obj_list, pixsize)
-        get_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
-        gal.draw(image=get_image, dx=pixsize)
-        return get_image.array
+        PSF_image = galsim.ImageD(self.oversize, self.oversize)
+        PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
+        return chroma.utils.FWHM(PSF_image.array, pixsize=self.overpixsize)
+
+    def gal_FWHM(self, gparam, *PSFs):
+        im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
+        return chroma.utils.FWHM(im, pixsize=self.overpixsize)
+
+    def gal_AHM(self, gparam, *PSFs):
+        im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
+        return chroma.utils.AHM(im, pixsize=self.overpixsize)
+
+    def gal_r2(self, gparam, *PSFs):
+        im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
+        xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=self.overpixsize)
+        return Ixx + Iyy
+
+    def gal_uncvl_r2(self, gparam):
+        im = self.get_uncvl_image(gparam, pixsize=self.overpixsize)
+        xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=self.overpixsize)
+        return Ixx + Iyy
+
 
 class GalSimBDEngine(GalSimEngine):
     def _gparam_to_galsim(self, gparam):
@@ -66,15 +83,19 @@ class GalSimBDEngine(GalSimEngine):
         disk.setFlux(gparam['d_flux'].value)
         return bulge, disk
 
-    def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
+    def get_uncvl_image(self, gparam, pixsize=1.0):
+        im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         bulge, disk = self._gparam_to_galsim(gparam)
-        im = self.get_image(gparam, bulge_PSF, disk_PSF, pixsize=1.0/self.oversample_factor)
-        return chroma.utils.FWHM(im, pixsize=1.0/self.oversample_factor)
+        gal = self._get_uncvl_gal([bulge, disk], pixsize)
+        gal.draw(image=im, dx=pixsize)
+        return im.array
 
     def get_image(self, gparam, bulge_PSF, disk_PSF, pixsize=1.0):
+        im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         bulge, disk = self._gparam_to_galsim(gparam)
-        return super(GalSimBDEngine, self).get_image([(bulge, bulge_PSF), (disk, disk_PSF)],
-                                                     pixsize=pixsize)
+        gal = self._get_gal([(bulge, bulge_PSF), (disk, disk_PSF)], pixsize)
+        gal.draw(image=im, dx=pixsize)
+        return im.array
 
 class GalSimSEngine(GalSimEngine):
     def gparam_to_galsim(self, gparam):
@@ -84,27 +105,19 @@ class GalSimSEngine(GalSimEngine):
         gal.setFlux(gparam['flux'].value)
         return gal
 
-    def galcvl_FWHM(self, gparam, PSF):
-        gal = self.gparam_to_galsim(gparam)
-        return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
-                                 pixsize=1.0/self.oversample_factor)
-
-    def gal_uncvl_image(self, gparam):
-        gal = self.gparam_to_galsim(gparam)
-        im = galsim.ImageD(self.oversize, self.oversize)
-        gal.draw(image=im, dx=1./self.oversample_factor)
+    def get_uncvl_image(self, gparam, pixsize=1.0):
+        im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
+        sersic = self.gparam_to_galsim(gparam)
+        gal = self._get_uncvl_gal([sersic], pixsize)
+        gal.draw(image=im, dx=pixsize)
         return im.array
 
-    def gal_r2(self, gparam):
-        '''Return unconvolved galaxy sum of orthogonal second moments, as used to normalize shape
-        measurements quadrupole moments.'''
-        im = self.gal_uncvl_image(gparam)
-        xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, scale=self.oversample_factor)
-        return Ixx + Iyy
-
     def get_image(self, gparam, PSF, pixsize=1.0):
-        gal = self.gparam_to_galsim(gparam)
-        return super(GalSimSEngine, self).get_image([(gal, PSF)], pixsize=pixsize)
+        im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
+        sersic = self.gparam_to_galsim(gparam)
+        gal = self._get_gal([(sersic, PSF)], pixsize)
+        gal.draw(image=im, dx=pixsize)
+        return im.array
 
 class VoigtEngine(object):
     ''' Class to create 15x15 pixel postage stamp images of galaxies as described in Voigt+12.

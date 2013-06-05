@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import scipy.stats
 
 import _mypath
-import chroma.atmdisp
+import chroma
 
 
 def moments(s_wave, s_flux, f_wave, f_throughput, zenith, **kwargs):
@@ -16,11 +16,11 @@ def moments(s_wave, s_flux, f_wave, f_throughput, zenith, **kwargs):
     throughput_i = numpy.interp(wave, f_wave, f_throughput)
     photons = flambda_i * throughput_i * wave
 
-    m = chroma.atmdisp.disp_moments(wave, photons, zenith=zenith * numpy.pi / 180.0, **kwargs)
+    m = chroma.disp_moments(wave, photons, zenith=zenith * numpy.pi / 180.0, **kwargs)
     gaussian_sigma = 1.0 / 2.35 # 1 arcsec FWHM -> sigma
-    m2 = chroma.atmdisp.weighted_second_moment(wave, photons, 1.0,
-                                               zenith=zenith * numpy.pi / 180.0,
-                                               Rbar=m[0], **kwargs)
+    m2 = chroma.weighted_second_moment(wave, photons, 1.0,
+                                       zenith=zenith * numpy.pi / 180.0,
+                                       Rbar=m[0], **kwargs)
     return m[0], m[1], m2
 
 

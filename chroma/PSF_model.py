@@ -39,17 +39,13 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     PSF = galsim.InterpolatedImage(im, dx=1.0/7)
     return PSF
 
-def GSAtmPSF(wave, photons, aPSF_kwargs=None, mPSF_kwargs=None):
-    if 'plate_scale' in aPSF_kwargs.keys():
-        plate_scale = aPSF_kwargs['plate_scale']
-        del aPSF_kwargs['plate_scale']
-    else:
-        plate_scale = 0.2
+def GSAtmPSF(wave, photons,
+             plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5, **kwargs):
     # get photon density binned by refraction angle
-    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **aPSF_kwargs)
-    # need to take out the huge zenith angle dependence:
-    # normalize to whatever the refraction is at 685 nm
-    R685 = chroma.atm_refrac(685.0, **aPSF_kwargs)
+    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
+    # need to take out the huge zenith angle dependence, normalize to whatever the
+    # refraction is at 685 nm
+    R685 = chroma.atm_refrac(685.0, **kwargs)
     pixels = (R - R685) * 206265 / plate_scale # degrees -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
@@ -66,9 +62,7 @@ def GSAtmPSF(wave, photons, aPSF_kwargs=None, mPSF_kwargs=None):
         w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
         PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
     aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
-    mPSF = galsim.Moffat(beta=mPSF_kwargs['beta'],
-                         fwhm=mPSF_kwargs['FWHM'],
-                         flux=mPSF_kwargs['flux'])
+    mPSF = galsim.Moffat(beta=moffat_beta, fwhm=moffat_FWHM)
     PSF = galsim.Convolve([aPSF, mPSF])
     return PSF
 
@@ -391,11 +385,13 @@ class ConvolvePSF(object):
         return self._rebin(over, x.shape)
 
 class VoigtAtmPSF(object):
-    def __init__(self, wave, photons, aPSF_kwargs=None, mPSF_kwargs=None):
+    def __init__(self, wave, photons,
+                 plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5, **kwargs):
         self.wave = wave
         self.photons = photons
-        self.aPSF = AtmDispPSF(wave, photons, **aPSF_kwargs)
-        self.mPSF = MoffatPSF(0.0, 0.0, **mPSF_kwargs)
+        self.aPSF = AtmDispPSF(wave, photons, plate_scale=plate_scale, **kwargs)
+        self.mPSF = MoffatPSF(0.0, 0.0, moffat_beta, FWHM=moffat_FWHM,
+                              gmag=0.0, phi=0.0, flux=1.0)
         self.cPSF = ConvolvePSF([self.aPSF, self.mPSF])
         self.key = self.cPSF.key
 

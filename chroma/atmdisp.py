@@ -40,7 +40,7 @@ def atm_refrac(wave, zenith, **kwargs):
 
     **kwargs
     --------
-    pressure, temperature, partialPressureWater forwarded to air_refractive_index()
+    pressure, temperature, H2O_pressure forwarded to air_refractive_index()
     '''
 
     n_squared = air_refractive_index(wave, **kwargs)**2.0
