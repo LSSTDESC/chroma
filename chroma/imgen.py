@@ -28,7 +28,7 @@ class GalSimEngine(object):
         '''
         PSF_image = galsim.ImageD(self.oversize, self.oversize)
         PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
-        return chroma.utils.FWHM(PSF_image.array, scale=self.oversample_factor)
+        return chroma.utils.FWHM(PSF_image.array, pixsize=1.0/self.oversample_factor)
 
     def _get_gal(self, obj_list, pixsize):
         '''Create galsim.SBProfile object from list of galaxy profiles and associated PSFs.
@@ -43,7 +43,7 @@ class GalSimEngine(object):
         '''Estimate FWHM of galaxy convolved with PSF.
         '''
         return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
-                                 scale=self.oversample_factor)
+                                 pixsize=1.0/self.oversample_factor)
 
     def get_image(self, obj_list, pixsize=1.0):
         '''Create postage stamp image of galaxy.
@@ -54,7 +54,7 @@ class GalSimEngine(object):
         return get_image.array
 
 class GalSimBDEngine(GalSimEngine):
-    def gparam_to_galsim(self, gparam):
+    def _gparam_to_galsim(self, gparam):
         bulge = galsim.Sersic(n=gparam['b_n'].value, half_light_radius=gparam['b_r_e'].value)
         bulge.applyShift(gparam['b_x0'].value, gparam['b_y0'].value)
         bulge.applyShear(g=gparam['b_gmag'].value, beta=gparam['b_phi'].value * galsim.radians)
@@ -67,12 +67,12 @@ class GalSimBDEngine(GalSimEngine):
         return bulge, disk
 
     def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
-        bulge, disk = self.gparam_to_galsim(gparam)
+        bulge, disk = self._gparam_to_galsim(gparam)
         im = self.get_image(gparam, bulge_PSF, disk_PSF, pixsize=1.0/self.oversample_factor)
-        return chroma.utils.FWHM(im, scale=self.oversample_factor)
+        return chroma.utils.FWHM(im, pixsize=1.0/self.oversample_factor)
 
     def get_image(self, gparam, bulge_PSF, disk_PSF, pixsize=1.0):
-        bulge, disk = self.gparam_to_galsim(gparam)
+        bulge, disk = self._gparam_to_galsim(gparam)
         return super(GalSimBDEngine, self).get_image([(bulge, bulge_PSF), (disk, disk_PSF)],
                                                      pixsize=pixsize)
 
@@ -87,12 +87,11 @@ class GalSimSEngine(GalSimEngine):
     def galcvl_FWHM(self, gparam, PSF):
         gal = self.gparam_to_galsim(gparam)
         return chroma.utils.FWHM(self.get_image(obj_list, pixsize=1.0/self.oversample_factor),
-                                 scale=self.oversample_factor)
+                                 pixsize=1.0/self.oversample_factor)
 
     def gal_uncvl_image(self, gparam):
         gal = self.gparam_to_galsim(gparam)
-        oversize = self.size * self.oversample_factor
-        im = galsim.ImageD(oversize, oversize)
+        im = galsim.ImageD(self.oversize, self.oversize)
         gal.draw(image=im, dx=1./self.oversample_factor)
         return im.array
 
@@ -179,12 +178,12 @@ class VoigtEngine(object):
         Measures along a single row, so assumes that PSF is circularly symmetric.
         '''
         PSF_image = self.get_PSF_image(PSF)
-        return chroma.utils.FWHM(PSF_image, scale=self.oversample_factor)
+        return chroma.utils.FWHM(PSF_image, pixsize=1.0/self.oversample_factor)
 
     def galcvl_FWHM(self, obj_list):
         '''Estimate FWHM of galaxy convolved with PSF.
         '''
-        return chroma.utils.FWHM(self.get_overimage(obj_list), scale=self.oversample_factor)
+        return chroma.utils.FWHM(self.get_overimage(obj_list), pixsize=1.0/self.oversample_factor)
 
     def _get_subpix_centers(self):
         '''Calculate the coordinates of the centers of each subpixel.
@@ -305,7 +304,7 @@ class VoigtBDEngine(VoigtEngine):
     def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):
         bulge, disk = self.gparam_to_voigt(gparam)
         overim = self.get_overimage([(bulge, bulge_PSF), (disk, disk_PSF)])
-        return chroma.utils.FWHM(overim, scale=self.oversample_factor)
+        return chroma.utils.FWHM(overim, pixsize=1.0/self.oversample_factor)
 
     def get_image(self, gparam, bulge_PSF, disk_PSF):
         '''Use Voigt+12 procedure to make a galaxy image from params in gparam and using the bulge
