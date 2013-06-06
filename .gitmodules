@@ -1,0 +1,3 @@
+[submodule "chroma.wiki"]
+	path = chroma.wiki
+	url = https://github.com/DarkEnergyScienceCollaboration/chroma.wiki.git
