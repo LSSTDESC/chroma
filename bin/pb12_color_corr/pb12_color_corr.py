@@ -125,6 +125,9 @@ def pb12_color_corr(shape_filter, color_filters, zenith):
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$')
     ax2 = plt.subplot2grid((3,1), (2,0))
     ax2.set_xlabel('{} - {}'.format(*color_filters))
+    ax2.set_ylabel('residual')
+    ax1.set_title('zenith = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
+                                                    shape_filter))
 
     #plot gal residuals
     for i in range(len(gals)):
@@ -163,6 +166,9 @@ def pb12_color_corr(shape_filter, color_filters, zenith):
     ax1.set_ylabel('$\Delta \mathrm{V}$')
     ax2 = plt.subplot2grid((3,1), (2,0))
     ax2.set_xlabel('{} - {}'.format(*color_filters))
+    ax2.set_ylabel('residual')
+    ax1.set_title('zenith = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
+                                                    shape_filter))
 
     #plot gal residuals
     for i in range(len(gals)):
