@@ -33,17 +33,15 @@ def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     filter_dir = '../../data/filters/'
     filter_file = filter_dir + 'LSST_{}.dat'.format(filtername)
 
-    f_data = numpy.genfromtxt(filter_file)
-    f_wave = f_data[:,0]
-    f_throughput = f_data[:,1]
+    f_wave, f_throughput = numpy.genfromtxt(filter_file).T
 
     s_waves = []
     s_photons = []
     for s in gal_SEDs:
         SED_file = SED_dir + s + '.ascii'
-        s_data = numpy.genfromtxt(SED_file)
-        s_waves.append(s_data[:,0])
-        s_photons.append(s_data[:,1] * s_data[:,0])
+        s_wave, s_photon = numpy.genfromtxt(SED_file).T
+        s_waves.append(s_wave)
+        s_photons.append(s_photon * s_wave)
 
     zplot = numpy.empty(0)
     Rbar_plot = numpy.empty(0)
@@ -66,14 +64,48 @@ def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
             bar.update()
     return zplot, Rbar_plot, V_plot
 
+def test():
+    import matplotlib.pyplot as plt
+    f = plt.figure()
+    ax1 = plt.subplot2grid((2,4), (0,0), colspan=3)
+    ax2 = plt.subplot2grid((2,4), (0,3))
+    ax3 = plt.subplot2grid((2,4), (1,0), colspan=3)
+    ax4 = plt.subplot2grid((2,4), (1,3))
+    ax2.get_xaxis().set_visible(False)
+    ax2.get_yaxis().set_visible(False)
+    ax4.get_xaxis().set_visible(False)
+    ax4.get_yaxis().set_visible(False)
+    plt.subplots_adjust(wspace=0)
+    plt.show()
+
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    z, R, V = photoz_mc(5000, 'r', 30.0)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(211)
-    ax1.hist(R * 3600 * 180 / numpy.pi, 50)
-    ax1.set_xlabel('$\Delta \overline{\mathrm{R}}$')
-    ax2 = fig.add_subplot(212)
-    ax2.hist(V * (3600 * 180 / numpy.pi)**2, 50)
-    ax2.set_xlabel('$\Delta \mathrm{V}$')
+    f = plt.figure()
+    ax1 = plt.subplot2grid((2,4), (0,0), colspan=3)
+    ax2 = plt.subplot2grid((2,4), (0,3))
+    ax3 = plt.subplot2grid((2,4), (1,0), colspan=3)
+    ax4 = plt.subplot2grid((2,4), (1,3))
+    ax2.get_xaxis().set_visible(False)
+    ax2.get_yaxis().set_visible(False)
+    ax4.get_xaxis().set_visible(False)
+    ax4.get_yaxis().set_visible(False)
+    plt.subplots_adjust(wspace=0)
+
+    z, R, V = photoz_mc(500, 'r', 30.0)
+    R *= 3600 * 180 / numpy.pi
+    V *= (3600 * 180 / numpy.pi)**2
+    ax1.scatter(z, R)
+    ax2.hist(R, 50, orientation='horizontal', range=[-0.005, 0.005])
+    ax3.scatter(z, V)
+    ax4.hist(V, 50, orientation='horizontal', range=[-0.0003, 0.0003])
+
+    ax1.set_ylim([-0.005, 0.005])
+    ax2.set_ylim([-0.005, 0.005])
+    ax3.set_ylim([-0.0003, 0.0003])
+    ax4.set_ylim([-0.0003, 0.0003])
+    ax1.set_xlim([0.0, 3.0])
+    ax3.set_xlim([0.0, 3.0])
+
     plt.show()
