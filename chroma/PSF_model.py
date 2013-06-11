@@ -40,7 +40,8 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     return PSF
 
 def GSAtmPSF(wave, photons,
-             plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5, **kwargs):
+             plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5,
+             moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
     # get photon density binned by refraction angle
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence, normalize to whatever the
@@ -63,37 +64,34 @@ def GSAtmPSF(wave, photons,
         PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
     aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
     mPSF = galsim.Moffat(beta=moffat_beta, fwhm=moffat_FWHM)
+    mPSF.applyShear(g=moffat_ellip, beta=moffat_phi * galsim.radians)
     PSF = galsim.Convolve([aPSF, mPSF])
     return PSF
 
-def GSGaussAtmPSF(wave, photons, aPSF_kwargs=None, gPSF_kwargs=None):
-    if 'plate_scale' in aPSF_kwargs.keys():
-        plate_scale = aPSF_kwargs['plate_scale']
-        del aPSF_kwargs['plate_scale']
-    else:
-        plate_scale = 0.2
+def GSGaussAtmPSF(wave, photons,
+                  plate_scale=0.2, FWHM=3.5, **kwargs):
     # get photon density binned by refraction angle
-    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **aPSF_kwargs)
+    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence:
     # normalize to whatever the refraction is at 685 nm
-    R685 = chroma.atm_refrac(685.0, **aPSF_kwargs)
+    R685 = chroma.atm_refrac(685.0, **kwargs)
     pixels = (R - R685) * 206265 / plate_scale # degrees -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
     angle_dens = angle_dens[sort]
-    # now sample a size of 15 pixels oversampled by a factor of 7 => 105 subpixels
-    pixmin = -7.5 + 1./14
-    pixmax = 7.5 - 1./14
-    y = numpy.linspace(pixmin, pixmax, 105) # coords of subpixel centers
-    yboundaries = numpy.concatenate([numpy.array([y[0] - 1./14]), y + 1./14])
+    # now sample a size of 15 pixels oversampled by a factor of 21 => 315 subpixels
+    pixmin = -7.5 + 1./42
+    pixmax = 7.5 - 1./42
+    y = numpy.linspace(pixmin, pixmax, 315) # coords of subpixel centers
+    yboundaries = numpy.concatenate([numpy.array([y[0] - 1./42]), y + 1./42])
     yunion = numpy.union1d(pixels, yboundaries)
     angle_dens_interp = numpy.interp(yunion, pixels, angle_dens, left=0.0, right=0.0)
-    PSFim = galsim.ImageD(105,105)
-    for i in range(105):
+    PSFim = galsim.ImageD(315,315)
+    for i in range(315):
         w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
-        PSFim.array[i,52] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
-    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/7, flux=1.0)
-    gPSF = galsim.Gaussian(fwhm=gPSF_kwargs['FWHM'], flux=gPSF_kwargs['flux'])
+        PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
+    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
+    gPSF = galsim.Gaussian(fwhm=FWHM)
     PSF = galsim.Convolve([aPSF, gPSF])
     return PSF
 
