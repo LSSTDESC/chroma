@@ -93,7 +93,7 @@ def main():
                      '{} galaxy, z = 1.0, zenith = 30 degrees'.format(galname),
                      'output/d.{}.png'.format(galname))
 
-    cmd = 'convert -delay 80 -loop 0 '
+    cmd = 'convert -delay 200 -loop 0 '
     for name in starnames+galnames:
         cmd += 'output/d.{}.png '.format(name)
     cmd += 'output/DCR_PSF_anim.gif'
