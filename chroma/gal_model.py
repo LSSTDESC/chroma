@@ -55,13 +55,12 @@ class BDGal(object):
         self.gparam0['b_r_e'].value *= scale
         self.gparam0['d_r_e'].value *= scale
 
-    def set_r2(self, r2, bulge_PSF, disk_PSF):
+    def set_uncvl_r2(self, r2):
         gparam1 = copy.deepcopy(self.gparam0)
         def r2_gal(scale):
             gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
             gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            iter_r2 = self.bd_engine.galcvl_r2(gparam1, bulge_PSF, disk_PSF)
-            print scale, iter_r2
+            iter_r2 = self.bd_engine.gal_uncvl_r2(gparam1)
             return iter_r2
         scale = scipy.optimize.newton(lambda s: r2_gal(s) - r2, 1.0)
         self.gparam0['b_r_e'].value = self.gparam0['b_r_e'].value * scale
