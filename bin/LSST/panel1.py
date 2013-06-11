@@ -15,7 +15,7 @@ def fiducial_galaxy():
     gparam.add('b_x0', value=0.1)
     gparam.add('b_y0', value=0.3)
     gparam.add('b_n', value=4.0, vary=False)
-    gparam.add('b_r_e', value=1.037  * 1.1)
+    gparam.add('b_r_e', value=1.0 * 1.1)
     gparam.add('b_flux', value=0.25)
     gparam.add('b_gmag', value=0.2)
     gparam.add('b_phi', value=0.0)
@@ -23,7 +23,7 @@ def fiducial_galaxy():
     gparam.add('d_x0', expr='b_x0')
     gparam.add('d_y0', expr='b_y0')
     gparam.add('d_n', value=1.0, vary=False)
-    gparam.add('d_r_e', value=1.037)
+    gparam.add('d_r_e', value=1.0)
     gparam.add('d_flux', expr='1.0 - b_flux')
     gparam.add('d_gmag', expr='b_gmag')
     gparam.add('d_phi', expr='b_phi')
@@ -57,17 +57,22 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     bulge_wave, disk_wave, composite_wave = waves
     bulge_photons, disk_photons, composite_photons = photonses
 
-    bulge_PSF = PSF_model(bulge_wave, bulge_photons, zenith = 30.0 * numpy.pi / 180.0)
-    disk_PSF = PSF_model(disk_wave, disk_photons, zenith = 30.0 * numpy.pi / 180.0)
-    composite_PSF = PSF_model(composite_wave, composite_photons, zenith = 30.0 * numpy.pi / 180.0)
+    bulge_PSF = PSF_model(bulge_wave, bulge_photons, zenith=30.0 * numpy.pi / 180.0,
+                          moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
+    disk_PSF = PSF_model(disk_wave, disk_photons, zenith=30.0 * numpy.pi / 180.0,
+                         moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
+    composite_PSF = PSF_model(composite_wave, composite_photons, zenith=30.0 * numpy.pi / 180.0,
+                              moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
 
     # create galaxy
     gal = chroma.gal_model.BDGal(gparam, bd_engine)
 
-    # adjust FWHM such that FWHM(gal convolved with PSF) / FWHM(PSF) = 1.4
-    # use circularized PSFs for this (set_cvl_FWHM will also temporarily circularize the galaxy)
-    # PSF_FWHM = bd_engine.PSF_FWHM(circ_composite_PSF)
-    # gal.set_cvl_FWHM(1.4 * PSF_FWHM, circ_bulge_PSF, circ_disk_PSF)
+    # set size of galaxy such that second moment radius is 0.27 arcseconds before convolution
+
+    print gal.gparam0['b_r_e'].value, gal.gparam0['d_r_e'].value
+    print "setting r2 to 0.27 arcseconds"
+    gal.set_uncvl_r2((0.27/0.2)**2)
+    print gal.gparam0['b_r_e'].value, gal.gparam0['d_r_e'].value
 
     # wrapping galaxy gen_target_image using appropriate PSFs
     def gen_target_image(gamma, beta):
@@ -241,33 +246,17 @@ def panel1plot():
     ax4.set_xlabel('y$_0$')
     ax4.set_xlim(0.0, 0.5)
 
-    ax1.fill_between([1.5, 4.0], [1.e-3, 1.e-3], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax1.fill_between([1.5, 4.0], [1.e-3/2, 1.e-3/2], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax1.fill_between([1.5, 4.0], [1.e-3/5, 1.e-3/5], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
+    ax1.fill_between([1.5, 4.0], [3.e-3, 3.e-3], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.4, edgecolor='None')
 
-    ax2.fill_between([0.0, 1.0], [1.e-3, 1.e-3], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax2.fill_between([0.0, 1.0], [1.e-3/2, 1.e-3/2], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax2.fill_between([0.0, 1.0], [1.e-3/5, 1.e-3/5], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
+    ax2.fill_between([0.0, 1.0], [3.e-3, 3.e-3], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.4, edgecolor='None')
 
-    ax3.fill_between([0.1, 0.6], [1.e-3, 1.e-3], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax3.fill_between([0.1, 0.6], [1.e-3/2, 1.e-3/2], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax3.fill_between([0.1, 0.6], [1.e-3/5, 1.e-3/5], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
+    ax3.fill_between([0.1, 0.6], [3.e-3, 3.e-3], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.4, edgecolor='None')
 
-    ax4.fill_between([0.0, 0.5], [1.e-3, 1.e-3], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax4.fill_between([0.0, 0.5], [1.e-3/2, 1.e-3/2], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
-    ax4.fill_between([0.0, 0.5], [1.e-3/5, 1.e-3/5], [1.e-5, 1.e-5],
-                     color='grey', alpha=0.2, edgecolor='None')
+    ax4.fill_between([0.0, 0.5], [3.e-3, 3.e-3], [1.e-5, 1.e-5],
+                     color='grey', alpha=0.4, edgecolor='None')
 
     # load bulge sersic index data
 
@@ -388,6 +377,6 @@ def panel1data(argv):
     panel1_gal_ellip(bd_engine, PSF_model)
     panel1_y0(bd_engine, PSF_model)
 
-if __name__ == '__main__':
-    panel1data(sys.argv)
-    panel1plot()
+# if __name__ == '__main__':
+#     panel1data(sys.argv)
+#     panel1plot()
