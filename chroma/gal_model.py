@@ -20,7 +20,7 @@ class BDGal(object):
                        `phi` -- position angle of ellipticity
                        `flux` -- flux of component
                    Bulge params carry a `b_` prefix, disk params carry a `d_` prefix.
-        bd_engine -- image creation engine.  Possible instances are located in imgen.py
+        bd_engine -- image creation engine.  Possible instances are located in ImageEngine.py
         '''
         self.gparam0 = gparam0
         self.bd_engine = bd_engine

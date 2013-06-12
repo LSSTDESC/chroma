@@ -363,10 +363,10 @@ def panel1data(argv):
     else:
         use=argv[1]
     if use == 'voigt':
-        bd_engine = chroma.imgen.VoigtBDEngine()
+        bd_engine = chroma.ImageEngine.VoigtBDEngine()
         PSF_model = chroma.PSF_model.VoigtAtmPSF
     elif use == 'gs':
-        bd_engine = chroma.imgen.GalSimBDEngine()
+        bd_engine = chroma.ImageEngine.GalSimBDEngine()
         PSF_model = chroma.PSF_model.GSAtmPSF
     else:
         print 'unknown or missing command line option'

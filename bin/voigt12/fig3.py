@@ -149,13 +149,13 @@ def fig3data(argv):
     else:
         use=argv[1]
     if use == 'voigt':
-        bd_engine = chroma.imgen.VoigtBDEngine()
+        bd_engine = chroma.ImageEngine.VoigtBDEngine()
         PSF_model = chroma.PSF_model.VoigtEuclidPSF
     elif use == 'gs':
-        bd_engine = chroma.imgen.GalSimBDEngine()
+        bd_engine = chroma.ImageEngine.GalSimBDEngine()
         PSF_model = chroma.PSF_model.GSEuclidPSFInt
     elif use == 'gsfull':
-        bd_engine = chroma.imgen.GalSimBDEngine()
+        bd_engine = chroma.ImageEngine.GalSimBDEngine()
         PSF_model = chroma.PSF_model.GSEuclidPSF
     else:
         print 'unknown or missing command line option'

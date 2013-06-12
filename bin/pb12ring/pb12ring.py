@@ -102,7 +102,7 @@ def m_vs_redshift(s_engine, PSF_model):
     fil.close()
 
 def main(argv):
-    s_engine = chroma.imgen.GalSimSEngine(size=41, oversample_factor=41)
+    s_engine = chroma.ImageEngine.GalSimSEngine(size=41, oversample_factor=41)
     PSF_model = chroma.PSF_model.GSGaussAtmPSF
     m_vs_redshift(s_engine, PSF_model)
 

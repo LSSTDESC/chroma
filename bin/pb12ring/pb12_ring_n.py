@@ -59,7 +59,7 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     return m, c
 
 def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
-    s_engine = chroma.imgen.GalSimSEngine()#size=41, oversample_factor=41)
+    s_engine = chroma.ImageEngine.GalSimSEngine()#size=41, oversample_factor=41)
     PSF_model = chroma.PSF_model.GSGaussAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0

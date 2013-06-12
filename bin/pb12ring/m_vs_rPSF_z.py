@@ -61,7 +61,7 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     return m, c
 
 def m_vs_rPSF_z():
-    s_engine = chroma.imgen.GalSimSEngine(size=41, oversample_factor=41)
+    s_engine = chroma.ImageEngine.GalSimSEngine(size=41, oversample_factor=41)
     PSF_model = chroma.PSF_model.GSGaussAtmPSF
 
     PSF_ellip = 0.0

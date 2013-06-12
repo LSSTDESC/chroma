@@ -139,7 +139,7 @@ def ringtest():
     f_data = numpy.genfromtxt(filter_file)
     wave, throughput = f_data.T
 
-    bd_engine = chroma.imgen.GalSimBDEngine()
+    bd_engine = chroma.ImageEngine.GalSimBDEngine()
     PSF_model = chroma.PSF_model.GSAtmPSF
 
     with astropy.utils.console.ProgressBar(len(bulge_phot)) as bar:

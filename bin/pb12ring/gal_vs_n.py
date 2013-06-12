@@ -18,7 +18,7 @@ def fiducial_galaxy():
 gparam1 = fiducial_galaxy()
 gparam1['n'].value = 0.5
 
-s_engine = chroma.imgen.GalSimSEngine(size=15, oversample_factor=7)
+s_engine = chroma.ImageEngine.GalSimSEngine(size=15, oversample_factor=7)
 gal = chroma.gal_model.SGal(gparam1, s_engine)
 gal.set_uncvl_r2((0.27/0.2)**2)
 im05 = s_engine.get_uncvl_image(gal.gparam0, pixsize=1./7)
