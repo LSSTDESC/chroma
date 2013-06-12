@@ -7,17 +7,26 @@ import lmfit
 import chroma.utils
 
 class BDGalTools(object):
-    ''' Class to instantiate bulge+disk galaxies.'''
+    ''' Class to manipulate lmfit.Parameters objects corresponding to a bulge+disk galaxy model.
+
+    A few of the tasks require a bd_engine, which must be specified during initialization.
+    Available bd_engines can be found in ImageEngine.py
+
+    The `gparam0` argument to the below methods is the aforementioned lmfit.Parameters object.
+    The keys should include:
+      x0, y0 -- the centroid of the bulge or disk component
+      gmag, phi -- the ellipticity (a+b)/(a-b) and position angle of the elliptical profiles for the
+                   bulge or disk component
+      r_e -- the effective radius (half light radius) of the component
+      flux -- flux of the component
+      n -- the Sersic index of the component, frequently 1.0 for disk and 4.0 for bulge
+    These keys must be prefixed with b_ for bulge parameters, and d_ for disk parameters.
+    '''
     def __init__(self, bd_engine):
-        '''
-        Arguments
-        ---------
-        bd_engine -- image creation engine.  Possible instances are located in ImageEngine.py
-        '''
         self.bd_engine = bd_engine
 
     def get_ring_params(self, gparam0, gamma, beta):
-        ''' Adjust bulge+disk parameters in gparam0 to reflect applied shear `gamma` and
+        ''' Adjust bulge+disk parameters in `gparam0` to reflect applied shear `gamma` and
         angle around the ring `beta` in a ring test.  Returned parameters are good both for
         creating the target image and for initializing the lmfit minimize routine.
         '''
@@ -62,12 +71,14 @@ class BDGalTools(object):
         return gparam1
 
     def circularize(self, gparam0):
+        ''' Set the ellipticity of both components to zero.'''
         gparam1 = copy.deepcopy(gparam0)
         gparam1['b_gmag'].value = 0.0
         gparam1['d_gmag'].value = 0.0
         return gparam1
 
     def set_FWHM(self, gparam0, FWHM, bulge_PSF, disk_PSF):
+        ''' Adjust effective radii to produce desired FWHM'''
         gparam1 = copy.deepcopy(gparam0)
         def test_FWHM(scale):
             gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
@@ -81,6 +92,7 @@ class BDGalTools(object):
         return gparam1
 
     def set_AHM(gparam0, AHM, bulge_PSF, disk_PSF):
+        ''' Adjust effective radii to produce desired AFM (area above half maximum)'''
         gparam1 = copy.deepcopy(gparam0)
         def test_AHM(scale):
             gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
@@ -94,6 +106,7 @@ class BDGalTools(object):
         return gparam1
 
     def set_r2(self, gparam0, r2, bulge_PSF, disk_PSF):
+        ''' Adjust effective radii to produce desired second moment radius squared'''
         gparam1 = copy.deepcopy(gparam0)
         def test_r2(scale):
             gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
@@ -107,6 +120,8 @@ class BDGalTools(object):
         return gparam1
 
     def set_uncvl_r2(self, gparma0, r2):
+        ''' Adjust effective radii to produce desired second moment radius squared, but
+        don't convolve with PSF during r2 computation.'''
         gparam1 = copy.deepcopy(gparam0)
         def r2_gal(scale):
             gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
@@ -120,7 +135,8 @@ class BDGalTools(object):
         return gparam1
 
 class SGal(object):
-    ''' Class to instantiate single-component Sersic galaxies.'''
+    ''' Class to instantiate single-component Sersic galaxies.
+    See descriptions above for methods.'''
     def __init__(self, s_engine):
         self.s_engine = s_engine
 
