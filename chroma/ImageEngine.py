@@ -43,7 +43,7 @@ class GalSimEngine(object):
         gal = galsim.Convolve(total, pixel)
         return gal
 
-    def PSF_FWHM(self, PSF):
+    def get_PSF_FWHM(self, PSF):
         '''Estimate the FWHM of a PSF given by `PSF` (must be galsim.SBProfile object)
         Measures along a single row, so assumes that PSF is circularly symmetric.
         '''
@@ -51,20 +51,20 @@ class GalSimEngine(object):
         PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
         return chroma.utils.FWHM(PSF_image.array, pixsize=self.overpixsize)
 
-    def gal_FWHM(self, gparam, *PSFs):
+    def get_FWHM(self, gparam, *PSFs):
         im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
         return chroma.utils.FWHM(im, pixsize=self.overpixsize)
 
-    def gal_AHM(self, gparam, *PSFs):
+    def get_AHM(self, gparam, *PSFs):
         im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
         return chroma.utils.AHM(im, pixsize=self.overpixsize)
 
-    def gal_r2(self, gparam, *PSFs):
+    def get_r2(self, gparam, *PSFs):
         im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
         xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=self.overpixsize)
         return Ixx + Iyy
 
-    def gal_uncvl_r2(self, gparam):
+    def get_uncvl_r2(self, gparam):
         im = self.get_uncvl_image(gparam, pixsize=self.overpixsize)
         xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=self.overpixsize)
         return Ixx + Iyy

@@ -25,48 +25,13 @@ class BDGal(object):
         self.gparam0 = gparam0
         self.bd_engine = bd_engine
 
-    def set_circ_FWHM(self, FWHM, bulge_PSF, disk_PSF):
-        gparam1 = copy.deepcopy(self.gparam0)
-        gparam1['b_gmag'].value = 0.0
-        gparam1['b_x0'].value = 0.0
-        gparam1['b_y0'].value = 0.0
-        gparam1['d_gmag'].value = 0.0
-        gparam1['d_x0'].value = 0.0
-        gparam1['d_y0'].value = 0.0
-        def FWHM_gal(scale):
-            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
-            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            return self.bd_engine.gal_FWHM(gparam1, bulge_PSF, disk_PSF)
-        def f(scale):
-            return FWHM_gal(scale) - FWHM
-        scale = scipy.optimize.newton(f, 1.0)
-        self.gparam0['b_r_e'].value *= scale
-        self.gparam0['d_r_e'].value *= scale
+    def get_image(self, bulge_PSF, disk_PSF):
+        return self.bd_engine.get_image(self.gparam0, bulge_PSF, disk_PSF)
 
-    def set_AHM(self, AHM, bulge_PSF, disk_PSF):
-        gparam1 = copy.deepcopy(self.gparam0)
-        def AHM_gal(scale):
-            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
-            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            return self.bd_engine.galcvl_AHM(gparam1, bulge_PSF, disk_PSF)
-        def f(scale):
-            return AHM_gal(scale) - AHM
-        scale = scipy.optimize.newton(f, 1.0)
-        self.gparam0['b_r_e'].value *= scale
-        self.gparam0['d_r_e'].value *= scale
+    def get_uncvl_image(self):
+        return self.bd_engine.get_uncvl_image(self.gparam0)
 
-    def set_uncvl_r2(self, r2):
-        gparam1 = copy.deepcopy(self.gparam0)
-        def r2_gal(scale):
-            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
-            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-            iter_r2 = self.bd_engine.gal_uncvl_r2(gparam1)
-            return iter_r2
-        scale = scipy.optimize.newton(lambda s: r2_gal(s) - r2, 1.0)
-        self.gparam0['b_r_e'].value = self.gparam0['b_r_e'].value * scale
-        self.gparam0['d_r_e'].value = self.gparam0['d_r_e'].value * scale
-
-    def gen_init_param(self, gamma, beta):
+    def get_ring_params(self, gamma, beta):
         ''' Adjust bulge+disk parameters in self.gparam0 to reflect applied shear `gamma` and
         angle around the ring `beta` in a ring test.  Returned parameters are good both for
         creating the target image and for initializing the lmfit minimize routine.
@@ -111,16 +76,66 @@ class BDGal(object):
         gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * rescale
         return gparam1
 
-    def gen_target_image(self, gamma, beta, bulge_PSF, disk_PSF):
-        ''' Generate an image for ring test given an applied shear and angle around the ring.
+    def circularize(self):
+        gparam1 = copy.deepcopy(self.gparam0)
+        gparam1['b_gmag'].value = 0.0
+        gparam1['d_gmag'].value = 0.0
+        return BDGal(gparam1, self.bd_engine)
 
-        Arguments
-        ---------
-        gamma -- the input shear for the ring test.  Complex number.
-        beta -- angle around the ellipticity ring.
-        '''
-        gparam1 = self.gen_init_param(gamma, beta)
-        return self.bd_engine.get_image(gparam1, bulge_PSF, disk_PSF)
+    def get_FWHM(self, bulge_PSF, disk_PSF):
+        return self.bd_engine.get_FWHM(self.gparam0, bulge_PSF, disk_PSF)
+
+    def set_FWHM(self, FWHM, bulge_PSF, disk_PSF):
+        gparam1 = copy.deepcopy(self.gparam0)
+        def test_FWHM(scale):
+            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+            return self.bd_engine.get_FWHM(gparam1, bulge_PSF, disk_PSF)
+        def resid(scale):
+            return test_FWHM(scale) - FWHM
+        scale = scipy.optimize.newton(resid, 1.0)
+        gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+        gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+        return BDGal(gparam1, self.bd_engine)
+
+    def set_AHM(self, AHM, bulge_PSF, disk_PSF):
+        gparam1 = copy.deepcopy(self.gparam0)
+        def test_AHM(scale):
+            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+            return self.bd_engine.get_AHM(gparam1, bulge_PSF, disk_PSF)
+        def resid(scale):
+            return test_AHM(scale) - AHM
+        scale = scipy.optimize.newton(resid, 1.0)
+        gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
+        gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
+        return BDGal(gparam1, self.bd_engine)
+
+    def set_r2(self, r2, bulge_PSF, disk_PSF):
+        gparam1 = copy.deepcopy(self.gparam0)
+        def test_r2(scale):
+            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+            return self.bd_engine.get_r2(gparam1, bulge_PSF, disk_PSF)
+        def resid(scale):
+            return test_r2(scale) - r2
+        scale = scipy.optimize.newton(resid, 1.0)
+        gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
+        gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
+        return BDGal(gparam1, self.bd_engine)
+
+    def set_uncvl_r2(self, r2):
+        gparam1 = copy.deepcopy(self.gparam0)
+        def r2_gal(scale):
+            gparam1['b_r_e'].value = self.gparam0['b_r_e'].value * scale
+            gparam1['d_r_e'].value = self.gparam0['d_r_e'].value * scale
+            return self.bd_engine.gal_uncvl_r2(gparam1)
+        def resid(scale):
+            return r2_gal(s) - r2
+        scale = scipy.optimize.newton(resid, 1.0)
+        gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
+        gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
+        return BDGal(gparam1, self.bd_engine)
 
 class SGal(object):
     ''' Class to instantiate single-component Sersic galaxies.'''
