@@ -25,9 +25,11 @@ def make_PSF(wave, photons, PSF_model, zenith):
     return PSF
 
 def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
-    gal = chroma.gal_model.SGal(gparam, s_engine)
+    stool = chroma.GalTools.SGalTool(s_engine)
+
     def gen_target_image(gamma, beta):
-        return gal.gen_target_image(gamma, beta, gal_PSF)
+        ring_gparam = stool.get_ring_params(gparam, gamma, beta)
+        return s_engine.get_image(ring_gparam, gal_PSF)
 
     # function to measure ellipticity of target_image by trying to match the pixels
     # but using the "wrong" PSF (from the stellar SED)
@@ -41,17 +43,20 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
         c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
         return c_ellip
 
+    def get_ring_params(gamma, beta):
+        return stool.get_ring_params(gparam, gamma, beta)
+
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
                                        gen_target_image,
-                                       gal.gen_init_param,
+                                       get_ring_params,
                                        measure_ellip, silent=True)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
                                        gen_target_image,
-                                       gal.gen_init_param,
+                                       get_ring_params,
                                        measure_ellip, silent=True)
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
@@ -80,13 +85,12 @@ def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
     fil = open(outfile, 'w')
     gparam = fiducial_galaxy()
     gparam['n'].value = n
-    gal = chroma.gal_model.SGal(gparam, s_engine)
+    stool = chroma.GalTools.SGalTool(s_engine)
 
     print 'ready to normalize second moment radius'
 
     # normalize size to second moment (before PSF convolution)
-    gal.set_uncvl_r2((0.27/0.2)**2) ## (0.27 arcsec)^2 -> pixels^2
-    gparam = gal.gparam0
+    gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2) # (0.27 arcsec)^2 -> pixels^2
 
     print 'second moment radius is normalized'
 
@@ -94,7 +98,8 @@ def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
         gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
         gphotons /= scipy.integrate.simps(gphotons, gwave)
         gal_PSF = make_PSF(gwave, gphotons, PSF_model, zenith)
-        m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
+        gparam1 = copy.deepcopy(gparam)
+        m, c = measure_shear_calib(gparam1, gal_PSF, star_PSF, s_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
 

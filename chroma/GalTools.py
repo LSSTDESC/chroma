@@ -6,7 +6,7 @@ import lmfit
 
 import chroma.utils
 
-class BDGalTools(object):
+class BDGalTool(object):
     ''' Class to manipulate lmfit.Parameters objects corresponding to a bulge+disk galaxy model.
 
     A few of the tasks require a bd_engine, which must be specified during initialization.
@@ -119,22 +119,23 @@ class BDGalTools(object):
         gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
         return gparam1
 
-    def set_uncvl_r2(self, gparma0, r2):
+    def set_uncvl_r2(self, gparam0, r2):
         ''' Adjust effective radii to produce desired second moment radius squared, but
         don't convolve with PSF during r2 computation.'''
         gparam1 = copy.deepcopy(gparam0)
+        i=0
         def r2_gal(scale):
             gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
             gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
-            return self.bd_engine.gal_uncvl_r2(gparam1)
+            return self.bd_engine.get_uncvl_r2(gparam1)
         def resid(scale):
-            return r2_gal(s) - r2
+            return r2_gal(scale) - r2
         scale = scipy.optimize.newton(resid, 1.0)
         gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
         gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
         return gparam1
 
-class SGal(object):
+class SGalTool(object):
     ''' Class to instantiate single-component Sersic galaxies.
     See descriptions above for methods.'''
     def __init__(self, s_engine):
@@ -199,16 +200,16 @@ class SGal(object):
         def resid(scale):
             return test_r2(scale) - r2
         scale = scipy.optimize.newton(resid, 1.0)
-        gparam1['r_e'].value = gparam0['r_e'] * scale
+        gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1
 
     def set_uncvl_r2(self, gparam0, r2):
         gparam1 = copy.deepcopy(gparam0)
         def test_r2(scale):
             gparam1['r_e'].value = gparam0['r_e'].value * scale
-            return self.s_engine.get_uncvl_r2(gparam1, PSF)
+            return self.s_engine.get_uncvl_r2(gparam1)
         def resid(scale):
             return test_r2(scale) - r2
         scale = scipy.optimize.newton(resid, 1.0)
-        gparam1['r_e'].value = gparam0['r_e'] * scale
+        gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1

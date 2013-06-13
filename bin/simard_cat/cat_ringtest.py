@@ -66,24 +66,23 @@ def measure_shear_calib(gparam,
                         PSF_model, bd_engine):
     '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
 
-    # setup PSF arguments
-    aPSF_kwargs = {'zenith':numpy.pi * 25.0 / 180.0}
-    mPSF_kwargs = {'gmag':PSF_ellip, 'phi':PSF_phi, 'beta':2.5, 'FWHM':3.0, 'flux':1.0}
-    PSF_kwargs = {'aPSF_kwargs':aPSF_kwargs, 'mPSF_kwargs':mPSF_kwargs}
-
     # construct PSFs from surviving photons
-    bulge_PSF = PSF_model(wave, b_photons, zenith = 30.0 * numpy.pi / 180.0)
-    disk_PSF = PSF_model(wave, d_photons, zenith = 30.0 * numpy.pi / 180.0)
-    composite_PSF = PSF_model(wave, c_photons, zenith = 30.0 * numpy.pi / 180.0)
+    bulge_PSF = PSF_model(wave, b_photons, zenith=30.0 * numpy.pi / 180.0,
+                          moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
+    disk_PSF = PSF_model(wave, d_photons, zenith=30.0 * numpy.pi / 180.0,
+                         moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
+    composite_PSF = PSF_model(wave, c_photons, zenith=30.0 * numpy.pi / 180.0,
+                              moffat_ellip=PSF_ellip, moffat_phi=PSF_phi)
 
-    # create galaxy
-    gal = chroma.gal_model.BDGal(gparam, bd_engine)
+    # create galaxy and set second moment radius to 0.27 arcseconds
 
-#    gal.set_cvl_r2((0.27/0.2)**2, bulge_PSF, disk_PSF)
+    bdtool = chroma.GalTools.BDGalTool(bd_engine)
+    gparam = bdtool.set_uncvl_r2(gparam, (0.27/0.2)**2)
 
     # wrapping galaxy gen_target_image using appropriate PSFs
     def gen_target_image(gamma, beta):
-        return gal.gen_target_image(gamma, beta, bulge_PSF, disk_PSF)
+        ring_gparam = bdtool.get_ring_params(gparam, gamma, beta)
+        return bd_engine.get_image(ring_gparam, bulge_PSF, disk_PSF)
 
     # function to measure ellipticity of target_image by trying to match the pixels
     # but using the "wrong" PSF (the composite PSF for both bulge and disk).
@@ -97,11 +96,14 @@ def measure_shear_calib(gparam,
         c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
         return c_ellip
 
+    def get_ring_params(gamma, beta):
+        return bdtool.get_ring_params(gparam, gamma, beta)
+
     # Ring test for two values of gamma, solve for m and c.
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
                                        gen_target_image,
-                                       gal.gen_init_param,
+                                       get_ring_params,
                                        measure_ellip, silent=True)
     # c is just gamma_hat when input gamma_true is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
@@ -109,7 +111,7 @@ def measure_shear_calib(gparam,
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.utils.ringtest(gamma1, 3,
                                        gen_target_image,
-                                       gal.gen_init_param,
+                                       get_ring_params,
                                        measure_ellip, silent=True)
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0

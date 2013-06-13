@@ -1,3 +1,5 @@
+#plots results of m_vs_redshift
+
 import sys
 
 import matplotlib.pyplot as plt

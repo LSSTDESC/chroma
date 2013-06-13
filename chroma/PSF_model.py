@@ -69,7 +69,8 @@ def GSAtmPSF(wave, photons,
     return PSF
 
 def GSGaussAtmPSF(wave, photons,
-                  plate_scale=0.2, FWHM=3.5, **kwargs):
+                  plate_scale=0.2, FWHM=3.5,
+                  gauss_phi=0.0, gauss_ellip=0.0, **kwargs):
     # get photon density binned by refraction angle
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence:
@@ -92,6 +93,7 @@ def GSGaussAtmPSF(wave, photons,
         PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
     aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
     gPSF = galsim.Gaussian(fwhm=FWHM)
+    gPSF.applyShear(g=gauss_ellip, beta=gauss_phi * galsim.radians)
     PSF = galsim.Convolve([aPSF, gPSF])
     return PSF
 

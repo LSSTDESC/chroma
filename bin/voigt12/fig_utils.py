@@ -72,7 +72,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     gparam['b_r_e'] = circ_gparam['b_r_e']
     gparam['d_r_e'] = circ_gparam['d_r_e']
 
-    # wrapping galaxy gen_target_image using appropriate PSFs
+    # generate target image using ringed gparam and PSFs
     def gen_target_image(gamma, beta):
         ring_gparam = bdtool.get_ring_params(gparam, gamma, beta)
         return bd_engine.get_image(ring_gparam, bulge_PSF, disk_PSF)

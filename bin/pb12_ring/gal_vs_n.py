@@ -1,3 +1,7 @@
+# displays images and profiles for Sersic galaxies with
+# the same second moment radius, but different Sersic
+# indices
+
 import numpy
 import lmfit
 
@@ -15,23 +19,22 @@ def fiducial_galaxy():
     gparam.add('phi', value=0.0)
     return gparam
 
-gparam1 = fiducial_galaxy()
-gparam1['n'].value = 0.5
+gparam= fiducial_galaxy()
+gparam['n'].value = 0.5
 
 s_engine = chroma.ImageEngine.GalSimSEngine(size=15, oversample_factor=7)
-gal = chroma.gal_model.SGal(gparam1, s_engine)
-gal.set_uncvl_r2((0.27/0.2)**2)
-im05 = s_engine.get_uncvl_image(gal.gparam0, pixsize=1./7)
+stool = chroma.GalTools.SGalTool(s_engine)
 
-gparam1['n'].value = 1.0
-gal = chroma.gal_model.SGal(gparam1, s_engine)
-gal.set_uncvl_r2((0.27/0.2)**2)
-im10 = s_engine.get_uncvl_image(gal.gparam0, pixsize=1./7)
+gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2)
+im05 = s_engine.get_uncvl_image(gparam, pixsize=1./7)
 
-gparam1['n'].value = 4.0
-gal = chroma.gal_model.SGal(gparam1, s_engine)
-gal.set_uncvl_r2((0.27/0.2)**2)
-im40 = s_engine.get_uncvl_image(gal.gparam0, pixsize=1./7)
+gparam['n'].value = 1.0
+gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2)
+im10 = s_engine.get_uncvl_image(gparam, pixsize=1./7)
+
+gparam['n'].value = 4.0
+gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2)
+im40 = s_engine.get_uncvl_image(gparam, pixsize=1./7)
 
 import matplotlib.pyplot as plt
 f, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3)
