@@ -1,3 +1,5 @@
+import operator
+
 import numpy
 import scipy
 
@@ -128,3 +130,9 @@ def Sersic_r_2nd_moment_over_r_e(n):
     '''
     return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
                      n * (-0.000154064 + n * 0.0000219636)))))
+
+def component_r_2nd_moment(ns, weights, r_es):
+    t = numpy.array(weights).sum()
+    ws = [w / t for w in weights]
+    r2s = [Sersic_r_2nd_moment_over_r_e(n) * r_e for n, r_e in zip(ns, r_es)]
+    return numpy.sqrt(reduce(operator.mul, [r2**2 * w for r2, w in zip(r2s, ws)]))

@@ -119,21 +119,20 @@ class BDGalTool(object):
         gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
         return gparam1
 
+    def get_uncvl_r2(self, gparam0):
+        ns = [gparam0['b_n'].value, gparam0['d_n'].value]
+        weights = [gparam0['b_flux'].value, gparam0['d_flux'].value]
+        r_es = [gparam0['b_r_e'].value, gparam0['d_r_e'].value]
+        return (chroma.utils.component_r_2nd_moment(ns, weights, r_es))**2
+
     def set_uncvl_r2(self, gparam0, r2):
-        ''' Adjust effective radii to produce desired second moment radius squared, but
-        don't convolve with PSF during r2 computation.'''
         gparam1 = copy.deepcopy(gparam0)
-        i=0
-        def r2_gal(scale):
-            gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
-            gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
-            return self.bd_engine.get_uncvl_r2(gparam1)
-        def resid(scale):
-            return r2_gal(scale) - r2
-        scale = scipy.optimize.newton(resid, 1.0)
+        r2_now = self.get_uncvl_r2(gparam0)
+        scale = numpy.sqrt(r2_now / r2)
         gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
         gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
         return gparam1
+
 
 class SGalTool(object):
     ''' Class to instantiate single-component Sersic galaxies.
@@ -203,13 +202,12 @@ class SGalTool(object):
         gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1
 
+    def get_uncvl_r2(self, gparam0):
+        return (gparam0['r_e'] * chroma.utils.Sersic_r_2nd_moment_over_r_e(gparam0['n']))**2
+
     def set_uncvl_r2(self, gparam0, r2):
         gparam1 = copy.deepcopy(gparam0)
-        def test_r2(scale):
-            gparam1['r_e'].value = gparam0['r_e'].value * scale
-            return self.s_engine.get_uncvl_r2(gparam1)
-        def resid(scale):
-            return test_r2(scale) - r2
-        scale = scipy.optimize.newton(resid, 1.0)
+        r2_now = self.get_uncvl_r2(gparam0)
+        scale = numpy.sqrt(r2_now / r2)
         gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1
