@@ -122,7 +122,7 @@ def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
 
     **kwargs
     --------
-    zenith -> atm_disp()
+    zenith -> atm_refrac()
     pressure, temperature, H2O_pressure -> air_refractive_index()
 
     Returns
@@ -147,7 +147,10 @@ def disp_moments_R(wave, photons, **kwargs):
     V = scipy.integrate.simps((R - Rbar)**2.0 * photons_per_dR, R)/norm
     return Rbar, V
 
-def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
+def weighted_second_moment(wave, photons, sigma,
+                           moffat_FWHM=0.705*numpy.pi/180/3600, moffat_beta=2.67,
+                           Rbar=None, V=None,
+                           **kwargs):
     ''' Compute the weighted second moment of the PSF along the zenith direction, including
     atmospheric dispersion and seeing described by a Moffat profile.  The weight function is a
     Gaussian.
@@ -157,15 +160,19 @@ def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
     wave -- SED wavelengths in nanometers.
     photons -- the distribution of surviving photons (binned by wavelength)
                SED*throughput*wave, units proportional to photons/sec/cm^2/A
-    sigma -- the width of the Gaussian weight function
+    sigma -- the width of the Gaussian weight function (radians)
+    moffat_FWHM -- the FWHM of the turbulence+optics part of the PSF (radians)
+    moffat_beta -- Moffat profile parameter
     Rbar -- the first moment of the surviving photon refraction distribution
     V -- the second moment of the surviving photon refraction distribution
 
     **kwargs
     -----------------
-
-
+    zenith -> atm_refrac()
+    pressure, temperature, H2O_pressure -> air_refractive_index()
     '''
+
+    # creating some auxilliary functions...
     def moffat1d(FWHM, beta):
         alpha = FWHM / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
         def f(x):
@@ -174,10 +181,10 @@ def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
             return p / p.max()
         return f
 
-    def gaussian1d(sigma, center):
-        return lambda x: numpy.exp(-0.5 * ((x - center) / sigma)**2.0)
-
-    def zenith_PSF(wave, flux, moffat_FWHM=0.705, moffat_beta=2.67,
+    # function representing the PSF in the zenith direction, consisting of an atmospheric
+    # turbulence component convolved with a dispersion component.  The turbulence
+    # component is represented by a Moffat profile.
+    def zenith_PSF(wave, flux, moffat_FWHM, moffat_beta,
                    Rbar=None, V=None,
                    **kwargs):
         # the dispersion contribution to the PSF
@@ -191,26 +198,27 @@ def weighted_second_moment(wave, photons, sigma, Rbar=None, V=None, **kwargs):
             V = M[1]
         # scale in radians
         scale = numpy.sqrt(numpy.log(256.0) * V) # radians
-        moffat_FWHM_rad = moffat_FWHM * numpy.pi / 180.0 / 3600
-        if moffat_FWHM_rad > scale : scale = moffat_FWHM_rad
+        if moffat_FWHM > scale : scale = moffat_FWHM
         r_min = Rbar - 2.5 * scale # radians
         r_max = Rbar + 2.5 * scale # radians
-        R_fine = numpy.arange(r_min, r_max, 0.001 * numpy.pi / 180.0 / 3600) # radians
+        step_rad = 0.01 * numpy.pi / 180 / 3600 #arcsec -> radians
+        R_fine = numpy.arange(r_min, r_max, step_rad)
         photons_per_dR_fine = numpy.interp(R_fine, R, photons_per_dR)
         # check units below
-        moffat = moffat1d(moffat_FWHM_rad, moffat_beta)
+        moffat = moffat1d(moffat_FWHM, moffat_beta)
         moffat_PSF = moffat(R_fine - 0.5 * (R_fine[0] + R_fine[-1])) # center in window
         moffat_PSF /= moffat_PSF.sum()
         zen_PSF = numpy.convolve(photons_per_dR_fine, moffat_PSF, mode="same")
         return R_fine, zen_PSF
 
+    # Use user pre-computed values of Rbar, V if possible
     if Rbar is None or V is None:
         M = disp_moments(wave, photons, **kwargs)
         Rbar = M[0]
         V = M[1]
-    R, zen_PSF = zenith_PSF(wave, photons, Rbar=Rbar, V=V, **kwargs)
-    sigma_rad = sigma * numpy.pi / 180 / 3600
-    gaussian = gaussian1d(sigma_rad, Rbar)
+    # create zenith-direction PSF
+    R, zen_PSF = zenith_PSF(wave, photons, moffat_FWHM, moffat_beta, Rbar=Rbar, V=V, **kwargs)
+    gaussian = lambda x: numpy.exp(-0.5 * ((x - Rbar) / sigma)**2.0)
     norm = scipy.integrate.simps(gaussian(R) * zen_PSF, R)
     return scipy.integrate.simps(gaussian(R) * zen_PSF * (R - Rbar)**2, R)/norm
 
@@ -225,3 +233,6 @@ if __name__ == '__main__':
     print M[0] * 206265, M[1] * 206265**2
     M = disp_moments_R(wave, photons, zenith=45.0 * numpy.pi/180.0)
     print M[0] * 206265, M[1] * 206265**2
+    print 'weighted second moment'
+    M2 = weighted_second_moment(wave, photons, 1.0 * numpy.pi / 180 / 3600, zenith=30.0 * numpy.pi / 180)
+    print M2 * 206265**2
