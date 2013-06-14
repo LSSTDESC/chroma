@@ -67,10 +67,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     # create galaxy and set size of galaxy such that second moment radius
     # is 0.27 arcseconds before convolution
     bdtool = chroma.GalTools.BDGalTool(bd_engine)
-    print gparam['b_r_e'].value, gparam['d_r_e'].value
-    print "setting r2 to 0.27 arcseconds"
     gparam = bdtool.set_uncvl_r2(gparam, (0.27/0.2)**2)
-    print gparam['b_r_e'].value, gparam['d_r_e'].value
 
     # generate target image using ringed gparam and PSFs
     def gen_target_image(gamma, beta):
@@ -129,6 +126,7 @@ def panel1_bulge_sersic_index(bd_engine, PSF_model):
         os.mkdir('output/')
     fil = open('output/panel1_bulge_sersic_index.dat', 'w')
     for bulge_n in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
+        print 'Running with bulge Sersic index = {}'.format(bulge_n)
         gparam = fiducial_galaxy()
         gparam['b_n'].value = bulge_n
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
@@ -154,6 +152,7 @@ def panel1_bulge_flux(bd_engine, PSF_model):
         os.mkdir('output/')
     fil = open('output/panel1_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+        print 'Running with bulge flux fraction = {}'.format(bulge_flux)
         gparam = fiducial_galaxy()
         gparam['b_flux'].value = bulge_flux
         gparam['d_flux'].value = 1.0 - bulge_flux
@@ -180,6 +179,7 @@ def panel1_gal_ellip(bd_engine, PSF_model):
         os.mkdir('output/')
     fil = open('output/panel1_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
+        print 'Running with galaxy ellipticity = {}'.format(gal_ellip)
         gparam = fiducial_galaxy()
         gparam['b_gmag'].value = gal_ellip
         gparam['d_gmag'].value = gal_ellip
@@ -206,6 +206,7 @@ def panel1_y0(bd_engine, PSF_model):
         os.mkdir('output/')
     fil = open('output/panel1_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
+        print 'Running with subpixel offset = '.format(y0)
         gparam = fiducial_galaxy()
         gparam['b_y0'].value = y0
         gparam['d_y0'].value = y0
