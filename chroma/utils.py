@@ -118,3 +118,13 @@ def AHM(data, pixsize=1.0, height=None):
     if height is None:
         height = data.max()
     return (data > (0.5 * height)).sum() * scale**2
+
+def Sersic_r_2nd_moment_over_r_e(n):
+    ''' Factor to convert the half light radius r_e to the 2nd moment radius defined
+    as sqrt(Ixx + Iyy) where Ixx and Iyy are the second central moments of a distribution
+    in the perpendicular directions.  Depends on the Sersic index n.  The polynomial
+    below is derived from a Mathematica fit to the exact relation, and should be good to
+    ~(0.01 - 0.04)% over than range 0.2 < n < 8.0.
+    '''
+    return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
+                     n * (-0.000154064 + n * 0.0000219636)))))
