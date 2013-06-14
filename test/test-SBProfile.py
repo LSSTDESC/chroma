@@ -2,7 +2,7 @@ import _mypath
 import numpy as np
 
 def test_Sersic():
-    from chroma.SBProfile import Sersic
+    from chroma.Sersic import Sersic
     '''Creating a test case for the various ways of initializing Sersics'''
     y0 = 0.1
     x0 = 0.3

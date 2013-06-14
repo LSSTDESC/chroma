@@ -3,7 +3,7 @@ import scipy.signal
 import galsim
 
 import chroma.utils
-import chroma.SBProfile
+import chroma.Sersic
 
 class GalSimEngine(object):
     '''Class to use `galsim` to create postage stamp images of multi-component galaxies.  Really
@@ -298,20 +298,20 @@ class VoigtEngine(object):
 
 class VoigtBDEngine(VoigtEngine):
     def gparam_to_voigt(self, gparam):
-        bulge = chroma.SBProfile.Sersic(gparam['b_y0'].value,
-                                        gparam['b_x0'].value,
-                                        gparam['b_n'].value,
-                                        flux=gparam['b_flux'].value,
-                                        r_e=gparam['b_r_e'].value,
-                                        gmag=gparam['b_gmag'].value,
-                                        phi=gparam['b_phi'].value)
-        disk = chroma.SBProfile.Sersic(gparam['d_y0'].value,
-                                       gparam['d_x0'].value,
-                                       gparam['d_n'].value,
-                                       flux=gparam['d_flux'].value,
-                                       r_e=gparam['d_r_e'].value,
-                                       gmag=gparam['d_gmag'].value,
-                                       phi=gparam['d_phi'].value)
+        bulge = chroma.Sersic.Sersic(gparam['b_y0'].value,
+                                     gparam['b_x0'].value,
+                                     gparam['b_n'].value,
+                                     flux=gparam['b_flux'].value,
+                                     r_e=gparam['b_r_e'].value,
+                                     gmag=gparam['b_gmag'].value,
+                                     phi=gparam['b_phi'].value)
+        disk = chroma.Sersic.Sersic(gparam['d_y0'].value,
+                                    gparam['d_x0'].value,
+                                    gparam['d_n'].value,
+                                    flux=gparam['d_flux'].value,
+                                    r_e=gparam['d_r_e'].value,
+                                    gmag=gparam['d_gmag'].value,
+                                    phi=gparam['d_phi'].value)
         return bulge, disk
 
     def galcvl_FWHM(self, gparam, bulge_PSF, disk_PSF):

@@ -133,8 +133,8 @@ class VoigtEuclidPSF(object):
     def _monochromatic_PSF(self, y0, x0, wave, ellipticity, phi, norm):
         '''Returns the Voigt+12 Euclid Gaussian PSF for particular wavelength.'''
         n = 0.5 # Gaussian
-        return chroma.SBProfile.Sersic(y0, x0, n,
-                                       r_e=self._rp(wave), flux=norm, gmag=ellipticity, phi=phi)
+        return chroma.Sersic.Sersic(y0, x0, n,
+                                    r_e=self._rp(wave), flux=norm, gmag=ellipticity, phi=phi)
 
     def _load_monochromatic_PSFs(self):
         # create all the monochromatic Gaussians (as Sersics) at initialization and store for later
@@ -403,7 +403,7 @@ class VoigtGaussAtmPSF(object):
         self.wave = wave
         self.photons = photons
         self.aPSF = AtmDispPSF(wave, photons, **aPSF_kwargs)
-        self.gPSF = chroma.SBProfile.Sersic(0.0, 0.0, 0.5, **mPSF_kwargs)
+        self.gPSF = chroma.Sersic.Sersic(0.0, 0.0, 0.5, **mPSF_kwargs)
         self.cPSF = ConvolvePSF([self.aPSF, self.gPSF])
         self.key = self.cPSF.key
 
