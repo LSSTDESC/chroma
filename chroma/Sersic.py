@@ -1,5 +1,6 @@
 import numpy
-import scipy
+import scipy.optimize
+import scipy.special
 
 class Sersic(object):
     ''' Class for handling all things related to Sersic surface brightness profiles.  The main usage
