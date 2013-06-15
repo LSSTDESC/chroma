@@ -5,6 +5,7 @@ import copy
 import numpy
 import scipy.integrate
 import lmfit
+import astropy.utils.console
 
 import _mypath
 import chroma
@@ -14,7 +15,7 @@ def fiducial_galaxy():
     gparam.add('x0', value=0.1)
     gparam.add('y0', value=0.3)
     gparam.add('n', value=4.0, vary=False)
-    gparam.add('r_e', value=0.058/0.2)
+    gparam.add('r_e', value=1.0)
     gparam.add('flux', value=1.0, vary=False)
     gparam.add('gmag', value=0.2)
     gparam.add('phi', value=0.0)
@@ -87,27 +88,28 @@ def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
     gparam['n'].value = n
     stool = chroma.GalTools.SGalTool(s_engine)
 
-    print 'ready to normalize second moment radius'
-
     # normalize size to second moment (before PSF convolution)
+    print 'n: {}'.format(gparam['n'].value)
+    print 'fiducial r_e: {}'.format(gparam['r_e'].value)
+    print 'setting second moment radius to 0.27 arcseconds = 1.35 pixels'
     gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2) # (0.27 arcsec)^2 -> pixels^2
+    print 'output r2: {}'.format(stool.get_uncvl_r2(gparam))
+    print 'output r: {}'.format(numpy.sqrt(stool.get_uncvl_r2(gparam)))
+    print 'output r_e:{}'.format(gparam['r_e'].value)
 
-    print 'second moment radius is normalized'
+    with astropy.utils.console.ProgressBar(100) as bar:
+        for z in numpy.arange(0.0, 3.0, 0.03):
+            gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
+            gphotons /= scipy.integrate.simps(gphotons, gwave)
+            gal_PSF = make_PSF(gwave, gphotons, PSF_model, zenith)
+            gparam1 = copy.deepcopy(gparam)
+            m, c = measure_shear_calib(gparam1, gal_PSF, star_PSF, s_engine)
 
-    for z in numpy.arange(0.0, 3.0, 0.03):
-        gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
-        gphotons /= scipy.integrate.simps(gphotons, gwave)
-        gal_PSF = make_PSF(gwave, gphotons, PSF_model, zenith)
-        gparam1 = copy.deepcopy(gparam)
-        m, c = measure_shear_calib(gparam1, gal_PSF, star_PSF, s_engine)
-        print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
-        print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
-
-        gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
-        m_analytic = (smom[1] - gmom[1]) * (3600 * 180 / numpy.pi)**2 / (0.27**2)
-        print 'm_analytic: {:10g}'.format(m_analytic)
-        fil.write('{} {} {} {}\n'.format(z, c, m, m_analytic))
-    fil.close()
+            gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
+            m_analytic = (smom[1] - gmom[1]) * (3600 * 180 / numpy.pi)**2 / (0.27**2)
+            fil.write('{} {} {} {}\n'.format(z, c, m, m_analytic))
+            bar.update()
+        fil.close()
 
 def main(argv):
     m_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 0.5)

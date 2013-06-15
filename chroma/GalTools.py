@@ -128,7 +128,7 @@ class BDGalTool(object):
     def set_uncvl_r2(self, gparam0, r2):
         gparam1 = copy.deepcopy(gparam0)
         r2_now = self.get_uncvl_r2(gparam0)
-        scale = numpy.sqrt(r2_now / r2)
+        scale = numpy.sqrt(r2 / r2_now)
         gparam1['b_r_e'].value = gparam0['b_r_e'].value * scale
         gparam1['d_r_e'].value = gparam0['d_r_e'].value * scale
         return gparam1
@@ -203,11 +203,12 @@ class SGalTool(object):
         return gparam1
 
     def get_uncvl_r2(self, gparam0):
-        return (gparam0['r_e'] * chroma.utils.Sersic_r_2nd_moment_over_r_e(gparam0['n']))**2
+        return (gparam0['r_e'].value *
+                chroma.utils.Sersic_r_2nd_moment_over_r_e(gparam0['n'].value))**2
 
     def set_uncvl_r2(self, gparam0, r2):
         gparam1 = copy.deepcopy(gparam0)
         r2_now = self.get_uncvl_r2(gparam0)
-        scale = numpy.sqrt(r2_now / r2)
+        scale = numpy.sqrt(r2 / r2_now)
         gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1

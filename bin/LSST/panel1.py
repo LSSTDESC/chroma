@@ -153,11 +153,14 @@ def panel1_bulge_flux(bd_engine, PSF_model):
     fil = open('output/panel1_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         print 'Running with bulge flux fraction = {}'.format(bulge_flux)
-        gparam = fiducial_galaxy()
-        gparam['b_flux'].value = bulge_flux
-        gparam['d_flux'].value = 1.0 - bulge_flux
-        m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
-                                   PSF_ellip, PSF_phi, PSF_model, bd_engine)
+        if bulge_flux not in [0.0, 1.0]:
+            gparam = fiducial_galaxy()
+            gparam['b_flux'].value = bulge_flux
+            gparam['d_flux'].value = 1.0 - bulge_flux
+            m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
+                                       PSF_ellip, PSF_phi, PSF_model, bd_engine)
+        else:
+            m, c = [0,0], [0,0]
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
         print 'm:    {:10g}  {:10g}'.format(m[0], m[1])
         fil.write('{} {} {}\n'.format(bulge_flux, c, m))
@@ -206,7 +209,7 @@ def panel1_y0(bd_engine, PSF_model):
         os.mkdir('output/')
     fil = open('output/panel1_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
-        print 'Running with subpixel offset = '.format(y0)
+        print 'Running with subpixel offset = {}'.format(y0)
         gparam = fiducial_galaxy()
         gparam['b_y0'].value = y0
         gparam['d_y0'].value = y0
