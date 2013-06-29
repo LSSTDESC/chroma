@@ -13,7 +13,7 @@ class GalSimEngine(object):
     Idea is to be able to hot-swap this class with the VoigtEngine below which reconstructs the
     postage stamp generation used by Voigt+12.
     '''
-    def __init__(self, size=15, oversample_factor=7):
+    def __init__(self, size=15, oversample_factor=7, gsp=None):
         '''Initialize the image engine
 
         Arguments
@@ -25,13 +25,14 @@ class GalSimEngine(object):
         self.oversample_factor = oversample_factor
         self.oversize = size * oversample_factor
         self.overpixsize = 1.0 / oversample_factor
+        self.gsp = gsp
 
     def _get_gal(self, obj_list, pixsize):
         '''Create galsim.SBProfile object from list of galaxy profiles and associated PSFs.
         Also convolves in a square pixel.
         '''
         pixel = galsim.Pixel(pixsize)
-        cvls = [galsim.Convolve(gal, PSF, pixel) for gal, PSF in obj_list]
+        cvls = [galsim.Convolve(gal, PSF, pixel, gsparams=self.gsp) for gal, PSF in obj_list]
         gal = galsim.Add(cvls)
         return gal
 
@@ -40,7 +41,7 @@ class GalSimEngine(object):
         still convolves by a square pixel.'''
         pixel = galsim.Pixel(pixsize)
         total = galsim.Add(obj_list)
-        gal = galsim.Convolve(total, pixel)
+        gal = galsim.Convolve(total, pixel, gsparams=self.gsp)
         return gal
 
     def get_PSF_FWHM(self, PSF):
@@ -50,6 +51,11 @@ class GalSimEngine(object):
         PSF_image = galsim.ImageD(self.oversize, self.oversize)
         PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
         return chroma.utils.FWHM(PSF_image.array, pixsize=self.overpixsize)
+
+    def get_PSF_image(self, PSF, pixsize=1.0):
+        PSF_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
+        PSF.draw(image=PSF_image, dx=pixsize)
+        return PSF_image.array
 
     def get_FWHM(self, gparam, *PSFs):
         im = self.get_image(gparam, *PSFs, pixsize=self.overpixsize)
