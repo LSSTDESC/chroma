@@ -1,5 +1,3 @@
-import copy
-
 import numpy
 import lmfit
 
@@ -57,19 +55,20 @@ def measure_moffat_fwhm(mono_wave, filter_name, zenith, seed):
     image_file = 'output/eimage_{}_f{}_R22_S11_E000.fits.gz'
     image_file = image_file.format(obshistid, filter_number[filter_name])
 
-    print 'opening: {}'.format(image_file)
     hdulist = fits.open(image_file)
     w = wcs.WCS(hdulist[0].header)
 
     RAs = [-0.035, -0.025, -0.015, -0.005, 0.005, 0.015, 0.025, 0.035]
     DECs = [-0.035, -0.025, -0.015, -0.005, 0.005, 0.015, 0.025, 0.035]
 
-    values = {'fwhm_x':numpy.empty(0), 'fwhm_y':numpy.empty(0), 'beta':numpy.empty(0)}
+    values = numpy.empty(len(RAs) * len(DECs),
+                         dtype=[('fwhm_x','f4'), ('fwhm_y','f4'), ('beta', 'f4')])
+
+    i=0
     for RA in RAs:
         for DEC in DECs:
             center = w.wcs_world2pix(numpy.array([[RA, DEC]], numpy.float_),0)
             thumb = hdulist[0].data[center[0,1]-30:center[0,1]+30, center[0,0]-30:center[0,0]+30]
-
             xbar, ybar, Ixx, Iyy, Ixy = moments(thumb)
 
             params = lmfit.Parameters()
@@ -81,144 +80,85 @@ def measure_moffat_fwhm(mono_wave, filter_name, zenith, seed):
             params.add('y0', ybar)
 
             def resid(p):
-                profile = moffat2d(p)
-                xs = numpy.arange(thumb.shape[1])
-                ys = numpy.arange(thumb.shape[0])
-                xs, ys = numpy.meshgrid(xs, ys)
-                profile_im = profile(ys, xs)
-                return (profile_im - thumb).flatten()
+                xs, ys = numpy.meshgrid(numpy.arange(thumb.shape[1]), numpy.arange(thumb.shape[0]))
+                return (thumb - moffat2d(p)(ys, xs)).flatten()
             result = lmfit.minimize(resid, params)
-            values['fwhm_x'] = numpy.append(values['fwhm_x'], result.params['fwhm_x'].value)
-            values['fwhm_y'] = numpy.append(values['fwhm_y'], result.params['fwhm_y'].value)
-            values['beta'] = numpy.append(values['beta'], result.params['beta'].value)
+            values[i] = (result.params['fwhm_x'].value,
+                         result.params['fwhm_y'].value,
+                         result.params['beta'].value)
+            i += 1
 
     print mono_wave
-    outstring = 'fwhm_x = {} +/- {}, fwhm_y = {} +/- {}, beta = {} +/- {}'
-#    import ipdb; ipdb.set_trace()
+    outstring = 'fwhm_x = {:5.3f} +/- {:5.3f}, ' \
+      + 'fwhm_y = {:5.3f} +/- {:5.3f}, ' \
+      + 'beta = {:5.3f} +/- {:5.3f}'
     outstring = outstring.format(numpy.mean(values['fwhm_x']), numpy.std(values['fwhm_x']),
                                  numpy.mean(values['fwhm_y']), numpy.std(values['fwhm_y']),
                                  numpy.mean(values['beta']), numpy.std(values['beta']))
     print outstring
-    return (numpy.mean(values['fwhm_x']), numpy.std(values['fwhm_x']),
-            numpy.mean(values['fwhm_y']), numpy.std(values['fwhm_y']),
-            numpy.mean(values['beta']), numpy.std(values['beta']))
+    return (numpy.mean(values['fwhm_x']), numpy.mean(values['fwhm_y']), numpy.mean(values['beta']),
+            numpy.std(values['fwhm_x']), numpy.std(values['fwhm_y']), numpy.std(values['beta']))
 
-values0 = {'waves':numpy.empty(0),
-           'fwhm_x':numpy.empty(0), 'fwhm_x_err':numpy.empty(0),
-           'fwhm_y':numpy.empty(0), 'fwhm_y_err':numpy.empty(0),
-           'beta':numpy.empty(0), 'beta_err':numpy.empty(0)}
-values = {'u':copy.deepcopy(values0),
-          'g':copy.deepcopy(values0),
-          'r':copy.deepcopy(values0),
-          'i':copy.deepcopy(values0),
-          'z':copy.deepcopy(values0),
-          'Y':copy.deepcopy(values0)}
+waves = {'u': numpy.arange(325, 401, 25),
+         'g': numpy.arange(400, 551, 25),
+         'r': numpy.arange(550, 701, 25),
+         'i': numpy.arange(675, 826, 25),
+         'z': numpy.arange(800, 951, 25),
+         'Y': numpy.arange(900, 1100, 25)}
+colors = {'u':'violet',
+          'g':'blue',
+          'r':'green',
+          'i':'yellow',
+          'z':'red',
+          'Y':'black'}
 
-for w in numpy.arange(300, 401, 25):
-    result = measure_moffat_fwhm(w, 'u', 0, 1000)
-    values['u']['waves'] = numpy.append(values['u']['waves'], w)
-    values['u']['fwhm_x'] = numpy.append(values['u']['fwhm_x'], result[0])
-    values['u']['fwhm_y'] = numpy.append(values['u']['fwhm_y'], result[2])
-    values['u']['beta'] = numpy.append(values['u']['beta'], result[4])
-    values['u']['fwhm_x_err'] = numpy.append(values['u']['fwhm_x_err'], result[1])
-    values['u']['fwhm_y_err'] = numpy.append(values['u']['fwhm_y_err'], result[3])
-    values['u']['beta_err'] = numpy.append(values['u']['beta_err'], result[5])
-for w in numpy.arange(400, 551, 25):
-    result = measure_moffat_fwhm(w, 'g', 0, 1000)
-    values['g']['waves'] = numpy.append(values['g']['waves'], w)
-    values['g']['fwhm_x'] = numpy.append(values['g']['fwhm_x'], result[0])
-    values['g']['fwhm_y'] = numpy.append(values['g']['fwhm_y'], result[2])
-    values['g']['beta'] = numpy.append(values['g']['beta'], result[4])
-    values['g']['fwhm_x_err'] = numpy.append(values['g']['fwhm_x_err'], result[1])
-    values['g']['fwhm_y_err'] = numpy.append(values['g']['fwhm_y_err'], result[3])
-    values['g']['beta_err'] = numpy.append(values['g']['beta_err'], result[5])
-for w in numpy.arange(550, 701, 25):
-    result = measure_moffat_fwhm(w, 'r', 0, 1000)
-    values['r']['waves'] = numpy.append(values['r']['waves'], w)
-    values['r']['fwhm_x'] = numpy.append(values['r']['fwhm_x'], result[0])
-    values['r']['fwhm_y'] = numpy.append(values['r']['fwhm_y'], result[2])
-    values['r']['beta'] = numpy.append(values['r']['beta'], result[4])
-    values['r']['fwhm_x_err'] = numpy.append(values['r']['fwhm_x_err'], result[1])
-    values['r']['fwhm_y_err'] = numpy.append(values['r']['fwhm_y_err'], result[3])
-    values['r']['beta_err'] = numpy.append(values['r']['beta_err'], result[5])
-for w in numpy.arange(675, 826, 25):
-    result = measure_moffat_fwhm(w, 'i', 0, 1000)
-    values['i']['waves'] = numpy.append(values['i']['waves'], w)
-    values['i']['fwhm_x'] = numpy.append(values['i']['fwhm_x'], result[0])
-    values['i']['fwhm_y'] = numpy.append(values['i']['fwhm_y'], result[2])
-    values['i']['beta'] = numpy.append(values['i']['beta'], result[4])
-    values['i']['fwhm_x_err'] = numpy.append(values['i']['fwhm_x_err'], result[1])
-    values['i']['fwhm_y_err'] = numpy.append(values['i']['fwhm_y_err'], result[3])
-    values['i']['beta_err'] = numpy.append(values['i']['beta_err'], result[5])
-for w in numpy.arange(800, 951, 25):
-    result = measure_moffat_fwhm(w, 'z', 0, 1000)
-    values['z']['waves'] = numpy.append(values['z']['waves'], w)
-    values['z']['fwhm_x'] = numpy.append(values['z']['fwhm_x'], result[0])
-    values['z']['fwhm_y'] = numpy.append(values['z']['fwhm_y'], result[2])
-    values['z']['beta'] = numpy.append(values['z']['beta'], result[4])
-    values['z']['fwhm_x_err'] = numpy.append(values['z']['fwhm_x_err'], result[1])
-    values['z']['fwhm_y_err'] = numpy.append(values['z']['fwhm_y_err'], result[3])
-    values['z']['beta_err'] = numpy.append(values['z']['beta_err'], result[5])
-for w in numpy.arange(900, 1101, 25):
-    result = measure_moffat_fwhm(w, 'Y', 0, 1000)
-    values['Y']['waves'] = numpy.append(values['Y']['waves'], w)
-    values['Y']['fwhm_x'] = numpy.append(values['Y']['fwhm_x'], result[0])
-    values['Y']['fwhm_y'] = numpy.append(values['Y']['fwhm_y'], result[2])
-    values['Y']['beta'] = numpy.append(values['Y']['beta'], result[4])
-    values['Y']['fwhm_x_err'] = numpy.append(values['Y']['fwhm_x_err'], result[1])
-    values['Y']['fwhm_y_err'] = numpy.append(values['Y']['fwhm_y_err'], result[3])
-    values['Y']['beta_err'] = numpy.append(values['Y']['beta_err'], result[5])
+
+nfiles = sum(map(len, waves.values()))
+
+values = numpy.empty(nfiles,
+                     dtype=[('wave', 'i4'),
+                            ('filter', 'a1'),
+                            ('fwhm_x', 'f4'),
+                            ('fwhm_y', 'f4'),
+                            ('beta', 'f4'),
+                            ('fwhm_x_err', 'f4'),
+                            ('fwhm_y_err', 'f4'),
+                            ('beta_err', 'f4')])
+values[:] = numpy.nan
+
+i = 0
+for f, ws in waves.iteritems():
+    for w in ws:
+        result = measure_moffat_fwhm(w, f, 0, 1000)
+        values[i] = (w, f,
+                     result[0], result[1], result[2],
+                     result[3], result[4], result[5])
+        i += 1
 
 # fwhm plot
-
 fig = plt.figure()
 ax = plt.subplot(111)
-ax.errorbar(values['u']['waves'], values['u']['fwhm_x'], values['u']['fwhm_x_err'],
-            ls='none', marker='o', color='violet')
-ax.errorbar(values['u']['waves']+1, values['u']['fwhm_y'], values['u']['fwhm_y_err'],
-            ls='none', marker='o', color='violet')
-ax.errorbar(values['g']['waves'], values['g']['fwhm_x'], values['g']['fwhm_x_err'],
-            ls='none', marker='o', color='blue')
-ax.errorbar(values['g']['waves']+1, values['g']['fwhm_y'], values['g']['fwhm_y_err'],
-            ls='none', marker='o', color='blue')
-ax.errorbar(values['r']['waves'], values['r']['fwhm_x'], values['r']['fwhm_x_err'],
-            ls='none', marker='o', color='green')
-ax.errorbar(values['r']['waves']+1, values['r']['fwhm_y'], values['r']['fwhm_y_err'],
-            ls='none', marker='o', color='green')
-ax.errorbar(values['i']['waves'], values['i']['fwhm_x'], values['i']['fwhm_x_err'],
-            ls='none', marker='o', color='red')
-ax.errorbar(values['i']['waves']+1, values['i']['fwhm_y'], values['i']['fwhm_y_err'],
-            ls='none', marker='o', color='red')
-ax.errorbar(values['z']['waves'], values['z']['fwhm_x'], values['z']['fwhm_x_err'],
-            ls='none', marker='o', color='brown')
-ax.errorbar(values['z']['waves']+1, values['z']['fwhm_y'], values['z']['fwhm_y_err'],
-            ls='none', marker='o', color='brown')
-ax.errorbar(values['Y']['waves'], values['Y']['fwhm_x'], values['Y']['fwhm_x_err'],
-            ls='none', marker='o', color='black')
-ax.errorbar(values['Y']['waves']+1, values['Y']['fwhm_y'], values['Y']['fwhm_y_err'],
-            ls='none', marker='o', color='black')
+for k in waves.keys():
+    ind = values['filter'] == k
+    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
+                ls='none', marker='o', color=colors[k])
+    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_y'], values[ind]['fwhm_y_err'],
+                ls='none', marker='o', color=colors[k])
 ax.set_xlabel('wavelength (nm)')
 ax.set_ylabel('FWHM (pixels)')
 
 x=numpy.linspace(300, 1100, 100)
-y=values['r']['fwhm_x'][0] * (x/550.)**(-0.2)
+y=values[numpy.where(values['wave'] == 550)[0][0]]['fwhm_x'] * (x/550.)**(-0.2)
 ax.plot(x, y)
 plt.show()
 
+# beta plot
 fig2 = plt.figure()
 ax = plt.subplot(111)
-ax.errorbar(values['u']['waves'], values['u']['beta'], values['u']['beta_err'],
-            ls='none', marker='o', color='violet')
-ax.errorbar(values['g']['waves'], values['g']['beta'], values['g']['beta_err'],
-            ls='none', marker='o', color='blue')
-ax.errorbar(values['r']['waves'], values['r']['beta'], values['r']['beta_err'],
-            ls='none', marker='o', color='green')
-ax.errorbar(values['i']['waves'], values['i']['beta'], values['i']['beta_err'],
-            ls='none', marker='o', color='red')
-ax.errorbar(values['z']['waves'], values['z']['beta'], values['z']['beta_err'],
-            ls='none', marker='o', color='brown')
-ax.errorbar(values['Y']['waves'], values['Y']['beta'], values['Y']['beta_err'],
-            ls='none', marker='o', color='black')
+for k in waves.keys():
+    ind = values['filter'] == k
+    ax.errorbar(values[ind]['wave'], values[ind]['beta'], values[ind]['beta_err'],
+                ls='none', marker='o', color=colors[k])
 ax.set_xlabel('wavelength (nm)')
 ax.set_ylabel(r'$\beta$')
 plt.show()
