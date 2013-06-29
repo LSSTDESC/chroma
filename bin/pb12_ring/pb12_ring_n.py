@@ -21,15 +21,11 @@ def fiducial_galaxy():
     gparam.add('phi', value=0.0)
     return gparam
 
-def make_PSF(wave, photons, PSF_model, zenith):
-    PSF = PSF_model(wave, photons, zenith=zenith)
-    return PSF
-
 def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
-    stool = chroma.GalTools.SGalTool(s_engine)
+    galtool = chroma.GalTools.SGalTool(s_engine)
 
     def gen_target_image(gamma, beta):
-        ring_gparam = stool.get_ring_params(gparam, gamma, beta)
+        ring_gparam = galtool.get_ring_params(gparam, gamma, beta)
         return s_engine.get_image(ring_gparam, gal_PSF)
 
     # function to measure ellipticity of target_image by trying to match the pixels
@@ -39,13 +35,20 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
             im = s_engine.get_image(param, star_PSF)
             return (im - target_image).flatten()
         result = lmfit.minimize(resid, init_param)
+        # print
+        # print
+        # print
+        # print
+        # print
+        # print
+        # lmfit.report_errors(result.params)
         gmag = result.params['gmag'].value
         phi = result.params['phi'].value
         c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
         return c_ellip
 
     def get_ring_params(gamma, beta):
-        return stool.get_ring_params(gparam, gamma, beta)
+        return galtool.get_ring_params(gparam, gamma, beta)
 
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.utils.ringtest(gamma0, 3,
@@ -64,9 +67,9 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     m = m0, m1
     return m, c
 
-def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
-    s_engine = chroma.ImageEngine.GalSimSEngine()#size=41, oversample_factor=41)
-    PSF_model = chroma.PSF_model.GSGaussAtmPSF
+def calib_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
+    s_engine = chroma.ImageEngine.GalSimSEngine(size=41)#size=41, oversample_factor=41)
+    PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0
     data_dir = '../../data/'
@@ -75,33 +78,50 @@ def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
     star_SED_file = data_dir+'SEDs/{}.ascii'.format(star)
 
     swave, sphotons = chroma.utils.get_photons(star_SED_file, filter_file, 0.0)
+    # swave = swave[::50]
+    # sphotons = sphotons[::50]
     sphotons /= scipy.integrate.simps(sphotons, swave)
-    star_PSF = make_PSF(swave, sphotons, PSF_model, zenith)
+    star_PSF = PSF_model(swave, sphotons, zenith=zenith)
     smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    outfile = 'output/m_vs_redshift.{}.{}.{}.{}.z{:02d}.dat'
+    outfile = 'output/calib_vs_redshift.{}.{}.{}.{}.z{:02d}.dat'
     outfile = outfile.format(filter_name, gal, star, n, int(round(zenith*180/numpy.pi)))
     fil = open(outfile, 'w')
     gparam = fiducial_galaxy()
     gparam['n'].value = n
-    stool = chroma.GalTools.SGalTool(s_engine)
+    #gparam['gmag'].value = 0.0
+    galtool = chroma.GalTools.SGalTool(s_engine)
 
     # normalize size to second moment (before PSF convolution)
+    print
+    print
     print 'n: {}'.format(gparam['n'].value)
     print 'fiducial r_e: {}'.format(gparam['r_e'].value)
     print 'setting second moment radius to 0.27 arcseconds = 1.35 pixels'
-    gparam = stool.set_uncvl_r2(gparam, (0.27/0.2)**2) # (0.27 arcsec)^2 -> pixels^2
-    print 'output r2: {}'.format(stool.get_uncvl_r2(gparam))
-    print 'output r: {}'.format(numpy.sqrt(stool.get_uncvl_r2(gparam)))
+    gparam = galtool.set_uncvl_r2(gparam, (0.27/0.2)**2) # (0.27 arcsec)^2 -> pixels^2
+    print 'output r2: {}'.format(galtool.get_uncvl_r2(gparam))
+    print 'output r: {}'.format(numpy.sqrt(galtool.get_uncvl_r2(gparam)))
     print 'output r_e:{}'.format(gparam['r_e'].value)
 
-    with astropy.utils.console.ProgressBar(100) as bar:
-        for z in numpy.arange(0.0, 3.0, 0.03):
+    # print 'retreiving subpixelized image of unconvolved circularized galaxy.'
+    # gparam1 = copy.deepcopy(gparam)
+    # gparam1['gmag'].value = 0.0
+    # gim = s_engine.get_uncvl_image(gparam1, pixsize=1./7)
+    # print 'computing quadrupole moment from image.'
+    # mom = chroma.utils.moments(gim, pixsize=1./7)
+    # print 'empirical second moment radius = {} pixels'.format(numpy.sqrt(mom[2]+mom[3]))
+    # print 'r2/re = {}'.format(numpy.sqrt(mom[2]+mom[3])/gparam1['r_e'].value)
+
+    zs = numpy.arange(0.0, 3.0, 0.03)
+    with astropy.utils.console.ProgressBar(len(zs)) as bar:
+        for z in zs:
             gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, z)
+            # gwave = gwave[::50]
+            # gphotons = gphotons[::50]
             gphotons /= scipy.integrate.simps(gphotons, gwave)
-            gal_PSF = make_PSF(gwave, gphotons, PSF_model, zenith)
+            gal_PSF = PSF_model(gwave, gphotons, zenith=zenith)
             gparam1 = copy.deepcopy(gparam)
             m, c = measure_shear_calib(gparam1, gal_PSF, star_PSF, s_engine)
 
@@ -112,9 +132,9 @@ def m_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
         fil.close()
 
 def main(argv):
-    m_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 0.5)
-    m_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 1.0)
-    m_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 4.0)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 4.0, zenith=50*numpy.pi/180)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 1.0, zenith=50*numpy.pi/180)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 0.5, zenith=50*numpy.pi/180)
 
 if __name__ == '__main__':
     main(sys.argv)

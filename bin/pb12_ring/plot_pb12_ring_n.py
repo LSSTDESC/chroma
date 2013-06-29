@@ -2,8 +2,7 @@ import sys
 
 import matplotlib.pyplot as plt
 
-def main(argv):
-    infile = argv
+def main(infile):
     calib = {'z':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[], 'm_analytic':[], 'c_analytic':[]}
     with open(infile, 'r') as fil:
         for line in fil:
@@ -37,10 +36,11 @@ def main(argv):
     ax2.plot(calib['z'], [0.0] * len(calib['z']), color='blue')
 
     ax1.set_xlim(0.0, 3.0)
-    ax1.set_ylim(-0.02, 0.02)
+    ax1.set_ylim(-0.05, 0.05)
     ax2.set_xlim(0.0, 3.0)
-    ax2.set_ylim(-0.02, 0.02)
+    ax2.set_ylim(-0.05, 0.05)
     fig.savefig(infile.replace('.dat', '.pdf'))
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    for fn in sys.argv[1:]:
+        main(fn)
