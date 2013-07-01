@@ -5,6 +5,7 @@ import scipy.integrate
 import numpy
 import matplotlib.pyplot as plt
 import matplotlib.colorbar as clb
+from matplotlib.backends.backend_pdf import PdfPages
 import galsim
 galsim.GSParams.maximum_fft_size = 16384
 
@@ -53,10 +54,13 @@ def apodized_quadrupole(data, sigma=5.0, pixsize=1.0):
     Ixy = (data1 * (xs - xbar) * (ys - ybar)).sum() / total1
     return Ixx, Iyy, Ixy
 
-def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF):
+def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
     s_engine = chroma.ImageEngine.GalSimSEngine(size=31,
                                                 gsp=galsim.GSParams(maximum_fft_size=32768))
+    bd_engine = chroma.ImageEngine.GalSimBDEngine(size=31,
+                                                  gsp=galsim.GSParams(maximum_fft_size=32768))
     galtool = chroma.GalTools.SGalTool(s_engine)
+    bdtool = chroma.GalTools.BDGalTool(bd_engine)
 
     star_PSF_overim = s_engine.get_PSF_image(star_PSF, pixsize=1./7)
     star_mom = chroma.utils.moments(star_PSF_overim, pixsize=1./7)
@@ -78,8 +82,10 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF):
     print 'Iyy = {:8f}'.format(gal_mom[3])
     print 'Ixy = {:8f}'.format(gal_mom[4])
 
+    pp = PdfPages('output/case_study_g{:6.2f}.n{}.bd{}.pdf'.format(gamma, gparam['n'].value, bd))
     betas = numpy.linspace(0.0, 2.0 * numpy.pi, 2 * n_ring, endpoint=False)
-    for beta in betas[1:]:
+    ellips=[]
+    for beta in betas:
         # generate target image
         ring_gparam = galtool.get_ring_params(gparam, gamma, beta)
         uncvlim = s_engine.get_uncvl_image(ring_gparam, pixsize=1./7)
@@ -88,15 +94,35 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF):
 
         # fit the target image
         def resid(param):
-            testim = s_engine.get_image(param, star_PSF)
+            testim = bd_engine.get_image(param, star_PSF, star_PSF)
             return (testim - im).flatten()
-        fit = lmfit.minimize(resid, copy.deepcopy(ring_gparam))
+        def initparam(param):
+            outparam = lmfit.Parameters()
+            outparam.add('b_x0', value=param['x0'].value)
+            outparam.add('b_y0', value=param['y0'].value)
+            outparam.add('b_n', value=param['n'].value, vary=False)
+            outparam.add('b_r_e', value=param['r_e'].value)
+            outparam.add('b_flux', value=0.75)
+            outparam.add('b_gmag', value=param['gmag'].value)
+            outparam.add('b_phi', value=param['phi'].value)
+            outparam.add('d_x0', expr='b_x0')
+            outparam.add('d_y0', expr='b_y0')
+            outparam.add('d_n', value=1.0, vary=False)
+            outparam.add('d_r_e', value=param['r_e'].value)
+            if bd:
+                outparam.add('d_flux', expr='1.0 - b_flux')
+            else:
+                outparam.add('d_flux', value=0, vary=False)
+            outparam.add('d_gmag', expr='b_gmag')
+            outparam.add('d_phi', expr='b_phi')
+            return outparam
+        fit = lmfit.minimize(resid, initparam(ring_gparam))
         fitparam = fit.params
-        fit_uncvlim = s_engine.get_uncvl_image(fitparam, pixsize=1./7)
-        fit_overim = s_engine.get_image(fitparam, star_PSF, pixsize=1./7)
-        fit_im = s_engine.get_image(fitparam, star_PSF)
+        fit_uncvlim = bd_engine.get_uncvl_image(fitparam, pixsize=1./7)
+        fit_overim = bd_engine.get_image(fitparam, star_PSF, star_PSF, pixsize=1./7)
+        fit_im = bd_engine.get_image(fitparam, star_PSF, star_PSF)
 
-        # compute unweighted quadrupole moments
+        # compute unweighted quadrupole moments of 'truth' image
         Q_g = quadrupole(uncvlim, pixsize=1./7)
         Q_o = quadrupole(overim, pixsize=1./7)
         e_model = ring_gparam['gmag'].value * complex(numpy.cos(2.0 * ring_gparam['phi'].value),
@@ -106,11 +132,12 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF):
         e_obs = ellip(overim, pixsize=1./7)
         e_obsx = ellip(im)
 
-        # repeat for observed (PSF-convolved) galaxy
+        # repeat for best fit galaxy
         Qfit_g = quadrupole(fit_uncvlim, pixsize=1./7)
         Qfit_o = quadrupole(fit_overim, pixsize=1./7)
-        efit_model = fitparam['gmag'].value * complex(numpy.cos(2.0 * fitparam['phi'].value),
-                                                      numpy.sin(2.0 * fitparam['phi'].value))
+        efit_model = fitparam['b_gmag'].value * complex(numpy.cos(2.0 * fitparam['b_phi'].value),
+                                                        numpy.sin(2.0 * fitparam['b_phi'].value))
+        ellips.append(efit_model)
         # and corresponding ellipticities
         efit_gal = ellip(fit_uncvlim, pixsize=1./7)
         efit_obs = ellip(fit_overim, pixsize=1./7)
@@ -197,15 +224,18 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF):
         axarr[0,3].set_title('pixelized')
         axarr[0,0].set_ylabel('truth')
         axarr[1,0].set_ylabel('best fit')
-        axarr[2,0].set_ylabel('residual')
-        axarr[3,0].set_ylabel('percent residual')
+        axarr[2,0].set_ylabel('abs(residual')
+        axarr[3,0].set_ylabel('abs(rel resid)')
         f.subplots_adjust(hspace=0.02, wspace=0.07, bottom=0.11)
         cbar_ax = f.add_axes([0.122, 0.05, 0.77, 0.04])
         plt.colorbar(img, cax=cbar_ax, orientation='horizontal')
-        plt.show()
+        # plt.show()
+        pp.savefig()
+    pp.close()
+    return ellips
 
-def case_study():
-    s_engine = chroma.ImageEngine.GalSimSEngine(size=51,
+def case_study(n, zenith=60*numpy.pi/180, bd=False):
+    s_engine = chroma.ImageEngine.GalSimSEngine(size=31,
                                                 gsp=galsim.GSParams(maximum_fft_size=32768))
     galtool = chroma.GalTools.SGalTool(s_engine)
     PSF_model = chroma.PSF_model.GSAtmPSF
@@ -220,12 +250,13 @@ def case_study():
     # swave = swave[::50]
     # sphotons = sphotons[::50]
     sphotons /= scipy.integrate.simps(sphotons, swave)
-    star_PSF = PSF_model(swave, sphotons, zenith=numpy.pi*60/180, moffat_FWHM=2.5)
+    star_PSF = PSF_model(swave, sphotons, zenith=zenith, moffat_FWHM=2.5)
+    smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.0)
     gparam.add('y0', value=0.0)
-    gparam.add('n', value=4.0, vary=False)
+    gparam.add('n', value=n, vary=False)
     gparam.add('r_e', value=1.0)
     gparam.add('flux', value=1.0, vary=False)
     gparam.add('gmag', value=0.2)
@@ -238,13 +269,51 @@ def case_study():
     # gwave = gwave[::50]
     # gphotons = gphotons[::50]
     gphotons /= scipy.integrate.simps(gphotons, gwave)
-    gal_PSF = PSF_model(gwave, gphotons, zenith=numpy.pi*60/180, moffat_FWHM=2.5)
+    gal_PSF = PSF_model(gwave, gphotons, zenith=zenith, moffat_FWHM=2.5)
+    gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
 
-   # m, c = measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine)
-   # print m
-   # print c
+    gamma0 = 0+0j
+    ellips = diagnostic_ringtest(gamma0, 3, gparam, star_PSF, gal_PSF, bd=bd)
+    print
+    print 'input shear: {:8.5f}'.format(gamma0)
+    print 'measured ellipticities:'
+    for e in ellips:
+        print '{:8.5f}'.format(e)
+    gamma0_hat = sum(ellips)/len(ellips)
+    print 'average measured ellipticity: {:8.5f}'.format(gamma0_hat)
+    c_calib = gamma0_hat
 
-    diagnostic_ringtest(0.0 + 0.0j, 3, gparam, star_PSF, gal_PSF)
+    gamma1 = 0.01 + 0.02j
+    ellips2 = diagnostic_ringtest(gamma1, 3, gparam, star_PSF, gal_PSF, bd=bd)
+    print
+    print 'input shear: {:8.5f}'.format(gamma1)
+    print 'measured ellipticities:'
+    for e in ellips2:
+        print '{:8.5f}'.format(e)
+    gamma1_hat = sum(ellips2)/len(ellips2)
+    print 'average measured ellipticity: {:8.5f}'.format(gamma1_hat)
+    m0 = (gamma1_hat.real - c_calib.real)/gamma1.real - 1.0
+    m1 = (gamma1_hat.imag - c_calib.imag)/gamma1.imag - 1.0
+    m_calib = complex(m0, m1)
+
+    delta_V = (gmom[1] - smom[1]) * (180 * 3600 / numpy.pi)**2
+    PB12_m = complex(delta_V / (0.27**2), delta_V / (0.27**2))
+    PB12_c = complex(delta_V / (0.27**2) / 2, 0)
+
+    print
+    print
+    print 'PB12 delta V: {:8.5f}'.format(delta_V)
+    print
+    print 'ring c: {:8.5f}'.format(c_calib)
+    print 'PB12 c: {:8.5f}'.format(PB12_c)
+    print 'ring m: {:8.5f}'.format(m_calib)
+    print 'PB12 m: {:8.5f}'.format(PB12_m)
+
 
 if __name__ == '__main__':
-    case_study()
+    case_study(0.5, zenith=numpy.pi*30/180, bd=False)
+    case_study(0.5, zenith=numpy.pi*30/180, bd=True)
+    case_study(1.0, zenith=numpy.pi*30/180, bd=False)
+    case_study(1.0, zenith=numpy.pi*30/180, bd=True)
+    case_study(4.0, zenith=numpy.pi*30/180, bd=False)
+    case_study(4.0, zenith=numpy.pi*30/180, bd=True)
