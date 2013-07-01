@@ -152,6 +152,11 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         #output!
         print
         print
+        print 'Ring params'
+        print '-----------'
+        print 'beta  : {:5.2f}'.format(beta)
+        print 'gamma : {:5.2f}'.format(gamma)
+        print
         print 'Truth image'
         print '-----------'
         print 'Ixx_g  : {:8f}'.format(Q_g[0])
@@ -166,7 +171,7 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         print 'e_obsx:  |{:6f}| = {:6f}'.format(e_obsx, abs(e_obsx))
         print
         print 'Best fit image'
-        print '---------------'
+        print '--------------'
         print 'Ixx_g  : {:8f}'.format(Qfit_g[0])
         print 'Iyy_g  : {:8f}'.format(Qfit_g[1])
         print 'Ixy_g  : {:8f}'.format(Qfit_g[2])
@@ -178,8 +183,8 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         print 'e_obs:   |{:6f}| = {:6f}'.format(efit_obs, abs(efit_obs))
         print 'e_obsx:  |{:6f}| = {:6f}'.format(efit_obsx, abs(efit_obsx))
         print
-        print 'Noteworthy comparison'
-        print '---------------------'
+        print 'Truth to best fit moment comparisons'
+        print '------------------------------------'
         print 'delta Ixx_g: {:8f}'.format(Q_o[0] - Qfit_o[0])
         print 'delta Iyy_g: {:8f}'.format(Q_o[1] - Qfit_o[1])
         print 'delta Ixy_g: {:8f}'.format(Q_o[2] - Qfit_o[2])
@@ -271,6 +276,20 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
     gphotons /= scipy.integrate.simps(gphotons, gwave)
     gal_PSF = PSF_model(gwave, gphotons, zenith=zenith, moffat_FWHM=2.5)
     gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
+
+    print
+    print
+    print
+    print '###################'
+    print 'Starting case study'
+    print '###################'
+    print
+    print 'Running with zenith angle: {:5.2f} degrees'.format(zenith * 180/numpy.pi)
+    print 'Running ring test for n={:3.1f}'.format(gparam['n'].value)
+    if bd:
+        print 'Using bulge+disk model to reconstruct'
+    else:
+        print 'Using Sersic model to reconstruct'
 
     gamma0 = 0+0j
     ellips = diagnostic_ringtest(gamma0, 3, gparam, star_PSF, gal_PSF, bd=bd)
