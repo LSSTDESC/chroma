@@ -34,7 +34,7 @@ def quadrupole(data, pixsize=1.0):
     Ixx = (data * (xs - xbar)**2).sum() / total
     Iyy = (data * (ys - ybar)**2).sum() / total
     Ixy = (data * (xs - xbar) * (ys - ybar)).sum() / total
-    return Ixx, Iyy, Ixy
+    return numpy.array([Ixx, Iyy, Ixy])
 
 def ellip(data, pixsize=1.0):
     Ixx, Iyy, Ixy = quadrupole(data, pixsize=pixsize)
@@ -52,9 +52,9 @@ def apodized_quadrupole(data, sigma=5.0, pixsize=1.0):
     Ixx = (data1 * (xs - xbar)**2).sum() / total1
     Iyy = (data1 * (ys - ybar)**2).sum() / total1
     Ixy = (data1 * (xs - xbar) * (ys - ybar)).sum() / total1
-    return Ixx, Iyy, Ixy
+    return numpy.array([Ixx, Iyy, Ixy])
 
-def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
+def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False, zenith=None):
     s_engine = chroma.ImageEngine.GalSimSEngine(size=31,
                                                 gsp=galsim.GSParams(maximum_fft_size=32768))
     bd_engine = chroma.ImageEngine.GalSimBDEngine(size=31,
@@ -82,9 +82,15 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
     print 'Iyy = {:8f}'.format(gal_mom[3])
     print 'Ixy = {:8f}'.format(gal_mom[4])
 
-    pp = PdfPages('output/case_study_g{:6.2f}.n{}.bd{}.pdf'.format(gamma, gparam['n'].value, bd))
+    outfile = 'output/case_study_g{:6.2f}.n{}.bd{}.z{:02d}.pdf'
+    outfile = outfile.format(gamma, gparam['n'].value, bd, int(round(zenith * 180 / numpy.pi)))
+    pp = PdfPages(outfile)
+
     betas = numpy.linspace(0.0, 2.0 * numpy.pi, 2 * n_ring, endpoint=False)
-    ellips=[]
+    out = numpy.empty(len(betas), dtype=[('ellip', 'c8'),
+                                         ('chisqr','f8'),
+                                         ('FoM','f8')])
+    iout = 0
     for beta in betas:
         # generate target image
         ring_gparam = galtool.get_ring_params(gparam, gamma, beta)
@@ -102,19 +108,20 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
             outparam.add('b_y0', value=param['y0'].value)
             outparam.add('b_n', value=param['n'].value, vary=False)
             outparam.add('b_r_e', value=param['r_e'].value)
-            outparam.add('b_flux', value=0.75)
             outparam.add('b_gmag', value=param['gmag'].value)
             outparam.add('b_phi', value=param['phi'].value)
             outparam.add('d_x0', expr='b_x0')
             outparam.add('d_y0', expr='b_y0')
             outparam.add('d_n', value=1.0, vary=False)
             outparam.add('d_r_e', value=param['r_e'].value)
-            if bd:
-                outparam.add('d_flux', expr='1.0 - b_flux')
-            else:
-                outparam.add('d_flux', value=0, vary=False)
             outparam.add('d_gmag', expr='b_gmag')
             outparam.add('d_phi', expr='b_phi')
+            if bd:
+                outparam.add('b_flux', value=1.0)
+                outparam.add('d_flux', expr='1.0 - b_flux')
+            else:
+                outparam.add('b_flux', value=1.0, vary=False)
+                outparam.add('d_flux', value=0.0, vary=False)
             return outparam
         fit = lmfit.minimize(resid, initparam(ring_gparam))
         fitparam = fit.params
@@ -125,6 +132,7 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         # compute unweighted quadrupole moments of 'truth' image
         Q_g = quadrupole(uncvlim, pixsize=1./7)
         Q_o = quadrupole(overim, pixsize=1./7)
+        Q_p = quadrupole(im)
         e_model = ring_gparam['gmag'].value * complex(numpy.cos(2.0 * ring_gparam['phi'].value),
                                                       numpy.sin(2.0 * ring_gparam['phi'].value))
         # unweighted ellipticities
@@ -135,9 +143,9 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         # repeat for best fit galaxy
         Qfit_g = quadrupole(fit_uncvlim, pixsize=1./7)
         Qfit_o = quadrupole(fit_overim, pixsize=1./7)
+        Qfit_p = quadrupole(fit_im)
         efit_model = fitparam['b_gmag'].value * complex(numpy.cos(2.0 * fitparam['b_phi'].value),
                                                         numpy.sin(2.0 * fitparam['b_phi'].value))
-        ellips.append(efit_model)
         # and corresponding ellipticities
         efit_gal = ellip(fit_uncvlim, pixsize=1./7)
         efit_obs = ellip(fit_overim, pixsize=1./7)
@@ -146,10 +154,23 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         # now repeat for apodized moments
         Qap_g = apodized_quadrupole(uncvlim, pixsize=1./7)
         Qap_o = apodized_quadrupole(overim, pixsize=1./7)
+        Qap_p = apodized_quadrupole(im)
         Qapfit_g = apodized_quadrupole(fit_uncvlim, pixsize=1./7)
         Qapfit_o = apodized_quadrupole(fit_overim, pixsize=1./7)
+        Qapfit_p = apodized_quadrupole(fit_im)
 
-        #output!
+        # and record the quadrupole moment residuals
+        Qresid_o = Q_o - Qfit_o
+        Qresid_p = Q_p - Qfit_p
+        Qapresid_o = Qap_o - Qapfit_o
+        Qapresid_p = Qap_p - Qapfit_p
+
+        # fit FoM is sum of pixelized xx and yy quadrupole moments
+        FoM = Qapresid_p[0] + Qapresid_p[1]
+        out[iout] = (efit_model, FoM, fit.chisqr)
+        iout +=1
+
+        # output!
         print
         print
         print 'Ring params'
@@ -185,12 +206,18 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         print
         print 'Truth to best fit moment comparisons'
         print '------------------------------------'
-        print 'delta Ixx_g: {:8f}'.format(Q_o[0] - Qfit_o[0])
-        print 'delta Iyy_g: {:8f}'.format(Q_o[1] - Qfit_o[1])
-        print 'delta Ixy_g: {:8f}'.format(Q_o[2] - Qfit_o[2])
-        print 'delta weighted Ixx_g: {:8f}'.format(Qap_o[0] - Qapfit_o[0])
-        print 'delta weighted Iyy_g: {:8f}'.format(Qap_o[1] - Qapfit_o[1])
-        print 'delta weighted Ixy_g: {:8f}'.format(Qap_o[2] - Qapfit_o[2])
+        print 'delta Ixx_o: {:8f}'.format(Qresid_o[0])
+        print 'delta Iyy_o: {:8f}'.format(Qresid_o[1])
+        print 'delta Ixy_o: {:8f}'.format(Qresid_o[2])
+        print 'delta Ixx_p: {:8f}'.format(Qresid_p[0])
+        print 'delta Iyy_p: {:8f}'.format(Qresid_p[1])
+        print 'delta Ixy_p: {:8f}'.format(Qresid_p[2])
+        print 'delta weighted Ixx_o: {:8f}'.format(Qapresid_o[0])
+        print 'delta weighted Iyy_o: {:8f}'.format(Qapresid_o[1])
+        print 'delta weighted Ixy_o: {:8f}'.format(Qapresid_o[2])
+        print 'delta weighted Ixx_p: {:8f}'.format(Qapresid_p[0])
+        print 'delta weighted Iyy_p: {:8f}'.format(Qapresid_p[1])
+        print 'delta weighted Ixy_p: {:8f}'.format(Qapresid_p[2])
 
         #display
         f, axarr = plt.subplots(4, 4, figsize=(6,6))
@@ -237,7 +264,7 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False):
         # plt.show()
         pp.savefig()
     pp.close()
-    return ellips
+    return out
 
 def case_study(n, zenith=60*numpy.pi/180, bd=False):
     s_engine = chroma.ImageEngine.GalSimSEngine(size=31,
@@ -292,24 +319,24 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
         print 'Using Sersic model to reconstruct'
 
     gamma0 = 0+0j
-    ellips = diagnostic_ringtest(gamma0, 3, gparam, star_PSF, gal_PSF, bd=bd)
+    diag = diagnostic_ringtest(gamma0, 3, gparam, star_PSF, gal_PSF, bd=bd, zenith=zenith)
     print
     print 'input shear: {:8.5f}'.format(gamma0)
     print 'measured ellipticities:'
-    for e in ellips:
+    for e in diag['ellip']:
         print '{:8.5f}'.format(e)
-    gamma0_hat = sum(ellips)/len(ellips)
+    gamma0_hat = sum(diag['ellip'])/len(diag)
     print 'average measured ellipticity: {:8.5f}'.format(gamma0_hat)
     c_calib = gamma0_hat
 
     gamma1 = 0.01 + 0.02j
-    ellips2 = diagnostic_ringtest(gamma1, 3, gparam, star_PSF, gal_PSF, bd=bd)
+    diag2 = diagnostic_ringtest(gamma1, 3, gparam, star_PSF, gal_PSF, bd=bd, zenith=zenith)
     print
     print 'input shear: {:8.5f}'.format(gamma1)
     print 'measured ellipticities:'
-    for e in ellips2:
+    for e in diag2['ellip']:
         print '{:8.5f}'.format(e)
-    gamma1_hat = sum(ellips2)/len(ellips2)
+    gamma1_hat = sum(diag2['ellip'])/len(diag2)
     print 'average measured ellipticity: {:8.5f}'.format(gamma1_hat)
     m0 = (gamma1_hat.real - c_calib.real)/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c_calib.imag)/gamma1.imag - 1.0
@@ -321,18 +348,37 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
 
     print
     print
-    print 'PB12 delta V: {:8.5f}'.format(delta_V)
+    print '+---------+'
+    print '| results |'
+    print '+---------+'
     print
-    print 'ring c: {:8.5f}'.format(c_calib)
-    print 'PB12 c: {:8.5f}'.format(PB12_c)
-    print 'ring m: {:8.5f}'.format(m_calib)
-    print 'PB12 m: {:8.5f}'.format(PB12_m)
+    print 'zenith angle: {:5.2f} degrees'.format(zenith * 180/numpy.pi)
+    print 'n: {:3.1f}'.format(gparam['n'].value)
+    print 'bd: {}'.format(bd)
+    print
+    print 'PB12 delta V: {:9.6f}'.format(delta_V)
+    print 'PB12 c: {:9.6f}'.format(PB12_c)
+    print 'PB12 m: {:9.6f}'.format(PB12_m)
+    print
+    print 'ring c: {:9.6f}'.format(c_calib)
+    print 'ring m: {:9.6f}'.format(m_calib)
+    print 'average chisqr: {:8.5e}'.format((sum(diag['chisqr']) \
+                                            + sum(diag2['chisqr'])) / (2 * len(diag)))
+    print 'average FoM: {:8.5e}'.format((sum(diag['FoM']) \
+                                         + sum(diag2['FoM'])) / (2 * len(diag)))
+
 
 
 if __name__ == '__main__':
     case_study(0.5, zenith=numpy.pi*30/180, bd=False)
     case_study(0.5, zenith=numpy.pi*30/180, bd=True)
+    case_study(0.5, zenith=numpy.pi*60/180, bd=False)
+    case_study(0.5, zenith=numpy.pi*60/180, bd=True)
     case_study(1.0, zenith=numpy.pi*30/180, bd=False)
     case_study(1.0, zenith=numpy.pi*30/180, bd=True)
+    case_study(1.0, zenith=numpy.pi*60/180, bd=False)
+    case_study(1.0, zenith=numpy.pi*60/180, bd=True)
     case_study(4.0, zenith=numpy.pi*30/180, bd=False)
     case_study(4.0, zenith=numpy.pi*30/180, bd=True)
+    case_study(4.0, zenith=numpy.pi*60/180, bd=False)
+    case_study(4.0, zenith=numpy.pi*60/180, bd=True)
