@@ -27,17 +27,18 @@
 
 \begin{document}
 
-\title{Shortcomings of the single Sersic galaxy profile when estimating chromatic weak lensing biases with a ring test}
+\title{Model fitting bias due to SED-dependent PSFs}
 
 \author{
-J.~Meyers\altaffilmark{1}}
+J.~Meyers\altaffilmark{1},
+The Authors}
 \email{jmeyers3@stanford.edu}
 
 \altaffiltext{1}{Department of Physics, Stanford University, Stanford, CA 94305}
 
 %Abstract
 \begin{abstract}
-This is the abstract.  Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec hendrerit tempor tellus. Donec pretium posuere tellus. Proin quam nisl, tincidunt et, mattis eget, convallis nec, purus. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nulla posuere. Donec vitae dolor. Nullam tristique diam non turpis. Cras placerat accumsan nulla. Nullam rutrum. Nam vestibulum accumsan nisl.
+This is the abstract.
 \end{abstract}
 
 %intro
@@ -76,7 +77,7 @@ test with a simple model parameterization.
 \section{Analytic Expectations}\label{sec:analytic}
 \citet{Plazas2012} derived analytic expressions for the bias expected
 in weak lensing measurements due to differential chromatic refraction.
-I will summarize the main points of their argument here.
+We summarize the main points of their argument here.
 
 Let $R(\lambda, z_a)$ be the refraction towards the zenith of a photon
 with wavelength $\lambda$ and true zenith angle (before refraction)
@@ -87,16 +88,15 @@ $z_A$.  The refraction can be factored into
 \end{equation}
 and $g(\lambda)$, which implicitly depends on air pressure,
 temperature, and the partial pressure of water vapor, and can be
-obtained from \citet{Edlen1953} and \citet{Coleman1960}.  On the focal
-plane, and forr monochromatic sources, the only effect is to move the
-apparent position of the object.  For sources which are not
-monochromatic (i.e. all real sources), having a wavelength density of
-surviving photons (i.e. the product of the source photon density and
-the total system throughput function) given by
-$\mathrm{p}_{\lambda}(\lambda)$, the mismatched displacements of
-different wavelengths introduces a convolution kernel in the zenith
-direction that can be written in terms of the inverse of Equation
-\ref{eqn:Rlamza}:
+obtained from \citet{Edlen1953} and \citet{Coleman1960}.  For
+monochromatic sources, the only effect is to move the apparent
+position of the object.  For sources which are not monochromatic
+(i.e. all real sources), having a wavelength density of surviving
+photons (i.e. the product of the source photon density and the total
+system throughput function) given by $\mathrm{p}_{\lambda}(\lambda)$,
+the mismatched displacements of different wavelengths introduces a
+convolution kernel in the zenith direction that can be written in
+terms of the inverse of Equation \ref{eqn:Rlamza}:
 \begin{equation}
   h(R) = \frac{p_\lambda(\lambda(R; z_a)) \left|\od{\lambda}{R}\right|}{\int{p_\lambda(\lambda) \dif{\lambda}}}
   \label{eqn:convker}
@@ -144,9 +144,9 @@ terms of the quadrupole moments before the galaxy light distribution
 is smeared by the PSF, but we only have access to the light
 distribution after convolution.  The second moments before ($I^g$) and
 after ($I^o$) convolution are related via the second moments of the
-PSF ($I^*$) like $I^g = I^o - I^*$.  If the SED's of galaxies and
-stars were the same, then the effect of DCR would be to add $V$ to
-both $I^o$ and $I^*$, which would then cancel when computing $I^g$ and
+PSF ($I^*$) like $I^g = I^o - I^*$.  If the SEDs of galaxies and stars
+were the same, then the effect of DCR would be to add $V$ to both
+$I^o$ and $I^*$, which would then cancel when computing $I^g$ and
 subsequently galaxy shape parameters.  The differences between stellar
 and galactic SEDs, however, will introduce a small error $\Delta V \ll
 r^2$ into $I_{xx}$ and $r^2$, which leads to biases in the derived
@@ -204,7 +204,7 @@ The general procedure can be implemented as follows:
 \end{enumerate}
 
 As described above, the ring test requires some prescription for
-creating galaxy images with a given ellipticity.  Here I investigate
+creating galaxy images with a given ellipticity.  Here we investigate
 using a single Sersic profile as the galaxy model.  The Sersic profile
 has 7 parameters: the $x$ and $y$ coordinates of the center, the total
 flux, the effective radius $r_e$ (also called the half-light radius),
@@ -243,51 +243,116 @@ PSF uses a DCR kernel derived from a galaxy SED, while the
 
 \section{Sersic index dependence}\label{sec:sersic}
 
-\begin{figure}
+The results of the ring test for set of Sersic galaxies are shown in
+Figure \ref{fig:mandc}.  The galaxy size quantified by $r^2$ is the
+same for each Sersic index.  The ring test results match the analytic
+formulae well when Gaussian galaxies ($n=0.5$) are used, but diverge
+by factors of 2-3 when de Vaucouleurs profiles ($n=4.0$) are used.
+The PB12 analytic formalism has no dependence on the profile of the
+galaxy, but only on the assumption that the differential dispersion
+kernel is much smaller than the size of the unsmeared galaxy ($\Delta
+V \ll r^2$).  This condition is met identically for each profile by
+construction, suggesting either that something is flawed with the PB12
+formalism or with the ring test.
+
+\begin{figure*}
 \begin{center}
-\epsscale{1.1}
+\epsscale{1.0}
 \plotone{figures/all_pb12_ring_n.pdf}
 \end{center}
-\caption[fig2]{\label{fig:two} Lorem ipsum dolor sit amet,
-  consectetuer adipiscing elit. Praesent libero orci, auctor sed,
-  faucibus vestibulum, gravida vitae, arcu. Nunc posuere. Suspendisse
-  potenti. Praesent in arcu ac nisl ultricies ultricies. Fusce
-  eros. Sed pulvinar vehicula ante. Maecenas urna dolor, egestas vel,
-  tristique et, porta eu, leo. Curabitur vitae sem eget arcu laoreet
-  vulputate. Cras orci neque, faucibus et, rhoncus ac, venenatis ac,
-  magna. Aenean eu lacus. Aliquam luctus facilisis augue. Nullam
-  fringilla consectetuer sapien. Aenean neque augue, bibendum a,
-  feugiat id, lobortis vel, nunc. Suspendisse in nibh quis erat
-  condimentum pretium. Vestibulum tempor odio et leo. Sed sodales
-  vestibulum justo. Cras convallis pellentesque augue. In eu magna. In
-  pede turpis, feugiat pulvinar, sodales eget, bibendum consectetuer,
-  magna. Pellentesque vitae augue.}
-\end{figure}
+\caption[fig1]{\label{fig:mandc} The shear calibration parameters $m$
+  and $c$ plotted against redshift.  The results are obtained from the
+  ring test assuming a true PSF derived from an elliptical galaxy
+  spectrum and reconstruction PSF derived from a G5v stellar spectrum.
+  The true galaxy images are simulated using the values: $r_e = 1.1$,
+  and $|g| = 0.2$.  Three values of the galaxy Sersic parameter $n$
+  are shown: $n=0.5$, corresponding to a Gaussian profile (blue),
+  $n=1.0$, corresponding to an exponential profile (green), and
+  $n=4.0$, corresponding to a de Vaucouleurs profile (red).  The cyan
+  line in each panel shows the analytic result from the PB12
+  formalism.  The zenith angle is 30 degrees.}
+\end{figure*}
 
-Compare analytic expression with ring test results for different Sersic indices.
+\section{Ring test case study}\label{sec:casestudy}
 
-\section{Failure of ring test}\label{sec:failure}
-Attempt to explain why the ring test fails for high Sersic index galaxies.
+To investigate the ring test in more detail, we have conducted a case
+study focusing on the redshift 1.25 galaxy that shows the largest $m$
+and $c$ values in both the ring test results and the PB12 results.
+For this study, we have constructed a series of diagnostic images
+showing the results of the fits in Step 5 of the ring test for each of
+the Sersic indices studied.  These diagnostic images are shown in
+Figures \ref{fig:gauss}, \ref{fig:exp}, and \ref{fig:deV}.  Note that
+the diagnostic figures were generated for a zenith angle of 60 degrees
+for better visualization, though the qualitative results are the same
+at 30 degrees.
+
+In Figures \ref{fig:gauss}, \ref{fig:exp}, and \ref{fig:deV}, the
+``truth'' image is shown in the top right panel.  The panel
+immediately below this one is the best fit to the ``truth'' image
+possible using the ``wrong'' PSF, which in this case is the PSF
+generated from the G5v stellar spectrum.  The leftmost panel in the
+second row shows the above-atmosphere galaxy model used to create this
+``best fit'' image.  The rightmost panel in the third row shows the
+residual between the ``truth'' image and the ``best fit'' image, and
+is an indication of the quality of the fit in Step 5 of the ring test.
+If the fit were perfect, then the residual image would be entirely
+zeros.
+
+The reason the residual image is not entirely filled with zeros is due
+to ``model bias'' \citep{Voigt2010, Melchior2011, Bernstein2010}.  The
+fitting step can be viewed as an attempt at deconvolution of the
+``truth'' image by the ``wrong'' PSF under the assumption that the
+functional form of the deconvolved image is known.  The best fit model
+(second row, first column) is the result of this attempted
+deconvolution, and the ellipticity parameters can then simply be read
+off as the parameters that generated the model.  In practice, however,
+the true deconvolved image (i.e. the true deconvolution of the
+``truth'' image by the ``wrong'' PSF) will not always be producable by
+the functional form of the fit.  More generally, the true
+deconvolution may not even have elliptical isophotes, precluding a
+solution by simply adding degrees of freedom to the radial profile of
+the functional form of the model.
+
+The degree to which the ring test results are biased by model fitting
+depends on how well the deconvolution is able to function.  Larger
+residuals to the fit are more susceptible to bias.  Comparing Figures
+\ref{fig:gauss}, \ref{fig:exp}, and \ref{fig:deV}, we see visually
+that the residuals grow with the Sersic index, which explains how the
+$n=4.0$ curve of Figure \ref{fig:mandc} became so different than the
+analytic prediction.  All of the curves are subject to bias both model
+bias and bias from DCR, but the $n=4.0$ curve is the most sensitive to
+model bias.  Presumably, better ellipticity measurement algorithms
+would show less dependence on the Sersic index.  For instance, the
+algorithms described in \citet{Bernstein2010} and \citet{Melchior2011}
+both aim to mitigate model bias.  If Step 5 of the ring test were
+replaced with one of these algorithms for measuring ellipticity, then
+maybe the effect of DCR could better be isolated from the effects of
+model bias.
 
 \begin{figure*}
 \begin{center}
 \epsscale{1.0}
 \plotone{figures/case_study_n05.pdf}
 \end{center}
-\caption[fig1]{\label{fig:one} Lorem ipsum dolor sit amet,
-  consectetuer adipiscing elit. Praesent libero orci, auctor sed,
-  faucibus vestibulum, gravida vitae, arcu. Nunc posuere. Suspendisse
-  potenti. Praesent in arcu ac nisl ultricies ultricies. Fusce
-  eros. Sed pulvinar vehicula ante. Maecenas urna dolor, egestas vel,
-  tristique et, porta eu, leo. Curabitur vitae sem eget arcu laoreet
-  vulputate. Cras orci neque, faucibus et, rhoncus ac, venenatis ac,
-  magna. Aenean eu lacus. Aliquam luctus facilisis augue. Nullam
-  fringilla consectetuer sapien. Aenean neque augue, bibendum a,
-  feugiat id, lobortis vel, nunc. Suspendisse in nibh quis erat
-  condimentum pretium. Vestibulum tempor odio et leo. Sed sodales
-  vestibulum justo. Cras convallis pellentesque augue. In eu magna. In
-  pede turpis, feugiat pulvinar, sodales eget, bibendum consectetuer,
-  magna. Pellentesque vitae augue.}
+\caption[fig2]{\label{fig:gauss} Illustration of the simulation and
+  fitting portion of the ring test procedure (steps 4 and 5).  The
+  columns from left to right represent (i) the high-resolution model
+  galaxy before PSF convolution, (ii) the PSF, (iii) the galaxy
+  convolved with the PSF, and (iv) the pixelization of (iii).  The
+  rows from top to bottom represent (i) the ``true'' galaxy model,
+  PSF, and convolutions, (ii) the best fit galaxy model, PSF, and
+  convolutions, (iii) the base-10 logarithm of the absolute value of
+  the residual ($\mathrm{best fit} - \mathrm{truth}$), and (iv) the
+  base-10 logarithm of the absolute fractional residual
+  ($(\mathrm{best fit} - \mathrm{truth})/\mathrm{truth}$).  The fit is
+  designed to minimize the pixelized residuals in the third row,
+  fourth column.  The difference between the truth and best fit galaxy
+  models illustrates the size of the model bias induced by using the
+  ``wrong'' PSF in the fit.  The galaxy profile is Gaussian in this
+  figure ($n = 0.5$, both in truth image and fixed during the fit),
+  the galaxy PSF is derived from an elliptical spectrum at redshift
+  1.3, and the stellar PSF is derived from the spectrum of a G5v star.
+  The zenith angle is 60 degrees.}
 \end{figure*}
 
 \begin{figure*}
@@ -295,20 +360,9 @@ Attempt to explain why the ring test fails for high Sersic index galaxies.
 \epsscale{1.0}
 \plotone{figures/case_study_n10.pdf}
 \end{center}
-\caption[fig1]{\label{fig:one} Lorem ipsum dolor sit amet,
-  consectetuer adipiscing elit. Praesent libero orci, auctor sed,
-  faucibus vestibulum, gravida vitae, arcu. Nunc posuere. Suspendisse
-  potenti. Praesent in arcu ac nisl ultricies ultricies. Fusce
-  eros. Sed pulvinar vehicula ante. Maecenas urna dolor, egestas vel,
-  tristique et, porta eu, leo. Curabitur vitae sem eget arcu laoreet
-  vulputate. Cras orci neque, faucibus et, rhoncus ac, venenatis ac,
-  magna. Aenean eu lacus. Aliquam luctus facilisis augue. Nullam
-  fringilla consectetuer sapien. Aenean neque augue, bibendum a,
-  feugiat id, lobortis vel, nunc. Suspendisse in nibh quis erat
-  condimentum pretium. Vestibulum tempor odio et leo. Sed sodales
-  vestibulum justo. Cras convallis pellentesque augue. In eu magna. In
-  pede turpis, feugiat pulvinar, sodales eget, bibendum consectetuer,
-  magna. Pellentesque vitae augue.}
+\caption[fig3]{\label{fig:exp} The same as Figure \ref{fig:gauss}, but
+  the galaxy profile is changed to be exponential ($n=1.0$, in both
+  the truth image and fixed during the fit).}
 \end{figure*}
 
 \begin{figure*}
@@ -316,24 +370,14 @@ Attempt to explain why the ring test fails for high Sersic index galaxies.
 \epsscale{1.0}
 \plotone{figures/case_study_n40.pdf}
 \end{center}
-\caption[fig1]{\label{fig:one} Lorem ipsum dolor sit amet,
-  consectetuer adipiscing elit. Praesent libero orci, auctor sed,
-  faucibus vestibulum, gravida vitae, arcu. Nunc posuere. Suspendisse
-  potenti. Praesent in arcu ac nisl ultricies ultricies. Fusce
-  eros. Sed pulvinar vehicula ante. Maecenas urna dolor, egestas vel,
-  tristique et, porta eu, leo. Curabitur vitae sem eget arcu laoreet
-  vulputate. Cras orci neque, faucibus et, rhoncus ac, venenatis ac,
-  magna. Aenean eu lacus. Aliquam luctus facilisis augue. Nullam
-  fringilla consectetuer sapien. Aenean neque augue, bibendum a,
-  feugiat id, lobortis vel, nunc. Suspendisse in nibh quis erat
-  condimentum pretium. Vestibulum tempor odio et leo. Sed sodales
-  vestibulum justo. Cras convallis pellentesque augue. In eu magna. In
-  pede turpis, feugiat pulvinar, sodales eget, bibendum consectetuer,
-  magna. Pellentesque vitae augue.}
+\caption[fig4]{\label{fig:deV} The same as Figure \ref{fig:gauss}, but
+  the galaxy profile is changed to be de Vaucouleurs ($n=4.0$, in both
+  the truth image and fixed during the fit). }
 \end{figure*}
 
 \acknowledgements
 
-%\bibliographystyle{apj}
+\bibliographystyle{apj}
+\bibliography{Single_Sersic_ringtest}
 
 \end{document}
