@@ -299,7 +299,7 @@ If the fit were perfect, then the residual image would be entirely
 zeros.
 
 The reason the residual image is not entirely filled with zeros is due
-to ``model bias'' \citep{Voigt2010, Melchior2011, Bernstein2010}.  The
+to ``model bias'' \citep{Melchior2009, Voigt2010, Bernstein2010}.  The
 fitting step can be viewed as an attempt at deconvolution of the
 ``truth'' image by the ``wrong'' PSF under the assumption that the
 functional form of the deconvolved image is known.  The best fit model
@@ -307,11 +307,14 @@ functional form of the deconvolved image is known.  The best fit model
 deconvolution, and the ellipticity parameters can then simply be read
 off as the parameters that generated the model.  In practice, however,
 the true deconvolved image (i.e. the true deconvolution of the
-``truth'' image by the ``wrong'' PSF) will not always be producable by
-the functional form of the fit.  More generally, the true
-deconvolution may not even have elliptical isophotes, precluding a
-solution by simply adding degrees of freedom to the radial profile of
-the functional form of the model.
+``truth'' image by the ``wrong'' PSF, not computed or shown in any of
+the Figure panels) will not always be an instance of the functional
+form of the fit.  More generally, the true deconvolution may not even
+have elliptical isophotes, precluding a solution by simply adding
+degrees of freedom to the radial profile of the functional form.
+(Degrees of freedom can, of course, be added {\it azimuthally} to get
+a perfect deconvolution, but then the ellipticity can no longer be
+simply read off as a model parameter).
 
 The degree to which the ring test results are biased by model fitting
 depends on how well the deconvolution is able to function.  Larger
@@ -321,13 +324,40 @@ that the residuals grow with the Sersic index, which explains how the
 $n=4.0$ curve of Figure \ref{fig:mandc} became so different than the
 analytic prediction.  All of the curves are subject to bias both model
 bias and bias from DCR, but the $n=4.0$ curve is the most sensitive to
-model bias.  Presumably, better ellipticity measurement algorithms
-would show less dependence on the Sersic index.  For instance, the
-algorithms described in \citet{Bernstein2010} and \citet{Melchior2011}
-both aim to mitigate model bias.  If Step 5 of the ring test were
-replaced with one of these algorithms for measuring ellipticity, then
-maybe the effect of DCR could better be isolated from the effects of
-model bias.
+model bias.  The visual comparison is backed up by the data in Table
+\ref{table:fitqual}.  As the Sersic index increases, the best fit
+$\chi^2$ also increases indicating a worse fit.  From the quadrupole
+moments of the residuals, one can define a Figure of Demerit:
+\begin{equation}
+  \mathrm{FoD} = I^r_{xx} + I^r_{yy}
+\end{equation}
+where $I^r$ is the residual image.  The Figure of Demerit also
+increases with Sersic index, indicating an increasing model bias.
+
+\begin{deluxetable*}{lllllll}
+\tablecaption{\label{table:fitqual} Fit Quality}
+\tablehead{
+\colhead{n} &
+\colhead{$\chi^2$} &
+\colhead{FoD} &
+\colhead{m} &
+\colhead{c} &
+\colhead{PB12 m} &
+\colhead{PB12 c}}
+\startdata
+0.5 & 2.08e-4 & 5.82e-10 & (0.008672, 0.008513) & (0.004213, 0.0) & -0.008111 & 0.004055 \\
+1.0 & 3.28e-3 & 8.97e-9  & (0.010016, 0.009828) & (0.005755, 0.0) & -0.008111 & 0.004055 \\
+4.0 & 1.15e-2 & 9.01e-8  & (0.023039, 0.022608) & (0.020024, 0.0) & -0.008111 & 0.004055
+\enddata
+\end{deluxetable*}
+
+
+Presumably, better ellipticity measurement algorithms would show less
+dependence on the Sersic index.  For instance, the algorithms
+described in \citet{Bernstein2010} and \citet{Melchior2011} both aim
+to mitigate model bias.  If Step 5 of the ring test were replaced with
+one of these algorithms for measuring ellipticity, then maybe the
+effect of DCR could better be isolated from the effects of model bias.
 
 \begin{figure*}
 \begin{center}
