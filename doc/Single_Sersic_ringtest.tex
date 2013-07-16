@@ -48,16 +48,16 @@ measuring the small departure from statistical isotropy of distant
 galaxy shapes induced by the gravitational lensing from foreground
 large scale structure.  The shapes of galaxy images collected from
 telescopes, however, are not only affected by cosmic shear (typically
-a $\sim$ 1\% effect), but also by the combined point spread function
-(PSF) of the atmosphere (for ground-based experiments), telescope
-optics, and the image sensor (often a few \% effect).  The shape of
-this additional convolution kernel is typically constrained from the
-shapes of stars, which are effectively point sources before being
-smeared by the PSF.  Galaxy images can then be deconvolved with the
-estimated convolution kernel.  Implicit in this approach is the
+a $\lesssim$ 1\% effect), but also by the combined point spread
+function (PSF) of the atmosphere (for ground-based experiments),
+telescope optics, and the image sensor (often a few \% effect).  The
+shape of this additional convolution kernel is typically constrained
+from the shapes of stars, which are effectively point sources before
+being smeared by the PSF.  Galaxy images can then be deconvolved with
+the estimated convolution kernel.  Implicit in this approach is the
 assumption that the galactic kernel is the same as the stellar kernel.
 Effects that make the PSF dependent on wavelength will violate this
-assumption, as stars and galaxies at different redshifts, have
+assumption, as stars and galaxies at different redshifts have
 different spectral energy distributions, and hence different PSFs.
 
 Examples of wavelength-dependent PSF contributions include:
@@ -71,51 +71,52 @@ Examples of wavelength-dependent PSF contributions include:
 
 This note will focus on PSF mis-estimations due to the first of the
 above effects, though the conclusions are applicable to any situation
-in which the bias due to using the wrong PSF is estimated using a ring
-test with a simple model parameterization.
+in which the bias due to using the wrong PSF is estimated using a
+``ring test'' with a simple model parameterization.
 
 \section{Analytic Expectations}\label{sec:analytic}
-\citet{Plazas2012} derived analytic expressions for the bias expected
-in weak lensing measurements due to differential chromatic refraction.
-We summarize the main points of their argument here.
+\citet[][hereafter PB12]{Plazas2012} derived analytic expressions for
+the bias expected in weak lensing measurements due to differential
+chromatic refraction.  We summarize the main points of their argument
+here.
 
-Let $R(\lambda, z_a)$ be the refraction towards the zenith of a photon
+Let $R(\lambda; z_a)$ be the refraction towards the zenith of a photon
 with wavelength $\lambda$ and true zenith angle (before refraction)
 $z_A$.  The refraction can be factored into
 \begin{equation}
-  R(\lambda; z_a) =  g(\lambda) \mathrm{tan}(z_a)
+  R(\lambda; z_a) =  h(\lambda) \mathrm{tan}(z_a),
   \label{eqn:Rlamza}
 \end{equation}
-and $g(\lambda)$, which implicitly depends on air pressure,
-temperature, and the partial pressure of water vapor, and can be
-obtained from \citet{Edlen1953} and \citet{Coleman1960}.  For
-monochromatic sources, the only effect is to move the apparent
-position of the object.  For sources which are not monochromatic
-(i.e. all real sources), having a wavelength density of surviving
-photons (i.e. the product of the source photon density and the total
-system throughput function) given by $\mathrm{p}_{\lambda}(\lambda)$,
-the mismatched displacements of different wavelengths introduces a
-convolution kernel in the zenith direction that can be written in
-terms of the inverse of Equation \ref{eqn:Rlamza}:
+where $h(\lambda)$ implicitly depends on air pressure, temperature,
+and the partial pressure of water vapor, and can be obtained from
+\citet{Edlen1953} and \citet{Coleman1960}.  For monochromatic sources,
+the only effect is to move the apparent position of the object.  For
+sources that are not monochromatic (i.e., all real sources), having a
+wavelength density of surviving photons (i.e., the product of the
+source photon density and the total system throughput function) given
+by $p_{\lambda}(\lambda)$, the mismatched displacements of different
+wavelengths introduces a convolution kernel in the zenith direction
+that can be written in terms of the inverse of Equation
+\ref{eqn:Rlamza}:
 \begin{equation}
-  h(R) = \frac{p_\lambda(\lambda(R; z_a)) \left|\od{\lambda}{R}\right|}{\int{p_\lambda(\lambda) \dif{\lambda}}}
+  k(R) = \frac{p_\lambda(\lambda(R; z_a)) \left|\od{\lambda}{R}\right|}{\int{p_\lambda(\lambda) \dif{\lambda}}}
   \label{eqn:convker}
 \end{equation}
 This kernel can largely be characterized in terms of its first and
 second central moments given by:
 \begin{equation}
-  \bar{R} = \int{h(R) R \dif{R} } = \frac{\int{R(\lambda; z_a) p_\lambda(\lambda)\dif{\lambda} }}{\int{p_\lambda(\lambda) \dif{\lambda}}}
+  \bar{R} = \int{k(R) R \dif{R} } = \frac{\int{R(\lambda; z_a) p_\lambda(\lambda)\dif{\lambda} }}{\int{p_\lambda(\lambda) \dif{\lambda}}}
   \label{eqn:rbar}
 \end{equation}
 \begin{equation}
-  V = \int{h(R) (R - \bar{R})^2 \dif{R} } = \frac{\int{(R(\lambda; z_a) - \bar{R})^2 p_\lambda(\lambda)\dif{\lambda} }}{\int{p_\lambda(\lambda) \dif{\lambda}}}
+  V = \int{k(R) (R - \bar{R})^2 \dif{R} } = \frac{\int{(R(\lambda; z_a) - \bar{R})^2 p_\lambda(\lambda)\dif{\lambda} }}{\int{p_\lambda(\lambda) \dif{\lambda}}}
   \label{eqn:V}
 \end{equation}
 
 Galaxy shapes can be characterized by the quadrupole moments of their
 light distribution given by:
 \begin{equation}
-  I_{\mu \nu} = \frac{1}{f}\int{\dif{x} \dif{y} I(x,y)\mu - \bar{\mu}(\nu - \bar{\nu})}
+  I_{\mu \nu} = \frac{1}{f}\int{\dif{x} \dif{y} I(x,y)(\mu - \bar{\mu})(\nu - \bar{\nu})}
 \end{equation}
 \begin{equation}
   \bar{\mu} = \frac{1}{f}\int{\dif{x} \dif{y} I(x,y)\mu}
@@ -170,15 +171,16 @@ profile of the galaxy in question.
 An alternative way to estimate the bias in $\hat{\gamma}$ induced by
 DCR is to simulate galaxy images using the ``true'' (galactic) PSF and
 then attempt to recover the simulated galactic ellipticities while
-pretending that the PSF is ``wrong'' (stellar).  A ring test
-\citep{Nakajima2007} is a specific prescription for such a suite of
-simulations designed to rapidly converge to the correct value of
+using the ``wrong'' (stellar) PSF.  A ring test \citep{Nakajima2007}
+is a specific prescription for such a suite of simulations designed to
+rapidly converge to the correct (though biased) value of
 $\hat{\gamma}$.  The test gets its name from the arrangement of galaxy
 shapes used in the simulated images, which form a ring in ellipticity
-space (i.e. constant $|e|$), before any shear is applied.  By choosing
-intrinsic ellipticities that exactly average to zero, the results of
-the test converge faster than for randomly (but isotropically) chosen
-ellipticities that only average to zero statistically.
+space centered at the origin (i.e., $|e|$ is constant), before any
+shear is applied.  By choosing intrinsic ellipticities that exactly
+average to zero, the results of the test converge faster than for
+randomly (but isotropically) chosen ellipticities that only average to
+zero statistically.
 
 The general procedure can be implemented as follows:
 
@@ -189,15 +191,15 @@ The general procedure can be implemented as follows:
   \item Generate a ``truth'' image by convolving the galaxy model with
     the ``true'' PSF (galactic in this case)
   \item Using a ``reconstruction'' PSF (stellar in this case), find
-    the best fitting model to the ``truth'' image, record the measured
-    ellipticity from the model parameters
+    the best fitting model to the ``truth'' image, and record the
+    measured ellipticity from the model parameters
   \item Repeat steps 3-5 using the opposite pre-sheared ellipticity
     $-e^s$
   \item Repeat steps 2-6 for as many values around the ellipticity
     ring as desired
   \item Average all recorded output ellipticity values.  This is the
     shear estimate $\hat{g}$
-  \item Repeat steps 1-8 to map out the relation $g(\hat{g})$
+  \item Repeat steps 1-8 to map out the relation $\hat{g}(g)$
   \item $m$ and $c$ are the slope and intercept of the best-fit linear
     relation between $g$ and $\hat{g}$ (note we assume that $g \approx
     \gamma$)
@@ -214,12 +216,12 @@ Using $r$ as an elliptical radial coordinate, the profile shape is:
   I(r) \propto \mathrm{e}^{[-k (r/r_e)^2]^{\frac{1}{2 n}}}
 \end{equation}
 The constant $k \approx 1.9992 n - 0.3271$ is chosen such that $r_e$
-is the half-light radius for a circularized profile.  Limiting cases
+is the half-light radius for a circularized profile.  Specific cases
 of the Sersic profile include the Gaussian profile which has $n=0.5$,
 an exponential profile which has $n=1.0$, and a de Vaucouleurs profile
 which has $n=4.0$.  The profile ranges from smoothly peaked with small
 tails at low $n$ (such as an $n=0.5$ Gaussian), to very sharply peak
-with heavy tails (such as an $n=4.0$ deVaucoulers profile).
+with heavy tails (such as an $n=4.0$ de Vaucouleurs profile).
 
 In addition to a galaxy model, the ring test also requires a model for
 the PSF.  We have described above the PSF kernel that describes the
@@ -236,14 +238,16 @@ profile:
 \end{equation}
 The PSF used in the ring test in this note is based on a Moffat
 profile with a FWHM of $0$\farcs$7$ and softening parameter $\beta =
-2.6$.  This base PSF is then convolved (in the zenith direction only)
-with the DCR kernel given in Equation \ref{eqn:convker}.  The ``true''
-PSF uses a DCR kernel derived from a galaxy SED, while the
-``reconstruction'' PSF uses a DCR kernel derived from a stellar SED.
+2.6$, values which were chosen based on fits to simulated LSST stars
+via the photon-by-photon simulation package phoSim.  This base PSF is
+then convolved (in the zenith direction only) with the DCR kernel
+given in Equation \ref{eqn:convker}.  The ``true'' PSF uses a DCR
+kernel derived from a galaxy SED, while the ``reconstruction'' PSF
+uses a DCR kernel derived from a stellar SED.
 
 \section{Sersic index dependence}\label{sec:sersic}
 
-The results of the ring test for set of Sersic galaxies are shown in
+The results of the ring test for a set of Sersic galaxies are shown in
 Figure \ref{fig:mandc}.  The galaxy size quantified by $r^2$ is the
 same for each Sersic index.  The ring test results match the analytic
 formulae well when Gaussian galaxies ($n=0.5$) are used, but diverge
@@ -322,8 +326,8 @@ residuals to the fit are more susceptible to bias.  Comparing Figures
 \ref{fig:gauss}, \ref{fig:exp}, and \ref{fig:deV}, we see visually
 that the residuals grow with the Sersic index, which explains how the
 $n=4.0$ curve of Figure \ref{fig:mandc} became so different than the
-analytic prediction.  All of the curves are subject to bias both model
-bias and bias from DCR, but the $n=4.0$ curve is the most sensitive to
+analytic prediction.  All of the curves are subject to both model bias
+and bias from DCR, but the $n=4.0$ curve is the most sensitive to
 model bias.  The visual comparison is backed up by the data in Table
 \ref{table:fitqual}.  As the Sersic index increases, the best fit
 $\chi^2$ also increases indicating a worse fit.  From the quadrupole
