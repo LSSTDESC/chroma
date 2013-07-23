@@ -18,6 +18,9 @@ lib64
 output
 catalogs
 stdout
+batch_sextract
+plots
+*.pik
 
 # Installer logs
 pip-log.txt
