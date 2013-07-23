@@ -17,7 +17,7 @@ def add_to_plot(infile, ax1, ax2, color, n):
             calib['m1'].append(float(m1))
             calib['m2'].append(float(m2))
             calib['m_analytic'].append(float(m_analytic))
-            calib['c_analytic'].append(float(m_analytic)/2.0)
+            calib['c_analytic'].append(-float(m_analytic)/2.0)
 
     ax1.scatter(calib['z'], calib['m1'], marker='s', c='None',
                 label=n, edgecolor=color)

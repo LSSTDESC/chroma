@@ -126,7 +126,7 @@ def calib_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
             m, c = measure_shear_calib(gparam1, gal_PSF, star_PSF, s_engine)
 
             gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
-            m_analytic = (smom[1] - gmom[1]) * (3600 * 180 / numpy.pi)**2 / (0.27**2)
+            m_analytic = - (gmom[1] - smom[1]) * (3600 * 180 / numpy.pi)**2 / (0.27**2)
             fil.write('{} {} {} {}\n'.format(z, c, m, m_analytic))
             bar.update()
         fil.close()
