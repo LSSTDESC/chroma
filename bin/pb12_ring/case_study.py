@@ -89,7 +89,7 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False, zeni
     betas = numpy.linspace(0.0, 2.0 * numpy.pi, 2 * n_ring, endpoint=False)
     out = numpy.empty(len(betas), dtype=[('ellip', 'c8'),
                                          ('chisqr','f8'),
-                                         ('FoM','f8')])
+                                         ('FoD','f8')])
     iout = 0
     for beta in betas:
         # generate target image
@@ -165,9 +165,9 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False, zeni
         Qapresid_o = Qap_o - Qapfit_o
         Qapresid_p = Qap_p - Qapfit_p
 
-        # fit FoM is sum of pixelized xx and yy quadrupole moments
-        FoM = Qapresid_p[0] + Qapresid_p[1]
-        out[iout] = (efit_model, FoM, fit.chisqr)
+        # fit FoD is sum of pixelized xx and yy quadrupole moments
+        FoD = Qapresid_p[0] + Qapresid_p[1]
+        out[iout] = (efit_model, FoD, fit.chisqr)
         iout +=1
 
         # output!
@@ -343,7 +343,7 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
     m_calib = complex(m0, m1)
 
     delta_V = (gmom[1] - smom[1]) * (180 * 3600 / numpy.pi)**2
-    PB12_m = complex(delta_V / (0.27**2), delta_V / (0.27**2))
+    PB12_m = complex(-delta_V / (0.27**2), -delta_V / (0.27**2))
     PB12_c = complex(delta_V / (0.27**2) / 2, 0)
 
     print
@@ -364,8 +364,8 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
     print 'ring m: {:9.6f}'.format(m_calib)
     print 'average chisqr: {:8.5e}'.format((sum(diag['chisqr']) \
                                             + sum(diag2['chisqr'])) / (2 * len(diag)))
-    print 'average FoM: {:8.5e}'.format((sum(diag['FoM']) \
-                                         + sum(diag2['FoM'])) / (2 * len(diag)))
+    print 'average FoD: {:8.5e}'.format((sum(diag['FoD']) \
+                                         + sum(diag2['FoD'])) / (2 * len(diag)))
 
 
 
