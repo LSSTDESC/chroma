@@ -53,7 +53,7 @@ def GSAtmPSF(wave, photons,
     # need to take out the huge zenith angle dependence, normalize to whatever the
     # refraction is at 685 nm
     R685 = chroma.atm_refrac(685.0, **kwargs)
-    pixels = (R - R685) * 3600 * 180 / numpy.pi / plate_scale # degrees -> pixels
+    pixels = (R - R685) * 3600 * 180 / numpy.pi / plate_scale # radians -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
     angle_dens = angle_dens[sort]
@@ -107,26 +107,22 @@ def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.6, moffat_FWHM_
                    moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
     ''' Include both dispersion effects and seeing vs. wavelength effects when constructing PSF.
     Really slow right now!'''
-
     R = chroma.atm_refrac(wave, **kwargs)
     R685 = chroma.atm_refrac(685.0, **kwargs)
     R_pixels = (R - R685) * 3600 * 180 / numpy.pi / plate_scale
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
     for w, p, Rp in zip(wave, photons, R_pixels):
-
-        fwhm = moffat_FWHM_500 * (w / 500)**(-0.2)
-        psf1 = galsim.Moffat(flux=p,
-                             fwhm=fwhm,
-                             beta=moffat_beta)
+        fwhm = moffat_FWHM_500 * (w / 500.0)**(-0.2)
+        psf1 = galsim.Moffat(flux=p, fwhm=fwhm, beta=moffat_beta)
         psf1.applyShift(0.0, Rp)
         mpsfs.append(psf1)
     PSF = galsim.Add(mpsfs)
     beta = moffat_phi * galsim.radians
     PSF.applyShear(g=moffat_ellip, beta=beta)
-    im = galsim.ImageD(105, 105) #arbitrary numbers!
-    PSF.draw(image=im, dx=1.0/7)
-    PSF = galsim.InterpolatedImage(im, dx=1.0/7)
+    im = galsim.ImageD(106, 106) #arbitrary numbers!
+    PSF.draw(image=im, dx=1./7)
+    PSF = galsim.InterpolatedImage(im, dx=1./7)
     return PSF
 
 class VoigtEuclidPSF(object):
