@@ -15,60 +15,13 @@ def fiducial_galaxy():
     gparam.add('n', value=4.0, vary=False)
     gparam.add('r_e', value=1.0)
     gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.2)
+    gparam.add('gmag', value=0.0, min=0.0, max=1.0)
     gparam.add('phi', value=0.0)
     return gparam
-
-def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
-    galtool = chroma.GalTools.SGalTool(s_engine)
-
-    def gen_target_image(gamma, beta):
-        ring_gparam = galtool.get_ring_params(gparam, gamma, beta)
-        return s_engine.get_image(ring_gparam, gal_PSF)
-
-    # function to measure ellipticity of target_image by trying to match the pixels
-    # but using the "wrong" PSF (from the stellar SED)
-    def measure_ellip(target_image, init_param):
-        def resid(param):
-            im = s_engine.get_image(param, star_PSF)
-            return (im - target_image).flatten()
-        result = lmfit.minimize(resid, init_param)
-        # print
-        # print
-        # print
-        # print
-        # print
-        # print
-        # lmfit.report_errors(result.params)
-        gmag = result.params['gmag'].value
-        phi = result.params['phi'].value
-        c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
-        return c_ellip
-
-    def get_ring_params(gamma, beta):
-        return galtool.get_ring_params(gparam, gamma, beta)
-
-    gamma0 = 0.0 + 0.0j
-    gamma0_hat = chroma.utils.ringtest(gamma0, 3,
-                                       gen_target_image,
-                                       get_ring_params,
-                                       measure_ellip, silent=True)
-    c = gamma0_hat.real, gamma0_hat.imag
-
-    gamma1 = 0.01 + 0.02j
-    gamma1_hat = chroma.utils.ringtest(gamma1, 3,
-                                       gen_target_image,
-                                       get_ring_params,
-                                       measure_ellip, silent=True)
-    m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
-    m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
-    m = m0, m1
-    return m, c
 
 # wiki.python.org/moin/PythonDecoratorLibrary#Memoize
 import collections
 import functools
-
 class memoized(object):
    '''Decorator. Caches a function's return value each time it is called.
    If called later with the same arguments, the cached value is returned
@@ -121,7 +74,7 @@ def measure_gamma_hat(gparam, gal_PSF, star_PSF, s_engine, gamma0):
                                  get_ring_params,
                                  measure_ellip, silent=True)
 
-def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
+def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/180):
     s_engine = chroma.ImageEngine.GalSimSEngine(size=41)
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
@@ -139,6 +92,7 @@ def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
     smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
     gparam = fiducial_galaxy()
+    gparam['gmag'].value = g
     gparam['n'].value = n
     # gparam['gmag'].value = 0.0
     galtool = chroma.GalTools.SGalTool(s_engine)
@@ -183,7 +137,7 @@ def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
     ax1.set_ylabel('$\hat{\gamma_1}$')
     ax2.set_xlabel('$\gamma_1$')
     ax2.set_ylabel('obs - PB12')
-    ax1.set_title('n = {}'.format(n))
+    ax1.set_title('n = {}, g = {}'.format(n, g))
 
     # PB12 analytic results
     ax1.plot(g1s, [c_PB12.real + (1.0 + m_PB12.real) * g for g in g1s])
@@ -197,9 +151,15 @@ def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
                     marker=m, label=g2)
         resids = [gamma_hat(g).real - (c_PB12.real + (1.0 + m_PB12.real) * g.real) for g in gs]
         ax2.scatter([g.real for g in gs], resids, marker=m)
-        vals = numpy.append(vals, resids)
-        xs = numpy.append(xs, [g.real for g in gs])
-        ys = numpy.append(ys, [gamma_hat(g).real for g in gs])
+        #HACK!
+        if g2 == 0.0:
+            vals = numpy.append(vals, resids[1:])
+            xs = numpy.append(xs, [g.real for g in gs])
+            ys = numpy.append(ys, [gamma_hat(g).real for g in gs])
+        else:
+            vals = numpy.append(vals, resids)
+            xs = numpy.append(xs, [g.real for g in gs])
+            ys = numpy.append(ys, [gamma_hat(g).real for g in gs])
     ax1.legend(title='$\gamma_2$', fontsize=9)
 
     # fit line to the data points
@@ -235,7 +195,7 @@ def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
     ax3.set_ylabel('$\hat{\gamma_2}$')
     ax4.set_xlabel('$\gamma_2$')
     ax4.set_ylabel('obs - PB12')
-    ax3.set_title('n = {}'.format(n))
+    ax3.set_title('n = {}, g = {}'.format(n, g))
     ax3.plot(g1s, [c_PB12.imag + (1.0 + m_PB12.imag) * g for g in g1s])
 
     vals = numpy.array([])
@@ -276,10 +236,12 @@ def calibration_linearity(filter_name, gal, z, star, n, zenith=30*numpy.pi/180):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) < 2:
-        print 'usage: python calibration_linearity.py n'
+    if len(sys.argv) < 3:
+        print 'usage: python calibration_linearity.py n g'
         print
         print 'n : Sersic index'
+        print 'g : ellipticity of galaxy |g| used in ring tests'
         sys.exit()
     else:
-        calibration_linearity('r', 'CWW_E_ext', 1.25, 'ukg5v', float(sys.argv[1]))
+        calibration_linearity('r', 'CWW_E_ext', 1.25, 'ukg5v',
+                              float(sys.argv[1]), float(sys.argv[2]))
