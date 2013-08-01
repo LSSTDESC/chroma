@@ -74,7 +74,7 @@ def measure_gamma_hat(gparam, gal_PSF, star_PSF, s_engine, gamma0):
                                  get_ring_params,
                                  measure_ellip, silent=True)
 
-def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/180):
+def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/180):
     s_engine = chroma.ImageEngine.GalSimSEngine(size=41)
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
@@ -92,7 +92,7 @@ def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/18
     smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
     gparam = fiducial_galaxy()
-    gparam['gmag'].value = g
+    gparam['gmag'].value = e
     gparam['n'].value = n
     # gparam['gmag'].value = 0.0
     galtool = chroma.GalTools.SGalTool(s_engine)
@@ -137,7 +137,7 @@ def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/18
     ax1.set_ylabel('$\hat{\gamma_1}$')
     ax2.set_xlabel('$\gamma_1$')
     ax2.set_ylabel('obs - PB12')
-    ax1.set_title('n = {}, g = {}'.format(n, g))
+    ax1.set_title('n = {}, e = {}'.format(n, e))
 
     # PB12 analytic results
     ax1.plot(g1s, [c_PB12.real + (1.0 + m_PB12.real) * g for g in g1s])
@@ -182,6 +182,8 @@ def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/18
     yspan = yrange[1] - yrange[0]
     yrange = [yrange[0]-yspan*0.1, yrange[1] + yspan*0.1]
     ax2.set_ylim(yrange)
+    plt.savefig('output/cal.g1.n{}.e{}.pdf'.format(n, e))
+
 
     # g2 plot:
     f2 = plt.figure(figsize=(8,6), dpi=100)
@@ -195,7 +197,7 @@ def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/18
     ax3.set_ylabel('$\hat{\gamma_2}$')
     ax4.set_xlabel('$\gamma_2$')
     ax4.set_ylabel('obs - PB12')
-    ax3.set_title('n = {}, g = {}'.format(n, g))
+    ax3.set_title('n = {}, e = {}'.format(n, e))
     ax3.plot(g1s, [c_PB12.imag + (1.0 + m_PB12.imag) * g for g in g1s])
 
     vals = numpy.array([])
@@ -231,16 +233,15 @@ def calibration_linearity(filter_name, gal, z, star, n, g, zenith=30*numpy.pi/18
     yspan = yrange[1] - yrange[0]
     yrange = [yrange[0]-yspan*0.1, yrange[1] + yspan*0.1]
     ax4.set_ylim(yrange)
-
-    plt.show()
+    plt.savefig('output/cal.g2.n{}.e{}.pdf'.format(n, e))
 
 if __name__ == '__main__':
     import sys
     if len(sys.argv) < 3:
-        print 'usage: python calibration_linearity.py n g'
+        print 'usage: python calibration_linearity.py n e'
         print
         print 'n : Sersic index'
-        print 'g : ellipticity of galaxy |g| used in ring tests'
+        print 'e : ellipticity of galaxy |e| used in ring tests'
         sys.exit()
     else:
         calibration_linearity('r', 'CWW_E_ext', 1.25, 'ukg5v',
