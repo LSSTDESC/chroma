@@ -82,26 +82,19 @@ def opsim_parse():
     out['z_a'], out['q'] = parallactic_zenith_angles(HA, out['fieldDec'])
     return out
 
-def airmass_vs_decln(cat):
-    decs = numpy.arange(-90, 90.0001, 5.0)
-    airmass = numpy.empty_like(decs)
-    dairmass = numpy.empty_like(decs)
-    for i, dec in enumerate(decs):
-        # conditions
-        c1 = cat['filter'] == 'r'
-        c2 = cat['fieldDec'] > (dec - 2.5) * numpy.pi/180
-        c3 = cat['fieldDec'] < (dec + 2.5) * numpy.pi/180
-        w = numpy.where(numpy.logical_and(numpy.logical_and(c1, c2), c3))[0]
-        airmass[i] = numpy.mean(cat[w]['airmass'])
-        dairmass[i] = numpy.std(cat[w]['airmass'])
-    return decs, airmass, dairmass
+def loadcat():
+    return numpy.load('indata/opsim.npy')
 
-def airmass_decl_density(cat):
+def lensing_visits(cat):
     r_cond = cat['filter'] == 'r'
     i_cond = cat['filter'] == 'i'
     X_cond = cat['airmass'] < 2.0
-    w = numpy.where(numpy.logical_and(numpy.logical_or(r_cond, i_cond), X_cond))[0]
-    dec_bins = numpy.arange(-90, 20.001, 2.0) * numpy.pi/180
+    return numpy.logical_and(numpy.logical_or(r_cond, i_cond), X_cond)
+
+def airmass_dec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    dec_bins = numpy.arange(-90, 20.001, 3.0) * numpy.pi/180
     X_bins = numpy.arange(1.0, 2.0, 0.02)
     H, yedges, xedges = numpy.histogram2d(cat[w]['airmass'], cat[w]['fieldDec'],
                                           bins=(X_bins, dec_bins))
@@ -112,13 +105,31 @@ def airmass_decl_density(cat):
     im = ax.imshow(H, extent=[xedges.min()*180/numpy.pi, xedges.max()*180/numpy.pi,
                               yedges.min(), yedges.max()], aspect='auto')
     f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/airmass_dec_density.pdf')
 
-def zenith_decl_density(cat):
-    r_cond = cat['filter'] == 'r'
-    i_cond = cat['filter'] == 'i'
-    za_cond = cat['z_a'] < 60.0 * numpy.pi/180
-    w = numpy.where(numpy.logical_and(numpy.logical_or(r_cond, i_cond), za_cond))[0]
-    dec_bins = numpy.arange(-90, 20.001, 2.0) * numpy.pi/180
+def airmass_sindec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    sindec_bins = numpy.arange(-1.0, 0.3, 0.04)
+    X_bins = numpy.arange(1.0, 2.0, 0.02)
+    H, yedges, xedges = numpy.histogram2d(cat[w]['airmass'],
+                                          numpy.sin(cat[w]['fieldDec']),
+                                          bins=(X_bins, sindec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('sin(declination)')
+    ax.set_ylabel('airmass')
+    im = ax.imshow(H, aspect='auto',
+                   extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()])
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/airmass_sindec_density.pdf')
+
+def zenith_dec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    dec_bins = numpy.arange(-90, 20.001, 3.0) * numpy.pi/180
     z_bins = numpy.arange(0.0, 60.0, 1.0) * numpy.pi/180
     H, yedges, xedges = numpy.histogram2d(cat[w]['z_a'], cat[w]['fieldDec'],
                                           bins=(z_bins, dec_bins))
@@ -130,6 +141,63 @@ def zenith_decl_density(cat):
                               yedges.min()*180/numpy.pi, yedges.max()*180/numpy.pi],
                               aspect='auto')
     f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/zenith_dec_density.pdf')
+
+def zenith_sindec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    sindec_bins = numpy.arange(-1.0, 0.3, 0.04)
+    z_bins = numpy.arange(0.0, 60.0, 1.0) * numpy.pi/180
+    H, yedges, xedges = numpy.histogram2d(cat[w]['z_a'], numpy.sin(cat[w]['fieldDec']),
+                                          bins=(z_bins, sindec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('sin(declination)')
+    ax.set_ylabel('zenith angle')
+    im = ax.imshow(H, extent=[xedges.min(), xedges.max(),
+                              yedges.min()*180/numpy.pi, yedges.max()*180/numpy.pi],
+                              aspect='auto')
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/zenith_sindec_density.pdf')
+
+def tanzenith_dec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    dec_bins = numpy.arange(-90, 20.001, 3.0) * numpy.pi/180
+    tanz_bins = numpy.arange(0.0, 1.5, 0.05)
+    H, yedges, xedges = numpy.histogram2d(numpy.tan(cat[w]['z_a']), cat[w]['fieldDec'],
+                                          bins=(tanz_bins, dec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('declination')
+    ax.set_ylabel('tan(zenith angle)')
+    im = ax.imshow(H, extent=[xedges.min()*180/numpy.pi, xedges.max()*180/numpy.pi,
+                              yedges.min(), yedges.max()],
+                              aspect='auto')
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/tanzenith_dec_density.pdf')
+
+def tanzenith_sindec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    sindec_bins = numpy.arange(-1.0, 0.3, 0.04)
+    tanz_bins = numpy.arange(0.0, 1.5, 0.05)
+    H, yedges, xedges = numpy.histogram2d(numpy.tan(cat[w]['z_a']), numpy.sin(cat[w]['fieldDec']),
+                                          bins=(tanz_bins, sindec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('sin(declination)')
+    ax.set_ylabel('tan(zenith angle)')
+    im = ax.imshow(H, extent=[xedges.min(), xedges.max(),
+                              yedges.min(), yedges.max()],
+                              aspect='auto')
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/tanzenith_sindec_density.pdf')
+
 
 def angle_dist(cat, fieldID, hardcopy=False):
     r_cond = cat['filter'] == 'r'
