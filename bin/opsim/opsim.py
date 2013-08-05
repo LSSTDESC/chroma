@@ -1,4 +1,7 @@
+import sys
+import os
 import gzip
+import glob
 
 import numpy
 
@@ -199,18 +202,21 @@ def tanzenith_sindec_density(cat, hardcopy=False):
         f.savefig('output/tanzenith_sindec_density.pdf')
 
 
-def angle_dist(cat, fieldID, hardcopy=False):
+def angle_dist(cat, fieldID, framenum=None, hardcopy=False):
     r_cond = cat['filter'] == 'r'
     i_cond = cat['filter'] == 'i'
     f_cond = cat['fieldID'] == fieldID
     w = numpy.where(numpy.logical_and(f_cond, numpy.logical_or(r_cond, i_cond)))[0]
     f = plt.figure()
-    ax = f.add_subplot(111)
+    ax = f.add_axes([0.1, 0.11, 0.64, 0.79])
+#    ax = f.add_subplot(111)
     ax.set_xlim(-90, 90)
     ax.set_ylim(-90, 90)
-    title = '$\\alpha$ = {:10.5f}, $\delta$ = {:10.5f}'.format(cat[w[0]]['fieldRA'] * 180/numpy.pi,
-                                                               cat[w[0]]['fieldDec'] * 180/numpy.pi)
-    ax.set_title(title)
+    title = 'Field # = {:04d} $\\alpha$ = {:9.5f}, $\delta$ = {:9.5f}'
+    title = title.format(fieldID,
+                         cat[w[0]]['fieldRA'] * 180/numpy.pi,
+                         cat[w[0]]['fieldDec'] * 180/numpy.pi)
+    ax.set_title(title, family='monospace')
     ax.plot([-90., 90], [0.0, 0.0], color='k')
     ax.plot([0.0, 0.0], [-90., 90], color='k')
 
@@ -219,7 +225,7 @@ def angle_dist(cat, fieldID, hardcopy=False):
     z, q = parallactic_zenith_angles(HAs, cat[w[0]]['fieldDec'])
     x = z * numpy.cos(q) * 180 / numpy.pi
     y = z * numpy.sin(q) * 180 / numpy.pi
-    ax.plot(x, y, color='k')
+    ax.plot(x, y, color='k', lw=2)
 
     # plot actual observations color coded by hour angle
     x = cat[w]['z_a'] * numpy.cos(cat[w]['q']) * 180 / numpy.pi
@@ -230,48 +236,54 @@ def angle_dist(cat, fieldID, hardcopy=False):
     for x1, y1, h1 in zip(x, y, h):
         ax.scatter(x1, y1, color=mpl.cm.rainbow(h1/2/numpy.pi + 0.5), zorder=3)
 
-    f.subplots_adjust(hspace=0.02, wspace=0.07, bottom=0.11, right=0.8)
-    cbar_ax = f.add_axes([0.85, 0.11, 0.04, 0.79])
+    f.subplots_adjust(hspace=0.15, wspace=0.07, bottom=0.11, right=0.8)
+    cbar_ax = f.add_axes([0.82, 0.11, 0.04, 0.79])
     cbar_ax.set_title('HA')
     cmap = mpl.cm.rainbow
     norm = mpl.colors.Normalize(vmin=-12, vmax=12)
     mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm, orientation='vertical')
 
+    # gray out horizon
     thetas = numpy.linspace(0, numpy.pi, 100)
-    x = numpy.cos(thetas) * 90
-    y = numpy.sin(thetas) * 90
-    ax.fill_between(x, y, 90, color='k', alpha=0.5)
-    ax.fill_between(x, -90, -y, color='k', alpha=0.5)
+    x = numpy.cos(thetas)
+    y = numpy.sin(thetas)
+    ax.fill_between(x * 90, y * 90, 90, color='k', alpha=0.5)
+    ax.fill_between(x * 90, -90, -y * 90, color='k', alpha=0.5)
+
+    # plot some zenith angle circles
+    thetas = numpy.linspace(0, 2 * numpy.pi, 100)
+    x = numpy.cos(thetas)
+    y = numpy.sin(thetas)
+    ax.plot(x * 60, y * 60, color='k')
+    ax.plot(x * 30, y * 30, color='k')
 
     if hardcopy == True:
-        f.savefig('frame{:04d}.png'.format(fieldID))
-    f.clf()
-    return fieldID
+        f.savefig('frames/frame{:04d}.png'.format(framenum))
+    return framenum
 
-
-def make_movie_frames(cat):
+def make_movie_frames(cat, start=0):
     s=list(set(cat['fieldID']))
-    with astropy.utils.console.ProgressBar(len(s)) as bar:
-        for s1 in s:
-            proc=mp.Process(target=angle_dist, args=(cat, s1, True))
-            proc.daemon=True
-            proc.start()
-            proc.join()
-#            angle_dist(cat, s1, hardcopy=True)
-            bar.update()
-
-def log_results(fieldID):
-    print fieldID
-
-def make_movie_frames2(cat):
-    s=list(set(cat['fieldID']))
-    pool = mp.Pool(processes=8)
-    for s1 in s:
-        junk = pool.apply_async(angle_dist, args=(cat, s1, True), callback = log_results)
+    pool = mp.Pool(processes=4, maxtasksperchild=4)
+    def updatebar(fieldID):
+        print fieldID
+    for i, s1 in enumerate(s[start:]):
+        pool.apply_async(angle_dist, args=(cat, s1, i+start, True), callback=updatebar)
     pool.close()
     pool.join()
 
+def reframe():
+    fns = glob.glob('frames/frame????.png')
+    numpy.sort(fns)
+    for i, fn in enumerate(fns):
+        if fn != 'frames/frame{:04d}.png'.format(i):
+            os.rename(fn, 'frames/frame{:04d}.png'.format(i))
+
+
 
 if __name__ == '__main__':
-    cat = numpy.load('opsim.npy')
-    make_movie_frames2(cat)
+    cat = loadcat()
+    if len(sys.argv) < 2:
+        start=0
+    else:
+        start=int(sys.argv[1])
+    make_movie_frames(cat, start)
