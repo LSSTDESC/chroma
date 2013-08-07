@@ -202,6 +202,46 @@ def tanzenith_sindec_density(cat, hardcopy=False):
         f.savefig('output/tanzenith_sindec_density.pdf')
 
 
+def coszenithm35_dec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    dec_bins = numpy.arange(-90, 20.001, 3.0) * numpy.pi/180
+    coszm35_bins = numpy.arange(1.0, 2.0, 0.05)
+    H, yedges, xedges = numpy.histogram2d(numpy.cos(cat[w]['z_a'])**(-3/5),
+                                          cat[w]['fieldDec'],
+                                          bins=(coszm35_bins, dec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('declination')
+    ax.set_ylabel('cos$^{-3/5}$(zenith angle)')
+    im = ax.imshow(H, extent=[xedges.min()*180/numpy.pi, xedges.max()*180/numpy.pi,
+                              yedges.min(), yedges.max()],
+                              aspect='auto')
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/coszenithm35_dec_density.pdf')
+
+
+def coszenithm35_sindec_density(cat, hardcopy=False):
+    w = lensing_visits(cat)
+
+    sindec_bins = numpy.arange(-1.0, 0.3, 0.04)
+    coszm35_bins = numpy.arange(1.0, 2.0, 0.05)
+    H, yedges, xedges = numpy.histogram2d(numpy.cos(cat[w]['z_a'])**(-3/5),
+                                          numpy.sin(cat[w]['fieldDec']),
+                                          bins=(coszm35_bins, sindec_bins))
+    f = plt.figure()
+    ax = f.add_subplot(111)
+    ax.set_xlabel('sin(declination)')
+    ax.set_ylabel('cos$^{-3/5}$(zenith angle)')
+    im = ax.imshow(H, extent=[xedges.min(), xedges.max(),
+                              yedges.min(), yedges.max()],
+                              aspect='auto')
+    f.colorbar(im)
+    if hardcopy:
+        f.savefig('output/coszenithm35_sindec_density.pdf')
+
+
 def angle_dist(cat, fieldID, framenum=None, hardcopy=False):
     r_cond = cat['filter'] == 'r'
     i_cond = cat['filter'] == 'i'
