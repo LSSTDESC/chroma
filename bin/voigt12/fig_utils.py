@@ -65,7 +65,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
     # create galaxy and adjust effective radii such that
     # FWHM(gal convolved with PSF) / FWHM(PSF) = 1.4
     # make size adjustment assuming circularized galaxy and PSFs
-    bdtool = chroma.GalTools.BDGalTools(bd_engine)
+    bdtool = chroma.GalTools.BDGalTool(bd_engine)
     PSF_FWHM = bd_engine.get_PSF_FWHM(circ_composite_PSF)
     circ_gparam = bdtool.circularize(gparam)
     circ_gparam = bdtool.set_FWHM(circ_gparam, 1.4 * PSF_FWHM, circ_bulge_PSF, circ_disk_PSF)
