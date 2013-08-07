@@ -46,8 +46,10 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     return PSF
 
 def GSAtmPSF(wave, photons,
-             plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5,
+             plate_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
              moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
     # get photon density binned by refraction angle
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence, normalize to whatever the
@@ -77,6 +79,8 @@ def GSAtmPSF(wave, photons,
 def GSGaussAtmPSF(wave, photons,
                   plate_scale=0.2, FWHM=3.5,
                   gauss_phi=0.0, gauss_ellip=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Gaussian PSF with a DCR kernel in the zenith (y) direction.'''
     # get photon density binned by refraction angle
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence:
@@ -103,10 +107,10 @@ def GSGaussAtmPSF(wave, photons,
     PSF = galsim.Convolve([aPSF, gPSF])
     return PSF
 
-def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.6, moffat_FWHM_500=3.5,
+def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.5, moffat_FWHM_500=3.5,
                    moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
-    ''' Include both dispersion effects and seeing vs. wavelength effects when constructing PSF.
-    Really slow right now!'''
+    ''' Returns a Galsim SBProfile object representing an atmospheric chromatic PSF characterized by
+    both DCR and seeing chromatic effects.'''
     R = chroma.atm_refrac(wave, **kwargs)
     R685 = chroma.atm_refrac(685.0, **kwargs)
     R_pixels = (R - R685) * 3600 * 180 / numpy.pi / plate_scale
@@ -120,9 +124,26 @@ def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.6, moffat_FWHM_
     PSF = galsim.Add(mpsfs)
     beta = moffat_phi * galsim.radians
     PSF.applyShear(g=moffat_ellip, beta=beta)
-    im = galsim.ImageD(106, 106) #arbitrary numbers!
-    PSF.draw(image=im, dx=1./7)
-    PSF = galsim.InterpolatedImage(im, dx=1./7)
+    im = galsim.ImageD(315, 315) #arbitrary numbers!
+    PSF.draw(image=im, dx=1./21)
+    PSF = galsim.InterpolatedImage(im, dx=1./21)
+    return PSF
+
+def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
+                moffat_ellip=0.0, moffat_phi=0.0):
+    ''' Returns a Galsim SBProfile object representing an atmospheric chromatic PSF characterized by
+    both DCR and seeing chromatic effects.'''
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p in zip(wave, photons):
+        fwhm = moffat_FWHM_500 * (w / 500.0)**(-0.2)
+        psf1 = galsim.Moffat(flux=p, fwhm=fwhm, beta=moffat_beta)
+        mpsfs.append(psf1)
+    PSF = galsim.Add(mpsfs)
+    PSF.applyShear(g=moffat_ellip, beta=moffat_beta * galsim.radians)
+    im = galsim.ImageD(124, 124) #arbitrary numbers!
+    PSF.draw(image=im, dx=1./3)
+    PSF = galsim.InterpolatedImage(im, dx=1./3)
     return PSF
 
 class VoigtEuclidPSF(object):
@@ -414,7 +435,7 @@ class ConvolvePSF(object):
 
 class VoigtAtmPSF(object):
     def __init__(self, wave, photons,
-                 plate_scale=0.2, moffat_beta=2.6, moffat_FWHM=3.5, **kwargs):
+                 plate_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5, **kwargs):
         self.wave = wave
         self.photons = photons
         self.aPSF = AtmDispPSF(wave, photons, plate_scale=plate_scale, **kwargs)

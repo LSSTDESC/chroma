@@ -32,7 +32,7 @@ class GalSimEngine(object):
         Also convolves in a square pixel.
         '''
         pixel = galsim.Pixel(pixsize)
-        cvls = [galsim.Convolve(gal, PSF, pixel, gsparams=self.gsp) for gal, PSF in obj_list]
+        cvls = [galsim.Convolve([PSF, gal, pixel], gsparams=self.gsp) for gal, PSF in obj_list]
         gal = galsim.Add(cvls)
         return gal
 
