@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.colorbar as clb
 from matplotlib.backends.backend_pdf import PdfPages
 import galsim
-galsim.GSParams.maximum_fft_size = 16384
 
 import _mypath
 import chroma
@@ -279,10 +278,11 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
     star_SED_file = data_dir+'SEDs/ukg5v.ascii'
 
     swave, sphotons = chroma.utils.get_photons(star_SED_file, filter_file, 0.0)
-    # swave = swave[::50]
-    # sphotons = sphotons[::50]
+    # thin out stellar spectrum
+    swave = swave[::50]
+    sphotons = sphotons[::50]
     sphotons /= scipy.integrate.simps(sphotons, swave)
-    star_PSF = PSF_model(swave, sphotons, zenith=zenith, moffat_FWHM=2.5)
+    star_PSF = PSF_model(swave, sphotons, zenith=zenith)
     smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
     gparam = lmfit.Parameters()
@@ -291,17 +291,18 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
     gparam.add('n', value=n, vary=False)
     gparam.add('r_e', value=1.0)
     gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.2)
+    gparam.add('gmag', value=0.2, min=0.0, max=1.0)
     gparam.add('phi', value=0.0)
 
     gparam = galtool.set_uncvl_r2(gparam, (0.27/0.2)**2) # 0.27 arcsecond second moment radius
 
     redshift = 1.3
     gwave, gphotons = chroma.utils.get_photons(gal_SED_file, filter_file, redshift)
-    # gwave = gwave[::50]
-    # gphotons = gphotons[::50]
+    # thin out galactic spectrum
+    gwave = gwave[::50]
+    gphotons = gphotons[::50]
     gphotons /= scipy.integrate.simps(gphotons, gwave)
-    gal_PSF = PSF_model(gwave, gphotons, zenith=zenith, moffat_FWHM=2.5)
+    gal_PSF = PSF_model(gwave, gphotons, zenith=zenith)
     gmom = chroma.disp_moments(gwave, gphotons, zenith=zenith)
 
     print
@@ -371,14 +372,14 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
 
 if __name__ == '__main__':
     case_study(0.5, zenith=numpy.pi*30/180, bd=False)
-    case_study(0.5, zenith=numpy.pi*30/180, bd=True)
+    # case_study(0.5, zenith=numpy.pi*30/180, bd=True)
     case_study(0.5, zenith=numpy.pi*60/180, bd=False)
-    case_study(0.5, zenith=numpy.pi*60/180, bd=True)
+    # case_study(0.5, zenith=numpy.pi*60/180, bd=True)
     case_study(1.0, zenith=numpy.pi*30/180, bd=False)
-    case_study(1.0, zenith=numpy.pi*30/180, bd=True)
+    # case_study(1.0, zenith=numpy.pi*30/180, bd=True)
     case_study(1.0, zenith=numpy.pi*60/180, bd=False)
-    case_study(1.0, zenith=numpy.pi*60/180, bd=True)
+    # case_study(1.0, zenith=numpy.pi*60/180, bd=True)
     case_study(4.0, zenith=numpy.pi*30/180, bd=False)
-    case_study(4.0, zenith=numpy.pi*30/180, bd=True)
+    # case_study(4.0, zenith=numpy.pi*30/180, bd=True)
     case_study(4.0, zenith=numpy.pi*60/180, bd=False)
-    case_study(4.0, zenith=numpy.pi*60/180, bd=True)
+    # case_study(4.0, zenith=numpy.pi*60/180, bd=True)

@@ -68,7 +68,7 @@ def measure_shear_calib(gparam, gal_PSF, star_PSF, s_engine):
     return m, c
 
 def calib_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
-    s_engine = chroma.ImageEngine.GalSimSEngine(size=41)#size=41, oversample_factor=41)
+    s_engine = chroma.ImageEngine.GalSimSEngine(size=31)
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0
@@ -132,9 +132,9 @@ def calib_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
         fil.close()
 
 def main(argv):
-    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 4.0, zenith=50*numpy.pi/180)
-    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 1.0, zenith=50*numpy.pi/180)
-    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 0.5, zenith=50*numpy.pi/180)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 4.0, zenith=30*numpy.pi/180)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 1.0, zenith=30*numpy.pi/180)
+    calib_vs_redshift('r', 'CWW_E_ext', 'ukg5v', 0.5, zenith=30*numpy.pi/180)
 
 if __name__ == '__main__':
     main(sys.argv)
