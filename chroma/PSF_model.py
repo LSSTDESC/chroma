@@ -141,7 +141,7 @@ def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
         mpsfs.append(psf1)
     PSF = galsim.Add(mpsfs)
     PSF.applyShear(g=moffat_ellip, beta=moffat_beta * galsim.radians)
-    im = galsim.ImageD(124, 124) #arbitrary numbers!
+    im = galsim.ImageD(124, 124) #arbitrary numbers!  support up to 41x41 stamp
     PSF.draw(image=im, dx=1./3)
     PSF = galsim.InterpolatedImage(im, dx=1./3)
     return PSF
