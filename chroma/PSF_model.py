@@ -124,9 +124,9 @@ def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.5, moffat_FWHM_
     PSF = galsim.Add(mpsfs)
     beta = moffat_phi * galsim.radians
     PSF.applyShear(g=moffat_ellip, beta=beta)
-    im = galsim.ImageD(315, 315) #arbitrary numbers!
-    PSF.draw(image=im, dx=1./21)
-    PSF = galsim.InterpolatedImage(im, dx=1./21)
+    im = galsim.ImageD(288, 288) #arbitrary numbers!
+    PSF.draw(image=im, dx=1./7)
+    PSF = galsim.InterpolatedImage(im, dx=1./7)
     return PSF
 
 def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
