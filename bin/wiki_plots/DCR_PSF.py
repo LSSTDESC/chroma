@@ -69,6 +69,23 @@ def photon_hists(wave, photons, title, outfile):
     ax2.plot(xs, moffat(xs) / 1.2, color='black')
     fig.savefig(outfile)
 
+def keynote_figs():
+    data_dir = '../../data/SEDs/'
+    G5v_file = data_dir + 'ukg5v.ascii'
+    swave, sflux = numpy.genfromtxt(G5v_file).T
+    photons = sflux * swave
+    photon_hists(swave, photons, 'G5v star, zenith = 30 degrees', 'output/d.G5v.png')
+    Ellip_file = data_dir + 'CWW_E_ext.ascii'
+    gwave, gflux = numpy.genfromtxt(Ellip_file).T
+    gwave *= 2.3
+    photons = gflux * gwave
+    photon_hists(gwave, photons, 'E galaxy, z = 1.3, zenith = 30 degrees', 'output/d.E.png')
+    Sa_file = data_dir + 'KIN_Sa_ext.ascii'
+    gwave, gflux = numpy.genfromtxt(Sa_file).T
+    gwave *= 2.3
+    photons = gflux * gwave
+    photon_hists(gwave, photons, 'Sa galaxy, z = 1.3, zenith = 30 degrees', 'output/d.Sa.png')
+
 def main():
     stars = ['uko5v', 'ukf5v', 'ukm5v']
     starnames = ['O5v', 'F5v', 'M5v']
