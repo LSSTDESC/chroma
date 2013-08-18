@@ -1,8 +1,8 @@
 import sys
+import pickle
 
 import numpy
 import lmfit
-
 import matplotlib.pyplot as plt
 from astropy import wcs
 from astropy.io import fits
@@ -57,7 +57,7 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
 
     filter_number = {'u':'0','g':'1','r':'2','i':'3','z':'4','Y':'5'}
     obshistid = encode_obshistid(mode, mono_wave, filter_name, zenith, seed)
-    image_file = 'output/eimage_{}_f{}_R22_S11_E000.fits.gz'
+    image_file = 'output/lsst_e_{}_f{}_R22_S11_E000.fits.gz'
     image_file = image_file.format(obshistid, filter_number[filter_name])
 
     try:
@@ -107,149 +107,52 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
     return (numpy.mean(values['fwhm_x']), numpy.mean(values['fwhm_y']), numpy.mean(values['beta']),
             numpy.std(values['fwhm_x']), numpy.std(values['fwhm_y']), numpy.std(values['beta']))
 
-# start script
+def main():
+    waves = {'u': numpy.arange(325, 401, 25),
+             'g': numpy.arange(400, 551, 25),
+             'r': numpy.arange(550, 701, 25),
+             'i': numpy.arange(675, 826, 25),
+             'z': numpy.arange(800, 951, 25),
+             'Y': numpy.arange(900, 1100, 25)}
+    # waves = {'u': numpy.arange(325, 351, 25)}
 
-waves = {'u': numpy.arange(325, 401, 25),
-         'g': numpy.arange(400, 551, 25),
-         'r': numpy.arange(550, 701, 25),
-         'i': numpy.arange(675, 826, 25),
-         'z': numpy.arange(800, 951, 25),
-         'Y': numpy.arange(900, 1100, 25)}
-colors = {'u':'violet',
-          'g':'blue',
-          'r':'green',
-          'i':'yellow',
-          'z':'red',
-          'Y':'black'}
+    nfiles = sum(map(len, waves.values())) * 2
 
-nfiles = sum(map(len, waves.values()))
+    values = numpy.empty(nfiles,
+                         dtype=[('wave', 'i4'),
+                                ('filter', 'a1'),
+                                ('mode','i4'),
+                                ('fwhm_x', 'f4'),
+                                ('fwhm_y', 'f4'),
+                                ('beta', 'f4'),
+                                ('fwhm_x_err', 'f4'),
+                                ('fwhm_y_err', 'f4'),
+                                ('beta_err', 'f4')])
+    values[:] = numpy.nan
 
-values = numpy.empty(nfiles,
-                     dtype=[('wave', 'i4'),
-                            ('filter', 'a1'),
-                            ('fwhm_x', 'f4'),
-                            ('fwhm_y', 'f4'),
-                            ('beta', 'f4'),
-                            ('fwhm_x_err', 'f4'),
-                            ('fwhm_y_err', 'f4'),
-                            ('beta_err', 'f4')])
-values[:] = numpy.nan
+    i = 0
+    for f, ws in waves.iteritems():
+        for w in ws:
+            result = measure_moffat_fwhm(1, w, f, 0, 1000)
+            values[i] = (w, f, 1,
+                         result[0], result[1], result[2],
+                         result[3], result[4], result[5])
+            result = measure_moffat_fwhm(2, w, f, 0, 1000)
+            i += 1
+            values[i] = (w, f, 2,
+                         result[0], result[1], result[2],
+                         result[3], result[4], result[5])
+            i += 1
 
-i = 0
-for f, ws in waves.iteritems():
-    for w in ws:
-        result = measure_moffat_fwhm(1, w, f, 0, 1000)
-        values[i] = (w, f,
-                     result[0], result[1], result[2],
-                     result[3], result[4], result[5])
-        i += 1
+    # ignore 500nm since spectrum here is wrong.
+    values['fwhm_x'][values['wave'] == 500] = numpy.nan
+    values['fwhm_y'][values['wave'] == 500] = numpy.nan
+    values['beta'][values['wave'] == 500] = numpy.nan
+    values['fwhm_x_err'][values['wave'] == 500] = numpy.nan
+    values['fwhm_y_err'][values['wave'] == 500] = numpy.nan
+    values['beta_err'][values['wave'] == 500] = numpy.nan
 
-# ignore 500nm beta since spectrum here is wrong.
-values['beta'][values['wave'] == 500] = numpy.nan
+    pickle.dump(values, open('seeing_vs_wave.pik', 'w'))
 
-# fwhm plot
-fig = plt.figure()
-ax = plt.subplot(111)
-for k in waves.keys():
-    ind = values['filter'] == k
-    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
-                ls='none', marker='o', color=colors[k])
-    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_y'], values[ind]['fwhm_y_err'],
-                ls='none', marker='o', color=colors[k])
-ax.set_xlabel('wavelength (nm)')
-ax.set_ylabel('FWHM (pixels)')
-
-x=numpy.linspace(300, 1100, 100)
-y=values[numpy.where(values['wave'] == 550)[0][0]]['fwhm_x'] * (x/550.)**(-0.2)
-ax.plot(x, y)
-plt.show()
-
-# beta plot
-fig2 = plt.figure()
-ax = plt.subplot(111)
-for k in waves.keys():
-    ind = values['filter'] == k
-    ax.errorbar(values[ind]['wave'], values[ind]['beta'], values[ind]['beta_err'],
-                ls='none', marker='o', color=colors[k])
-ax.set_xlabel('wavelength (nm)')
-ax.set_ylabel(r'$\beta$')
-plt.show()
-
-# telescopemode 0 analysis
-#---------------------------------------------------------------------------------------------------
-values = numpy.empty(nfiles,
-                     dtype=[('wave', 'i4'),
-                            ('filter', 'a1'),
-                            ('fwhm_x', 'f4'),
-                            ('fwhm_y', 'f4'),
-                            ('beta', 'f4'),
-                            ('fwhm_x_err', 'f4'),
-                            ('fwhm_y_err', 'f4'),
-                            ('beta_err', 'f4')])
-values[:] = numpy.nan
-
-i = 0
-for f, ws in waves.iteritems():
-    for w in ws:
-        result = measure_moffat_fwhm(2, w, f, 0, 1000)
-        values[i] = (w, f,
-                     result[0], result[1], result[2],
-                     result[3], result[4], result[5])
-        i += 1
-
-# ignore 500nm beta since spectrum here is wrong.
-values['beta'][values['wave'] == 500] = numpy.nan
-
-# fwhm plot
-fig = plt.figure()
-ax = plt.subplot(111)
-ax.set_title('telescopemode 0')
-for k in waves.keys():
-    ind = values['filter'] == k
-    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
-                ls='none', marker='o', color=colors[k])
-    ax.errorbar(values[ind]['wave'], values[ind]['fwhm_y'], values[ind]['fwhm_y_err'],
-                ls='none', marker='o', color=colors[k])
-ax.set_xlabel('wavelength (nm)')
-ax.set_ylabel('FWHM (pixels)')
-
-x=numpy.linspace(300, 1100, 100)
-y=values[numpy.where(values['wave'] == 550)[0][0]]['fwhm_x'] * (x/550.)**(-0.2)
-ax.plot(x, y)
-plt.show()
-
-# beta plot
-fig2 = plt.figure()
-ax = plt.subplot(111)
-ax.set_title('telescopemode 0')
-for k in waves.keys():
-    ind = values['filter'] == k
-    ax.errorbar(values[ind]['wave'], values[ind]['beta'], values[ind]['beta_err'],
-                ls='none', marker='o', color=colors[k])
-ax.set_xlabel('wavelength (nm)')
-ax.set_ylabel(r'$\beta$')
-plt.show()
-
-# loop over different atmospheres
-#---------------------------------------------------------------------------------------------------
-values = numpy.empty(100,
-                     dtype=[('fwhm_x', 'f4'),
-                            ('fwhm_y', 'f4')])
-values[:] = numpy.nan
-
-i = 0
-for sd in numpy.arange(1000, 1100):
-    print i
-    result = measure_moffat_fwhm(1, 600, 'r', 0, sd)
-    values[i] = (result[0], result[1])
-    i += 1
-
-# fwhm_x vs fwhm_y plot
-fig = plt.figure()
-ax = plt.subplot(111)
-ax.scatter(values['fwhm_x'], values['fwhm_y'])
-ax.set_xlabel('x FWHM (pixels)')
-ax.set_ylabel('y FWHM (pixels)')
-ax.plot([numpy.nanmin(values['fwhm_x']), numpy.nanmax(values['fwhm_x'])],
-        [numpy.nanmin(values['fwhm_x']), numpy.nanmax(values['fwhm_x'])])
-plt.show()
+if __name__ == '__main__':
+    main()

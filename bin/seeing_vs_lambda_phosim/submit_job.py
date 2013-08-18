@@ -18,7 +18,7 @@ def submit_job(mode, mono_wave, filter_name, zenith, seed, test=False):
         sys.exit()
 
     obshistid = encode_obshistid(mode, mono_wave, filter_name, zenith, seed)
-    phosim_dir = '/nfs/slac/g/ki/ki19/jmeyers3/phosim-3.2.9/'
+    phosim_dir = '/nfs/slac/g/ki/ki19/jmeyers3/phosim-3.3.2/'
     sub_dir = '/nfs/slac/g/ki/ki19/jmeyers3/chroma/bin/seeing_vs_lambda_phosim/'
     cat_dir = sub_dir + 'catalogs/'
     cat_file = cat_dir + 'stargrid_' + obshistid
@@ -28,13 +28,13 @@ def submit_job(mode, mono_wave, filter_name, zenith, seed, test=False):
     if not os.path.exists('stdout/'):
         os.mkdir('stdout/')
     out_dir = '/nfs/slac/g/ki/ki19/jmeyers3/chroma/bin/seeing_vs_lambda_phosim/output/'
-    command = '"cd {} && ./phosim {} -c {} -e0 -sR22_S11 -o {}"'.format(phosim_dir,
+    command = '"cd {} && python phosim.py {} -c {} -e0 -sR22_S11 -o {}"'.format(phosim_dir,
                                                                        cat_file,
                                                                        extra_file,
                                                                        out_dir)
     stdout_file = sub_dir + 'stdout/' + obshistid
     job_name = obshistid
-    full_command = 'bsub -q long -oo {} -J {} {}'.format(stdout_file, job_name, command)
+    full_command = 'bsub -q xlong -oo {} -J {} {}'.format(stdout_file, job_name, command)
     print full_command
     if not test:
         subprocess.call(full_command, shell=True)
