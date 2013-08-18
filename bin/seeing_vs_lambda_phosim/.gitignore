@@ -18,6 +18,8 @@ lib64
 output
 catalogs
 stdout
+plots
+*.pik
 
 # Installer logs
 pip-log.txt
