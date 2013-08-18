@@ -74,6 +74,7 @@ def plot_size_error(filter_name):
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 4.0)
     ax1.set_ylabel('$\Delta log(R_*^2)$')
+    ax1.set_xlabel('z')
     ax1.set_title('filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')
