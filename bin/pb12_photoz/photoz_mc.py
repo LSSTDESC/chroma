@@ -85,12 +85,12 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
     ax1.scatter(z, R)
-    ax2.hist(R, 50, color='Red', orientation='horizontal', range=[-0.005, 0.005])
+    ax2.hist(R, bins=50, color='Red', orientation='horizontal', range=[-0.006, 0.006])
     ax3.scatter(z, V)
-    ax4.hist(V, 50, color='Red', orientation='horizontal', range=[-0.0003, 0.0003])
+    ax4.hist(V, bins=50, color='Red', orientation='horizontal', range=[-0.0003, 0.0003])
 
-    ax1.set_ylim([-0.005, 0.005])
-    ax2.set_ylim([-0.005, 0.005])
+    ax1.set_ylim([-0.006, 0.006])
+    ax2.set_ylim([-0.006, 0.006])
     ax3.set_ylim([-0.0003, 0.0003])
     ax4.set_ylim([-0.0003, 0.0003])
     ax1.set_xlim([0.0, 3.0])
@@ -99,8 +99,9 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$')
     ax3.set_ylabel('$\Delta \mathrm{V}$')
     ax3.set_xlabel('redshift')
-    ax1.set_title('zenith = {:02d} degrees, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
-                                                                filtername))
+    title_text = 'zenith angle = {:02d} degrees, filter = {}'
+    title_text = title_text.format(int(round(zenith * 180 / numpy.pi)), filtername)
+    ax1.set_title(title_text)
 
     if not os.path.exists('output/'):
         os.mkdir('output/')

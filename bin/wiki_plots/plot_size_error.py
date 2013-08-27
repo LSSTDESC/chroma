@@ -73,8 +73,8 @@ def plot_size_error(filter_name):
     f = plt.figure(figsize=(8,6), dpi=100)
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 4.0)
-    ax1.set_ylabel('$\Delta log(R_*^2)$')
-    ax1.set_xlabel('z')
+    ax1.set_ylabel('$\delta(\mathrm{ln}\, r_{PSF}^2)$')
+    ax1.set_xlabel('redshift')
     ax1.set_title('filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')

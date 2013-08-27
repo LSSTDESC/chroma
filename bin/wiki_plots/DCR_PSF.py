@@ -74,17 +74,17 @@ def keynote_figs():
     G5v_file = data_dir + 'ukg5v.ascii'
     swave, sflux = numpy.genfromtxt(G5v_file).T
     photons = sflux * swave
-    photon_hists(swave, photons, 'G5v star, zenith = 30 degrees', 'output/d.G5v.png')
+    photon_hists(swave, photons, 'G5v star, zenith angle = 30 degrees', 'output/d.G5v.png')
     Ellip_file = data_dir + 'CWW_E_ext.ascii'
     gwave, gflux = numpy.genfromtxt(Ellip_file).T
     gwave *= 2.3
     photons = gflux * gwave
-    photon_hists(gwave, photons, 'E galaxy, z = 1.3, zenith = 30 degrees', 'output/d.E.png')
+    photon_hists(gwave, photons, 'E galaxy, z = 1.3, zenith angle = 30 degrees', 'output/d.E.png')
     Sa_file = data_dir + 'KIN_Sa_ext.ascii'
     gwave, gflux = numpy.genfromtxt(Sa_file).T
     gwave *= 2.3
     photons = gflux * gwave
-    photon_hists(gwave, photons, 'Sa galaxy, z = 1.3, zenith = 30 degrees', 'output/d.Sa.png')
+    photon_hists(gwave, photons, 'Sa galaxy, z = 1.3, zenith angle = 30 degrees', 'output/d.Sa.png')
 
 def main():
     stars = ['uko5v', 'ukf5v', 'ukm5v']
@@ -95,7 +95,7 @@ def main():
         swave, sflux = sdata[:,0], sdata[:,1]
         photons = sflux * swave
         photon_hists(swave, photons,
-                     '{} star, zenith = 30 degrees'.format(starname),
+                     '{} star, zenith angle = 30 degrees'.format(starname),
                      'output/d.{}.png'.format(starname))
 
     gals = ['CWW_E', 'CWW_Sbc', 'CWW_Im']
@@ -107,7 +107,7 @@ def main():
         photons = gflux * gwave
         gwave *= 2.0 # z = 1.0
         photon_hists(gwave, photons,
-                     '{} galaxy, z = 1.0, zenith = 30 degrees'.format(galname),
+                     '{} galaxy, z = 1.0, zenith angle = 30 degrees'.format(galname),
                      'output/d.{}.png'.format(galname))
 
     cmd = 'convert -delay 200 -loop 0 '

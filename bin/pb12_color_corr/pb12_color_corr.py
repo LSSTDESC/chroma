@@ -126,8 +126,8 @@ def pb12_color_corr(shape_filter, color_filters, zenith):
     ax2 = plt.subplot2grid((3,1), (2,0))
     ax2.set_xlabel('{} - {}'.format(*color_filters))
     ax2.set_ylabel('residual')
-    ax1.set_title('zenith = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
-                                                    shape_filter))
+    ax1.set_title('zenith angle = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
+                                                          shape_filter))
 
     #plot gal residuals
     for i in range(len(gals)):
@@ -167,8 +167,8 @@ def pb12_color_corr(shape_filter, color_filters, zenith):
     ax2 = plt.subplot2grid((3,1), (2,0))
     ax2.set_xlabel('{} - {}'.format(*color_filters))
     ax2.set_ylabel('residual')
-    ax1.set_title('zenith = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
-                                                    shape_filter))
+    ax1.set_title('zenith angle = {}, filter = {}'.format(int(round(zenith * 180 / numpy.pi)),
+                                                          shape_filter))
 
     #plot gal residuals
     for i in range(len(gals)):
@@ -200,5 +200,5 @@ def pb12_color_corr(shape_filter, color_filters, zenith):
                                                        color_filters[1],
                                                        int(round(zenith * 180 / numpy.pi))))
 
-#if __name__ == '__main__':
-#    pb12_color_corr(['g', 'r'], 'r', 30.0 * numpy.pi / 180)
+if __name__ == '__main__':
+   pb12_color_corr('r', ['r', 'i'], 30.0 * numpy.pi / 180)

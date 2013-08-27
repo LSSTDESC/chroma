@@ -97,7 +97,8 @@ def plot_analytic_moments(filter_name, zenith, seed):
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 4.0)
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)')
-    ax1.set_title('zenith = 30, filter = {}'.format(filter_name))
+    ax1.set_xlabel('redshift')
+    ax1.set_title('zenith angle = 30, filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')
 
@@ -134,7 +135,8 @@ def plot_analytic_moments(filter_name, zenith, seed):
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 4.0)
     ax1.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)')
-    ax1.set_title('zenith = 30, filter = {}'.format(filter_name))
+    ax1.set_xlabel('redshift')
+    ax1.set_title('zenith angle = 30, filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')
 
