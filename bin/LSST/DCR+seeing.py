@@ -110,7 +110,7 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
 
     return m, c
 
-def panel1_bulge_sersic_index(bd_engine, PSF_model):
+def panel2_bulge_sersic_index(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
     bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
@@ -124,7 +124,7 @@ def panel1_bulge_sersic_index(bd_engine, PSF_model):
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    fil = open('output/panel1_bulge_sersic_index.dat', 'w')
+    fil = open('output/panel2_bulge_sersic_index.dat', 'w')
     for bulge_n in [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         print 'Running with bulge Sersic index = {}'.format(bulge_n)
         gparam = fiducial_galaxy()
@@ -136,7 +136,7 @@ def panel1_bulge_sersic_index(bd_engine, PSF_model):
         fil.write('{} {} {}\n'.format(bulge_n, c, m))
     fil.close()
 
-def panel1_bulge_flux(bd_engine, PSF_model):
+def panel2_bulge_flux(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
     bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
@@ -150,7 +150,7 @@ def panel1_bulge_flux(bd_engine, PSF_model):
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    fil = open('output/panel1_bulge_flux.dat', 'w')
+    fil = open('output/panel2_bulge_flux.dat', 'w')
     for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         print 'Running with bulge flux fraction = {}'.format(bulge_flux)
         if bulge_flux not in [0.0, 1.0]:
@@ -166,7 +166,7 @@ def panel1_bulge_flux(bd_engine, PSF_model):
         fil.write('{} {} {}\n'.format(bulge_flux, c, m))
     fil.close()
 
-def panel1_gal_ellip(bd_engine, PSF_model):
+def panel2_gal_ellip(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
     bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
@@ -180,7 +180,7 @@ def panel1_gal_ellip(bd_engine, PSF_model):
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    fil = open('output/panel1_gal_ellip.dat', 'w')
+    fil = open('output/panel2_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
         print 'Running with galaxy ellipticity = {}'.format(gal_ellip)
         gparam = fiducial_galaxy()
@@ -193,7 +193,7 @@ def panel1_gal_ellip(bd_engine, PSF_model):
         fil.write('{} {} {}\n'.format(gal_ellip, c, m))
     fil.close()
 
-def panel1_y0(bd_engine, PSF_model):
+def panel2_y0(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
     bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
@@ -207,7 +207,7 @@ def panel1_y0(bd_engine, PSF_model):
 
     if not os.path.isdir('output/'):
         os.mkdir('output/')
-    fil = open('output/panel1_y0.dat', 'w')
+    fil = open('output/panel2_y0.dat', 'w')
     for y0 in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]:
         print 'Running with subpixel offset = {}'.format(y0)
         gparam = fiducial_galaxy()
@@ -220,7 +220,7 @@ def panel1_y0(bd_engine, PSF_model):
         fil.write('{} {} {}\n'.format(y0, c, m))
     fil.close()
 
-def panel1plot():
+def panel2plot():
     #setup plots
     fig = plt.figure(figsize=(10.0, 7.5), dpi=60)
     fig.subplots_adjust(left=0.1, right=0.9, wspace=0.3)
@@ -268,10 +268,12 @@ def panel1plot():
 
     calib = {'bulge_n':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('output/panel1_bulge_sersic_index.dat') as fil:
+        with open('output/panel2_bulge_sersic_index.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
+                line = line.replace('[', ' ')
+                line = line.replace(']', ' ')
                 line = line.replace(',', ' ')
                 line = ' '.join(line.split())
                 bulge_n, c1, c2, m1, m2 = line.split(' ')
@@ -292,10 +294,12 @@ def panel1plot():
 
     calib = {'bulge_flux':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('output/panel1_bulge_flux.dat') as fil:
+        with open('output/panel2_bulge_flux.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
+                line = line.replace('[', ' ')
+                line = line.replace(']', ' ')
                 line = line.replace(',', ' ')
                 line = ' '.join(line.split())
                 bulge_flux, c1, c2, m1, m2 = line.split(' ')
@@ -317,10 +321,12 @@ def panel1plot():
 
     calib = {'gal_ellip':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('output/panel1_gal_ellip.dat') as fil:
+        with open('output/panel2_gal_ellip.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
+                line = line.replace('[', ' ')
+                line = line.replace(']', ' ')
                 line = line.replace(',', ' ')
                 line = ' '.join(line.split())
                 gal_ellip, c1, c2, m1, m2 = line.split(' ')
@@ -341,10 +347,12 @@ def panel1plot():
 
     calib = {'y0':[], 'c1':[], 'c2':[], 'm1':[], 'm2':[]}
     try:
-        with open('output/panel1_y0.dat') as fil:
+        with open('output/panel2_y0.dat') as fil:
             for line in fil:
                 line = line.replace('(', ' ')
                 line = line.replace(')', ' ')
+                line = line.replace('[', ' ')
+                line = line.replace(']', ' ')
                 line = line.replace(',', ' ')
                 line = ' '.join(line.split())
                 y0, c1, c2, m1, m2 = line.split(' ')
@@ -361,28 +369,31 @@ def panel1plot():
     ax4.plot(calib['y0'], abs(numpy.array(calib['m2'])), 'x', mfc='None', mec='red', mew=1.3)
     ax4.plot(calib['y0'], abs(numpy.array(calib['m2'])), color='red', ls='--')
 
-    plt.savefig('output/panel1.pdf')
+    plt.savefig('output/panel2.pdf')
 
-def panel1data(argv):
-    if len(argv) == 1:
-        use='gs'
-    else:
-        use=argv[1]
-    if use == 'voigt':
-        bd_engine = chroma.ImageEngine.VoigtBDEngine()
-        PSF_model = chroma.PSF_model.VoigtAtmPSF
-    elif use == 'gs':
-        bd_engine = chroma.ImageEngine.GalSimBDEngine()
-        PSF_model = chroma.PSF_model.GSAtmPSF
-    else:
-        print 'unknown or missing command line option'
-        sys.exit()
+def panel2data(argv):
+    # if len(argv) == 1:
+    #     use='gs'
+    # else:
+    #     use=argv[1]
+    # if use == 'voigt':
+    #     bd_engine = chroma.ImageEngine.VoigtBDEngine()
+    #     PSF_model = chroma.PSF_model.VoigtAtmPSF
+    # elif use == 'gs':
+    #     bd_engine = chroma.ImageEngine.GalSimBDEngine()
+    #     PSF_model = chroma.PSF_model.GSAtmPSF
+    # else:
+    #     print 'unknown or missing command line option'
+    #     sys.exit()
 
-    panel1_bulge_sersic_index(bd_engine, PSF_model)
-    panel1_bulge_flux(bd_engine, PSF_model)
-    panel1_gal_ellip(bd_engine, PSF_model)
-    panel1_y0(bd_engine, PSF_model)
+    bd_engine = chroma.ImageEngine.GalSimBDEngine()
+    PSF_model = chroma.PSF_model.GSAtmSeeingPSF
+
+    panel2_bulge_sersic_index(bd_engine, PSF_model)
+    panel2_bulge_flux(bd_engine, PSF_model)
+    panel2_gal_ellip(bd_engine, PSF_model)
+    panel2_y0(bd_engine, PSF_model)
 
 # if __name__ == '__main__':
-#     panel1data(sys.argv)
-#     panel1plot()
+#     panel2data(sys.argv)
+#     panel2plot()
