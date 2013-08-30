@@ -32,19 +32,15 @@ fwhm_ax.set_ylabel('FWHM (pixels)')
 fwhm_ax.set_ylim(2.7, 4.5)
 for k in waves.keys():
     ind = numpy.logical_and(values['filter'] == k, values['mode'] == 1)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
-                     ls='none', marker='o', color=colors[k])
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_y'], values[ind]['fwhm_y_err'],
+    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k])
     ind = numpy.logical_and(values['filter'] == k, values['mode'] == 2)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
-                     ls='none', marker='o', color=colors[k], alpha=0.2)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_y'], values[ind]['fwhm_y_err'],
+    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k], alpha=0.2)
 
 x = numpy.linspace(300, 1100, 100)
 w600 = numpy.where(numpy.logical_and(values['wave'] == 600, values['mode'] == 2))[0][0]
-y600 = values[w600]['fwhm_x']
+y600 = values[w600]['fwhm']
 y= y600 * (x/600.)**(-0.2)
 fwhm_ax.plot(x, y)
 fwhm_fig.savefig('plots/FWHM.pdf')
@@ -79,12 +75,12 @@ fwhm_ax.set_ylim(2.8, 3.6)
 fwhm_ax.set_xlim(500, 900)
 for k in ['r', 'i']:
     ind = numpy.logical_and(values['filter'] == k, values['mode'] == 2)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
+    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k])
 
 x = numpy.linspace(300, 1100, 100)
 w700 = numpy.where(numpy.logical_and(values['wave'] == 700, values['mode'] == 2))[0][0]
-y700 = values[w700]['fwhm_x']
+y700 = values[w700]['fwhm']
 y= y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
@@ -112,15 +108,15 @@ fwhm_ax.set_ylim(2.8, 3.6)
 fwhm_ax.set_xlim(500, 900)
 for k in ['r', 'i']:
     ind = numpy.logical_and(values['filter'] == k, values['mode'] == 1)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
+    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k], alpha=0.2)
     ind = numpy.logical_and(values['filter'] == k, values['mode'] == 2)
-    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm_x'], values[ind]['fwhm_x_err'],
+    fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k])
 
 x = numpy.linspace(300, 1100, 100)
 w700 = numpy.where(numpy.logical_and(values['wave'] == 700, values['mode'] == 2))[0][0]
-y700 = values[w700]['fwhm_x']
+y700 = values[w700]['fwhm']
 y= y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
