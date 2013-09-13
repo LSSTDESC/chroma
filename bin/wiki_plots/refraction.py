@@ -86,6 +86,7 @@ for i, filter_file in enumerate(filter_files):
     ax.fill_between(fwave, throughput * 3.2 - 1, -1, color=colors[i], alpha=0.3)
 ax.legend(fontsize='small', title='zenith angle')
 fig.savefig('output/relative_refraction_vs_wavelength.png')
+fig.savefig('output/DCRfilters.pdf')
 
 # Third plot: refraction relative to 690 nanometers vs wavelength but only for weak lensing shape
 # measurement filters (r & i).
