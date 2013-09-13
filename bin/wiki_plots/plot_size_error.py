@@ -91,7 +91,7 @@ def plot_size_error(filter_name):
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
     gals = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
             'CWW_Im_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
-    gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue']
+    gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'Magenta']
 
     #plot gals
     zs = numpy.arange(0.0, 3.0, 0.03)
