@@ -162,7 +162,6 @@ blooming 0
 qevariation 0.0
 airglowvariation 0
 atmosphericdispersion 0
-telescopemode 0
 centroidfile 1
 ''')
     f.close()

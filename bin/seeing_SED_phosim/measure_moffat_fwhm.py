@@ -18,19 +18,28 @@ def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
     return SED_digit + filter_digit + zenith_digit + seed_digit + redshift_digits
 
 def moffat2d(params):
-    fwhm_x = params['fwhm_x'].value
-    fwhm_y = params['fwhm_y'].value
+    fwhm = params['fwhm'].value
     beta = params['beta'].value
-    peak = params['peak'].value
+    q = params['q'].value
+    phi = params['phi'].value
+    flux = params['flux'].value
     x0 = params['x0'].value
     y0 = params['y0'].value
 
-    alpha_x = fwhm_x / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
-    alpha_y = fwhm_y / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
+    alpha = fwhm / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
+    a = alpha / numpy.sqrt(q)
+    b = alpha * numpy.sqrt(q)
+    cph = numpy.cos(phi)
+    sph = numpy.sin(phi)
+    C11 = cph**2 / a**2 + sph**2 / b**2
+    C12 = 0.5 * (1.0 / a**2 - 1.0 / b**2) * numpy.sin(2.0 * phi)
+    C22 = sph**2 / a**2 + cph**2 / b**2
+
+    coeff = flux * (beta - 1.0) / (numpy.pi * alpha**2)
+
     def f(y, x):
-        u = ((x - x0) / alpha_x)**2.0 + ((y - y0) / alpha_y)**2.0
-        p = 1.0 / ((u + 1.0)**beta)
-        return peak*p/p.max()
+        u = 1.0 + (x - x0)**2 * C11 + 2.0 * (x - x0) * (y - y0) * C12 + (y - y0)**2 * C22
+        return coeff * u**(-beta)
     return f
 
 def moments(data, pixsize=1.0):
@@ -49,7 +58,14 @@ def moments(data, pixsize=1.0):
     Ixx = (data * (xs-xbar)**2).sum() / total
     Iyy = (data * (ys-ybar)**2).sum() / total
     Ixy = (data * (xs - xbar) * (ys - ybar)).sum() / total
-    return xbar, ybar, Ixx, Iyy, Ixy
+    return total, xbar, ybar, Ixx, Iyy, Ixy
+
+def moments_to_ellipse(Ixx, Ixy, Iyy):
+    r = numpy.sqrt(numpy.sqrt(4.0 * (Ixx*Iyy - Ixy**2))) # determinant
+    phi = 0.5 * numpy.arctan2(Iyy - Ixx, 2*Ixy)
+    discriminant = 4.0 / r**4 * (Ixx + Iyy)**2 - 4.0
+    q = 0.5 * ((2 / r**2) * (Ixx + Iyy) + numpy.sqrt(discriminant))
+    return r, q, phi
 
 def measure_moffat_fwhm(SED_type, filter_name, zenith, seed, redshift):
     # what will be the output of this function?
@@ -97,33 +113,42 @@ def measure_moffat_fwhm(SED_type, filter_name, zenith, seed, redshift):
 
     values = numpy.empty(len(RAs) * len(DECs),
                          dtype=[('type', numpy.str_, 8),
-                                ('fwhm_x','f4'),
-                                ('fwhm_y','f4'),
-                                ('beta', 'f4')])
+                                ('fwhm','f4'),
+                                ('beta', 'f4'),
+                                ('q', 'f4'),
+                                ('phi', 'f4'),
+                                ('flux', 'f4')])
 
     i=0
     for RA, typ in zip(RAs, obj_types):
         for DEC in DECs:
             center = w.wcs_world2pix(numpy.array([[RA, DEC]], numpy.float_),0)
             thumb = hdulist[0].data[center[0,1]-30:center[0,1]+30, center[0,0]-30:center[0,0]+30]
-            xbar, ybar, Ixx, Iyy, Ixy = moments(thumb)
+            flux, xbar, ybar, Ixx, Iyy, Ixy = moments(thumb)
+            r, q, phi = moments_to_ellipse(Ixx, Ixy, Iyy)
 
             params = lmfit.Parameters()
-            params.add('fwhm_x', value=numpy.sqrt(Ixx))
-            params.add('fwhm_y', value=numpy.sqrt(Iyy))
-            params.add('beta', value=2.5)
-            params.add('peak', value=thumb.max())
-            params.add('x0', xbar)
-            params.add('y0', ybar)
+            params.add('fwhm', value=r * 0.8, min=0.0, max=5.0)
+            params.add('beta', value=2.7, min=2.0, max=5.0)
+            params.add('q', value=q, min=0.0, max=1.0)
+            params.add('phi', value=4.0 * numpy.pi, min=0.0, max=8.0 * numpy.pi, vary=False)
+            params.add('flux', value=flux, min=0.0)
+            params.add('x0', value=xbar)
+            params.add('y0', value=ybar)
 
+            xs, ys = numpy.meshgrid(numpy.arange(thumb.shape[1]), numpy.arange(thumb.shape[0]))
             def resid(p):
-                xs, ys = numpy.meshgrid(numpy.arange(thumb.shape[1]), numpy.arange(thumb.shape[0]))
                 return (thumb - moffat2d(p)(ys, xs)).flatten()
             result = lmfit.minimize(resid, params)
+            params['phi'].vary=True
+            result = lmfit.minimize(resid, params)
+
             values[i] = (typ,
-                         result.params['fwhm_x'].value,
-                         result.params['fwhm_y'].value,
-                         result.params['beta'].value)
+                         result.params['fwhm'].value,
+                         result.params['beta'].value,
+                         result.params['q'].value,
+                         result.params['phi'].value,
+                         result.params['flux'].value)
             i += 1
 
     return values
