@@ -30,7 +30,7 @@ fig.savefig('output/refraction_vs_zenith.png')
 # First plot: refraction vs. wavelength for zenith angles between 0 deg and 50 deg
 
 zeniths = [10.0, 20.0, 30.0, 40.0, 50.0] # degrees
-waves = numpy.arange(300.0, 1100.0, 1.0) # nanometers
+waves = numpy.arange(300.0, 1200.0, 1.0) # nanometers
 
 # open figure for output
 fig = plt.figure(figsize=(10,5), dpi=80)
@@ -86,9 +86,40 @@ for i, filter_file in enumerate(filter_files):
     ax.fill_between(fwave, throughput * 3.2 - 1, -1, color=colors[i], alpha=0.3)
 ax.legend(fontsize='small', title='zenith angle')
 fig.savefig('output/relative_refraction_vs_wavelength.png')
+
+# Third plot:  a paper plot.  refraction and chromatic seeing on same axes.
+
+fig = plt.figure(figsize=(10,5), dpi=80)
+ax = fig.add_subplot(111)
+ax.set_xlabel('Wavelength (nm)')
+ax.set_xlim(300, 1200)
+ax.set_ylabel('Relative refraction (arcsec)')
+ax.set_ylim(-1, 1.)
+
+for zenith in zeniths:
+    # chroma expects angles in radians, so need to convert deg to radians
+    refrac_angle = chroma.atm_refrac(waves, zenith * numpy.pi/180)
+    refrac_ref = refrac_angle[numpy.argmin(abs(waves - 500))]
+    # chroma output is also in radians, so convert to arcsec here
+    ax.plot(waves, (refrac_angle - refrac_ref) * 206265, label=str(zenith)+' deg')
+
+for i, filter_file in enumerate(filter_files):
+    # filters are stored in two columns: wavelength (nm), and throughput
+    fdata = numpy.genfromtxt(filter_file)
+    fwave, throughput = fdata[:,0], fdata[:,1]
+    filter_name = filter_file.split('/')[-1].replace('.dat', '') # get filter name from file name
+    ax.fill_between(fwave, throughput * 3.2 - 1, -1, color=colors[i], alpha=0.3)
+# Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
+ax2 = ax.twinx()
+ys = (waves/500.0)**(-2./5)
+ax2.plot(waves, ys, 'k--', lw=2, label='$\lambda^{-2/5}$')
+ax.legend(fontsize='small', title='zenith angle')
+ax2.legend(fontsize='small', title='chromatic seeing', loc='center right')
+ax2.set_xlim(300, 1200)
+ax2.set_ylabel('Relative $r^2_\mathrm{PSF}$')
 fig.savefig('output/DCRfilters.pdf')
 
-# Third plot: refraction relative to 690 nanometers vs wavelength but only for weak lensing shape
+# Fourth plot: refraction relative to 690 nanometers vs wavelength but only for weak lensing shape
 # measurement filters (r & i).
 
 fig = plt.figure(figsize=(10,5), dpi=80)
