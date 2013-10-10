@@ -64,13 +64,27 @@ fwhm_ax = plt.subplot(111)
 fwhm_ax.set_xlabel('wavelength (nm)')
 fwhm_ax.set_ylabel('FWHM (pixels)')
 fwhm_ax.set_ylim(2.7, 4.5)
+# for k, ws in waves.iteritems():
+#     for w in ws:
+#         print k, w
+#         ind = numpy.logical_and(numpy.logical_and(values['filter'] == k,
+#                                                   values['mode'] == 1),
+#                                 values['wave'] == w)
+
+#         fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
+#                          ls='none', marker='o', color=colors[k])
+#         ind = numpy.logical_and(numpy.logical_and(values['filter'] == k,
+#                                                   values['mode'] == 2),
+#                                 values['wave'] == w)
+#         fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
+#                          ls='none', marker='o', color=colors[k], alpha=0.3)
 for k in waves.keys():
-    ind = numpy.logical_and(values['filter'] == k, values['mode'] == 1)
+    ind = (values['filter'] == k) & (values['mode'] == 1) & (values['flux'] > 1e4)
     fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
                      ls='none', marker='o', color=colors[k])
-    ind = numpy.logical_and(values['filter'] == k, values['mode'] == 2)
+    ind = (values['filter'] == k) & (values['mode'] == 2) & (values['flux'] > 1e4)
     fwhm_ax.errorbar(values[ind]['wave'], values[ind]['fwhm'], values[ind]['fwhm_err'],
-                     ls='none', marker='o', color=colors[k], alpha=0.2)
+                     ls='none', marker='o', color=colors[k], alpha=0.3)
 
 x = numpy.linspace(300, 1100, 100)
 w600 = numpy.where(numpy.logical_and(values['wave'] == 600, values['mode'] == 2))[0][0]

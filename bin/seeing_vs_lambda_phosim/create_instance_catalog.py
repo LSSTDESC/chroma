@@ -27,6 +27,7 @@ def create_instance_catalog(mode, mono_wave, filter_name, zenith, seed):
     filter_number = {'u':'0','g':'1','r':'2','i':'3','z':'4','Y':'5'}
     filter_num = filter_number[filter_name]
     obshistid = encode_obshistid(mode, mono_wave, filter_name, zenith, seed)
+    print obshistid
     outfilename = 'stargrid_{}'.format(obshistid)
     outstring = '''Unrefracted_RA_deg 0
 Unrefracted_Dec_deg 0
@@ -92,19 +93,19 @@ if __name__ == '__main__':
     for w in numpy.arange(300, 401, 25):
         create_instance_catalog(1, w, 'u', 0, 1000)
         create_instance_catalog(2, w, 'u', 0, 1000)
-    for w in numpy.arange(400, 551, 25):
+    for w in numpy.arange(375, 576, 25):
         create_instance_catalog(1, w, 'g', 0, 1000)
         create_instance_catalog(2, w, 'g', 0, 1000)
-    for w in numpy.arange(550, 701, 25):
+    for w in numpy.arange(525, 726, 25):
         create_instance_catalog(1, w, 'r', 0, 1000)
         create_instance_catalog(2, w, 'r', 0, 1000)
-    for w in numpy.arange(675, 826, 25):
+    for w in numpy.arange(650, 851, 25):
         create_instance_catalog(1, w, 'i', 0, 1000)
         create_instance_catalog(2, w, 'i', 0, 1000)
-    for w in numpy.arange(800, 951, 25):
+    for w in numpy.arange(775, 976, 25):
         create_instance_catalog(1, w, 'z', 0, 1000)
         create_instance_catalog(2, w, 'z', 0, 1000)
-    for w in numpy.arange(900, 1101, 25):
+    for w in numpy.arange(875, 1101, 25):
         create_instance_catalog(1, w, 'Y', 0, 1000)
         create_instance_catalog(2, w, 'Y', 0, 1000)
     # try a few different seeds for a specific wavelength

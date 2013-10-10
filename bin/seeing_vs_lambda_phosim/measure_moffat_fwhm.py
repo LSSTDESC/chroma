@@ -2,8 +2,9 @@ import sys
 import pickle
 
 import numpy
+import numpy.lib.recfunctions
 import lmfit
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from astropy import wcs
 from astropy.io import fits
 
@@ -41,22 +42,6 @@ def moffat2d(params):
         return coeff * u**(-beta)
     return f
 
-# def moffat2d(params):
-#     fwhm_x = params['fwhm_x'].value
-#     fwhm_y = params['fwhm_y'].value
-#     beta = params['beta'].value
-#     peak = params['peak'].value
-#     x0 = params['x0'].value
-#     y0 = params['y0'].value
-
-#     alpha_x = fwhm_x / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
-#     alpha_y = fwhm_y / (2.0 * numpy.sqrt(2.0**(1.0 / beta) - 1.0))
-#     def f(y, x):
-#         u = ((x - x0) / alpha_x)**2.0 + ((y - y0) / alpha_y)**2.0
-#         p = 1.0 / ((u + 1.0)**beta)
-#         return peak*p/p.max()
-#     return f
-
 def moments(data, pixsize=1.0):
     '''Compute first and second (quadrupole) moments of `data`.  Scales result by `pixsize` for
     non-unit width pixels.
@@ -86,9 +71,19 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
     if mode > 2:
         print 'invalid mode'
         sys.exit()
+    out = numpy.zeros(1, dtype=[('fwhm', 'f4'),
+                                ('fwhm_err', 'f4'),
+                                ('beta', 'f4'),
+                                ('beta_err', 'f4'),
+                                ('q', 'f4'),
+                                ('q_err', 'f4'),
+                                ('phi','f4'),
+                                ('phi_err','f4'),
+                                ('flux','f4'),
+                                ('flux_err','f4')])
+    out[0] = (numpy.NaN,)*10
     if mono_wave == 500:
-        return (numpy.nan, numpy.nan, numpy.nan, numpy.nan, numpy.nan,
-                numpy.nan, numpy.nan, numpy.nan, numpy.nan, numpy.nan)
+        return out
     filter_number = {'u':'0','g':'1','r':'2','i':'3','z':'4','Y':'5'}
     obshistid = encode_obshistid(mode, mono_wave, filter_name, zenith, seed)
     image_file = 'output/lsst_e_{}_f{}_R22_S11_E000.fits.gz'
@@ -97,8 +92,7 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
     try:
         hdulist = fits.open(image_file)
     except:
-        return (numpy.nan, numpy.nan, numpy.nan, numpy.nan, numpy.nan,
-                numpy.nan, numpy.nan, numpy.nan, numpy.nan, numpy.nan)
+        return out
     w = wcs.WCS(hdulist[0].header)
 
     RAs = [-0.035, -0.025, -0.015, -0.005, 0.005, 0.015, 0.025, 0.035]
@@ -119,6 +113,8 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
             center = w.wcs_world2pix(numpy.array([[RA, DEC]], numpy.float_),0)
             thumb = hdulist[0].data[center[0,1]-30:center[0,1]+30, center[0,0]-30:center[0,0]+30]
             flux, xbar, ybar, Ixx, Iyy, Ixy = moments(thumb)
+            if flux == 0.0:
+                return out
             r, q, phi = moments_to_ellipse(Ixx, Ixy, Iyy)
 
             params = lmfit.Parameters()
@@ -132,22 +128,11 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
 
             xs, ys = numpy.meshgrid(numpy.arange(thumb.shape[1]), numpy.arange(thumb.shape[0]))
 
-            # f=plt.figure()
-            # ax1=f.add_subplot(131)
-            # ax1.imshow(thumb, interpolation='nearest', vmin=0, vmax=3500)
-            # ax2=f.add_subplot(132)
-            # ax2.imshow(moffat2d(params)(ys, xs), interpolation='nearest', vmin=0, vmax=3500)
-
             def resid(p):
                 return (thumb - moffat2d(p)(ys, xs)).flatten()
             result = lmfit.minimize(resid, params)
             params['phi'].vary=True
             result = lmfit.minimize(resid, params)
-
-            # ax3=f.add_subplot(133)
-            # ax3.imshow(moffat2d(result.params)(ys,xs), interpolation='nearest', vmin=0, vmax=3500)
-            # plt.show()
-            # import ipdb; ipdb.set_trace()
 
             while result.params['phi'].value > 2.0 * numpy.pi:
                 result.params['phi'].value -= 2.0 * numpy.pi
@@ -161,31 +146,32 @@ def measure_moffat_fwhm(mode, mono_wave, filter_name, zenith, seed):
                          result.params['y0'].value)
             i += 1
 
-    print mono_wave
-    return (numpy.mean(values['fwhm']), numpy.std(values['fwhm']),
-            numpy.mean(values['beta']), numpy.std(values['beta']),
-            numpy.mean(values['q']), numpy.std(values['q']),
-            numpy.mean(values['phi']), numpy.std(values['phi']),
-            numpy.mean(values['flux']), numpy.std(values['flux']))
+    print mode, mono_wave, filter_name
+    outstring = 'fwhm = {:5.3f} +/- {:5.3f}    flux = {:010f}'
+    print outstring.format(numpy.mean(values['fwhm']),
+                           numpy.std(values['fwhm']),
+                           numpy.mean(values['flux']))
 
-    # outstring = 'fwhm_x = {:5.3f} +/- {:5.3f}, ' \
-    #   + 'fwhm_y = {:5.3f} +/- {:5.3f}, ' \
-    #   + 'beta = {:5.3f} +/- {:5.3f}'
-    # outstring = outstring.format(numpy.mean(values['fwhm_x']), numpy.std(values['fwhm_x']),
-    #                              numpy.mean(values['fwhm_y']), numpy.std(values['fwhm_y']),
-    #                              numpy.mean(values['beta']), numpy.std(values['beta']))
-    # print outstring
-    # return (numpy.mean(values['fwhm_x']), numpy.mean(values['fwhm_y']), numpy.mean(values['beta']),
-    #         numpy.std(values['fwhm_x']), numpy.std(values['fwhm_y']), numpy.std(values['beta']))
+    out['fwhm'] = numpy.mean(values['fwhm'])
+    out['fwhm_err'] = numpy.std(values['fwhm'])
+    out['beta'] = numpy.mean(values['beta'])
+    out['beta_err'] = numpy.std(values['beta'])
+    out['q'] = numpy.mean(values['q'])
+    out['q_err'] = numpy.std(values['q'])
+    out['phi'] = numpy.mean(values['phi'])
+    out['phi_err'] = numpy.std(values['phi'])
+    out['flux'] = numpy.mean(values['flux'])
+    out['flux_err'] = numpy.std(values['flux'])
 
+    return out
 
 def main():
-    waves = {'u': numpy.arange(325, 401, 25),
-             'g': numpy.arange(400, 551, 25),
-             'r': numpy.arange(550, 701, 25),
-             'i': numpy.arange(675, 826, 25),
-             'z': numpy.arange(800, 951, 25),
-             'Y': numpy.arange(900, 1100, 25)}
+    waves = {'u': numpy.arange(300, 401, 25),
+             'g': numpy.arange(375, 576, 25),
+             'r': numpy.arange(525, 726, 25),
+             'i': numpy.arange(650, 851, 25),
+             'z': numpy.arange(775, 976, 25),
+             'Y': numpy.arange(875, 1100, 25)}
     # waves = {'u': numpy.arange(325, 351, 25)}
 
     nfiles = sum(map(len, waves.values())) * 2
@@ -210,21 +196,21 @@ def main():
     i = 0
     for f, ws in waves.iteritems():
         for w in ws:
-            result = measure_moffat_fwhm(1, w, f, 0, 1000)
+            r1 = measure_moffat_fwhm(1, w, f, 0, 1000)
             values[i] = (w, f, 1,
-                         result[0], result[1],
-                         result[2], result[3],
-                         result[4], result[5],
-                         result[6], result[7],
-                         result[8], result[9])
-            result = measure_moffat_fwhm(2, w, f, 0, 1000)
+                         r1['fwhm'], r1['fwhm_err'],
+                         r1['beta'], r1['beta_err'],
+                         r1['q'], r1['q_err'],
+                         r1['phi'], r1['phi_err'],
+                         r1['flux'], r1['flux_err'])
             i += 1
+            r1 = measure_moffat_fwhm(2, w, f, 0, 1000)
             values[i] = (w, f, 2,
-                         result[0], result[1],
-                         result[2], result[3],
-                         result[4], result[5],
-                         result[6], result[7],
-                         result[8], result[9])
+                         r1['fwhm'], r1['fwhm_err'],
+                         r1['beta'], r1['beta_err'],
+                         r1['q'], r1['q_err'],
+                         r1['phi'], r1['phi_err'],
+                         r1['flux'], r1['flux_err'])
             i += 1
 
     # ignore 500nm since spectrum here is wrong.
