@@ -38,8 +38,7 @@ def photon_hists(wave, photons, title, outfile):
     filters = ['LSST_r', 'LSST_i']
     for f in filters:
         filter_file = '../../data/filters/{}.dat'.format(f)
-        fdata = numpy.genfromtxt(filter_file)
-        fwave, throughput = fdata[:,0], fdata[:,1]
+        fwave, throughput = numpy.genfromtxt(filter_file).T
         w = numpy.logical_and(fwave >= 500, fwave <= 1000)
         fwave = fwave[w]
         throughput = throughput[w]
@@ -91,8 +90,7 @@ def main():
     starnames = ['O5v', 'F5v', 'M5v']
     for star, starname in zip(stars, starnames):
         star_file = '../../data/SEDs/{}.ascii'.format(star)
-        sdata = numpy.genfromtxt(star_file)
-        swave, sflux = sdata[:,0], sdata[:,1]
+        swave, sflux = numpy.genfromtxt(star_file).T
         photons = sflux * swave
         photon_hists(swave, photons,
                      '{} star, zenith angle = 30 degrees'.format(starname),
@@ -102,8 +100,7 @@ def main():
     galnames = ['E', 'Sbc', 'Im']
     for gal, galname in zip(gals, galnames):
         gal_file = '../../data/SEDs/{}_ext.ascii'.format(gal)
-        gdata = numpy.genfromtxt(gal_file)
-        gwave, gflux = gdata[:,0], gdata[:,1]
+        gwave, gflux = numpy.genfromtxt(gal_file).T
         photons = gflux * gwave
         gwave *= 2.0 # z = 1.0
         photon_hists(gwave, photons,
