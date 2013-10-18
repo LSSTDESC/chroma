@@ -18,14 +18,15 @@ def moffat1d(fwhm, beta, center=0.0):
 cwave = numpy.linspace(500, 860, 256)
 fig, ax = plt.subplots(2, 2, figsize=(9,5), dpi=60)
 
-spectra = ['../../data/SEDs/'+s for s in ('CWW_E_ext.ascii', 'CWW_Im_ext.ascii')]
+spectra = ['../../data/SEDs/'+s for s in ('ukg5v.ascii', 'KIN_Sa_ext.ascii')]
+redshifts = [0.0, 1.3]
 filters = ['../../data/filters/'+s for s in ('LSST_r.dat', 'LSST_i.dat')]
 
 ax[1,0].set_xlabel('Wavelength (nm)')
 ax[1,1].set_xlabel('Refraction (arcsec)')
 for i, s in enumerate(spectra):
     wave, flux = numpy.genfromtxt(s).T
-    wave *= 2
+    wave *= (1 + redshifts[i])
     photons = flux * wave
     scale = 1.2 * photons[(wave > 500) & (wave < 850)].max()
     ax[i,0].plot(wave, photons/scale, color='black')
@@ -44,7 +45,8 @@ for i, s in enumerate(spectra):
         w = (fwave >= 500) & (fwave <= 1000)
         fwave = fwave[w]
         throughput = throughput[w]
-        plotwave = numpy.union1d(wave, fwave)
+        #plotwave = numpy.union1d(wave, fwave)
+        plotwave = wave
         plotwave.sort()
         photons_filtered = numpy.interp(plotwave, wave, photons) \
           * numpy.interp(plotwave, fwave, throughput)
@@ -59,6 +61,7 @@ for i, s in enumerate(spectra):
         R, angle_dens = chroma.wave_dens_to_angle_dens(plotwave, photons_filtered,
                                                        zenith=30.0 * numpy.pi/180)
         R *= 206265
+        #import ipdb; ipdb.set_trace()
 #        w = angle_dens > 0.001 * angle_dens
         ax[i,1].plot(R[w], angle_dens[w]/angle_dens[w].max() / 1.2, color='black')
         chroma.chroma_fill_plot(R[w], angle_dens[w]/angle_dens[w].max() / 1.2, color[w], axes=ax[i,1])
