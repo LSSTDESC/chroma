@@ -1,24 +1,25 @@
 import os
-import pickle
 
 import numpy
 import astropy.utils.console
+import scipy.integrate
 import matplotlib.pyplot as plt
-import scipy.stats
 
 import _mypath
 import chroma
 
-def get_r2(s_wave, s_flux, f_wave, f_throughput):
+def get_r2(s_wave, s_flux, f_wave, f_throughput, n=-0.2):
     wave = f_wave[f_wave > 300]
     flambda_i = numpy.interp(wave, s_wave, s_flux)
     throughput_i = numpy.interp(wave, f_wave, f_throughput)
     photons = flambda_i * throughput_i * wave
 
-    r2 = chroma.relative_second_moment_radius(wave, photons)
-    return r2
+    return (scipy.integrate.simps(photons * (wave/500) ** (2*n), wave) /
+            scipy.integrate.simps(photons, wave))
+#    r2 = chroma.relative_second_moment_radius(wave, photons)
+#    return r2
 
-def compute_second_moment_radii(filter_name):
+def compute_second_moment_radii(filter_name, n=-0.2):
     spec_dir = '../../data/SEDs/'
     filter_dir = '../../data/filters/'
 
@@ -27,7 +28,7 @@ def compute_second_moment_radii(filter_name):
 
     G5v_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
     G5v_wave, G5v_flambda = G5v_data[:,0], G5v_data[:,1]
-    G5v_r2 = get_r2(G5v_wave, G5v_flambda, f_wave, f_throughput)
+    G5v_r2 = get_r2(G5v_wave, G5v_flambda, f_wave, f_throughput, n)
 
     star_types = ['uko5v',
                   'ukb5iii',
@@ -43,7 +44,7 @@ def compute_second_moment_radii(filter_name):
         SED_data = numpy.genfromtxt(spec_dir + star_type + '.ascii')
         wave, flambda = SED_data[:,0], SED_data[:,1]
 
-        r2 = get_r2(wave, flambda, f_wave, f_throughput)
+        r2 = get_r2(wave, flambda, f_wave, f_throughput, n)
         star_diffs[star_type]['dlogr2'] = numpy.log(r2 / G5v_r2)
 
     gal_types= ['CWW_E_ext',
@@ -62,13 +63,13 @@ def compute_second_moment_radii(filter_name):
             SED_data = numpy.genfromtxt(spec_dir + gal_type + '.ascii')
             wave, flambda = SED_data[:,0], SED_data[:,1]
             for z in numpy.arange(0.0, 3.0, 0.03):
-                r2 = get_r2(wave * (1.0 + z), flambda, f_wave, f_throughput)
+                r2 = get_r2(wave * (1.0 + z), flambda, f_wave, f_throughput, n)
                 gal_diffs[gal_type]['dlogr2'].append( numpy.log(r2 / G5v_r2))
                 bar.update()
     return star_diffs, gal_diffs
 
 def plot_size_error(filter_name):
-    a_star_diff, a_gal_diff = compute_second_moment_radii(filter_name)
+    a_star_diff, a_gal_diff = compute_second_moment_radii(filter_name, -0.2)
 
     f = plt.figure(figsize=(8,6), dpi=100)
     ax1 = plt.subplot(111)
