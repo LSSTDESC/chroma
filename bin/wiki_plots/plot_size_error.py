@@ -23,7 +23,7 @@ def compute_second_moment_radii(filter_name, n=-0.2):
     spec_dir = '../../data/SEDs/'
     filter_dir = '../../data/filters/'
 
-    f_data = numpy.genfromtxt(filter_dir + 'LSST_{}.dat'.format(filter_name))
+    f_data = numpy.genfromtxt(filter_dir + '{}.dat'.format(filter_name))
     f_wave, f_throughput = f_data[:,0], f_data[:,1]
 
     G5v_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
@@ -68,8 +68,8 @@ def compute_second_moment_radii(filter_name, n=-0.2):
                 bar.update()
     return star_diffs, gal_diffs
 
-def plot_size_error(filter_name):
-    a_star_diff, a_gal_diff = compute_second_moment_radii(filter_name, -0.2)
+def plot_size_error(filter_name, n):
+    a_star_diff, a_gal_diff = compute_second_moment_radii(filter_name, n)
 
     f = plt.figure(figsize=(8,6), dpi=100)
     ax1 = plt.subplot(111)
@@ -87,7 +87,7 @@ def plot_size_error(filter_name):
     #plot stars
     for star, star_name, star_color in zip(stars, star_names, star_colors):
         val = a_star_diff[star]['dlogr2']
-        ax1.scatter(0.0, val, c=star_color, marker='*', s=160, label=star_name)
+        ax1.scatter(0.0, val, c=star_color, marker='*', s=160, label=star_name, edgecolor='black')
 
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
     gals = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
@@ -104,5 +104,6 @@ def plot_size_error(filter_name):
     f.savefig('output/dlogR2.{}.pdf'.format(filter_name))
 
 if __name__ == '__main__':
-    plot_size_error('r')
-    plot_size_error('i')
+    plot_size_error('LSST_r', -0.2)
+    plot_size_error('LSST_i', -0.2)
+    plot_size_error('Euclid_350', 0.6)

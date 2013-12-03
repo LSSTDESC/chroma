@@ -166,5 +166,5 @@ def plot_analytic_moments(filter_name, zenith, seed):
     f.savefig('output/V.{}.pdf'.format(obstypeid))
 
 if __name__ == '__main__':
-    plot_analytic_moments('r', 30.0, 1000)
-    plot_analytic_moments('i', 30.0, 1000)
+    plot_analytic_moments('LSST_r', 30.0, 1000)
+    plot_analytic_moments('LSST_i', 30.0, 1000)

@@ -89,11 +89,12 @@ fig.savefig('output/relative_refraction_vs_wavelength.png')
 
 # Third plot:  a paper plot.  refraction and chromatic seeing on same axes.
 
-fig = plt.figure(figsize=(10,5), dpi=80)
-ax = fig.add_subplot(111)
-ax.set_xlabel('Wavelength (nm)')
+fig = plt.figure(figsize=(8,5))
+#ax = fig.add_subplot(111)
+ax = fig.add_axes([0.14, 0.13, 0.76, 0.78])
+ax.set_xlabel('Wavelength (nm)', fontsize=18)
 ax.set_xlim(300, 1200)
-ax.set_ylabel('Relative refraction (arcsec)')
+ax.set_ylabel('Relative refraction (arcsec)', fontsize=18)
 ax.set_ylim(-1, 1.)
 
 for zenith in zeniths:
@@ -103,21 +104,33 @@ for zenith in zeniths:
     # chroma output is also in radians, so convert to arcsec here
     ax.plot(waves, (refrac_angle - refrac_ref) * 206265, label=str(zenith)+' deg')
 
+# 350nm wide Euclid filter.
+ax.fill_between([0., 550., 550., 900., 900., 1200.], [-1, -1, 0.25, 0.25, -1, -1], -1,
+                color='black', alpha=0.15)
+
 for i, filter_file in enumerate(filter_files):
     # filters are stored in two columns: wavelength (nm), and throughput
     fdata = numpy.genfromtxt(filter_file)
     fwave, throughput = fdata[:,0], fdata[:,1]
     filter_name = filter_file.split('/')[-1].replace('.dat', '') # get filter name from file name
-    ax.fill_between(fwave, throughput * 3.2 - 1, -1, color=colors[i], alpha=0.3)
+    ax.fill_between(fwave, throughput * 2.5 - 1, -1, color=colors[i], alpha=0.3)
 # Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
 ax2 = ax.twinx()
 ys = (waves/500.0)**(-2./5)
-ax2.plot(waves, ys, 'k--', lw=2, label='$\lambda^{-2/5}$')
-ax.legend(fontsize='small', title='zenith angle')
-ax2.legend(fontsize='small', title='chromatic seeing', loc='center right')
-ax2.set_xlim(300, 1200)
-ax2.set_ylabel('Relative $r^2_\mathrm{PSF}$')
-fig.savefig('output/DCRfilters.pdf')
+ax2.plot(waves, ys, 'k', lw=3, label='$\lambda^{-2/5}$')
+ax.legend(fontsize=11, title='zenith angle')
+ax2.legend(fontsize=11, title='chromatic seeing', loc='upper right', bbox_to_anchor = (0.78, 1))
+ax2.set_xlim(300, 1100)
+ax2.set_ylabel('Relative $r^2_\mathrm{PSF}$', fontsize=18)
+
+for label in ax.get_xticklabels():
+    label.set_fontsize(18)
+for label in ax.get_yticklabels():
+    label.set_fontsize(18)
+for label in ax2.get_yticklabels():
+    label.set_fontsize(18)
+
+fig.savefig('output/DCRfilters.png', dpi=220)
 
 # Fourth plot: refraction relative to 690 nanometers vs wavelength but only for weak lensing shape
 # measurement filters (r & i).
