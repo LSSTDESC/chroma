@@ -177,7 +177,7 @@ class SGalTool(object):
         def resid(scale):
             return test_FWHM(scale) - FWHM
         scale = scipy.optimize.newton(resid, 1.0)
-        gparam1['r_e'].value = gparam0['r_e'] * scale
+        gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1
 
     def set_AHM(self, gparam0, AHM, PSF):
@@ -188,7 +188,7 @@ class SGalTool(object):
         def resid(scale):
             return test_AHM(scale) - AHM
         scale = scipy.optimize.newton(resid, 1.0)
-        gparam1['r_e'].value = gparam0['r_e'] * scale
+        gparam1['r_e'].value = gparam0['r_e'].value * scale
         return gparam1
 
     def set_r2(self, gparam0, r2, PSF):
