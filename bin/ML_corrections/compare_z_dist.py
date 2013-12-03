@@ -31,6 +31,7 @@ def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
 
 
 a = cPickle.load(open('galaxy_data.pkl'))
+#a = cPickle.load(open('corrected_galaxy_data.pkl'))
 
 f = plt.figure(figsize=(5,3))
 ax = f.add_subplot(111)
