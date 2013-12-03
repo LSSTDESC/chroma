@@ -19,7 +19,9 @@ def moments(s_wave, s_flux, f_wave, f_throughput, zenith, **kwargs):
     photons = flambda_i * throughput_i * wave
 
     m = chroma.disp_moments(wave, photons, zenith=zenith, **kwargs)
-    return m
+    s = chroma.relative_second_moment_radius(wave, photons)
+
+    return m[0], m[1], s
     # gaussian_sigma = 1.0 / 2.35 # 1 arcsec FWHM -> sigma
     # m2 = chroma.weighted_second_moment(wave, photons, 1.0,
     #                                    zenith=zenith,
@@ -47,6 +49,7 @@ def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     zplot = numpy.empty(0)
     Rbar_plot = numpy.empty(0)
     V_plot = numpy.empty(0)
+    S_plot = numpy.empty(0)
 
     with astropy.utils.console.ProgressBar(niter) as bar:
         for i in range(niter):
@@ -62,13 +65,14 @@ def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
             zplot = numpy.append(zplot, z_spec)
             Rbar_plot = numpy.append(Rbar_plot, obs_m[0] - model_m[0])
             V_plot = numpy.append(V_plot, obs_m[1] - model_m[1])
+            S_plot = numpy.append(S_plot, obs_m[2] - model_m[2])
             bar.update()
-    return zplot, Rbar_plot, V_plot
+    return zplot, Rbar_plot, V_plot, S_plot
 
 def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     import matplotlib.pyplot as plt
 
-    z, R, V = photoz_mc(niter, filtername, zenith, sigma_z=sigma_z)
+    z, R, V, S = photoz_mc(niter, filtername, zenith, sigma_z=sigma_z)
     R *= 3600 * 180 / numpy.pi
     V *= (3600 * 180 / numpy.pi)**2
 
@@ -108,5 +112,32 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     plt.savefig('output/photoz_mc.{}.z{}.png'.format(filtername,
                                                      int(round(zenith * 180 / numpy.pi))))
 
+    f = plt.figure(figsize=(8,3.5))
+    ax1 = plt.subplot2grid((1, 4), (0, 0), colspan=3)
+    ax2 = plt.subplot2grid((1, 4), (0, 3))
+    ax2.get_xaxis().set_visible(False)
+    ax2.get_yaxis().set_visible(False)
+
+    ax1.scatter(z, S, s=3)
+    ax2.hist(S, bins=50, color='Red', orientation='horizontal', range=[-0.005, 0.005])
+    ax1.set_ylim(-0.005, 0.005)
+    ax2.set_ylim(-0.005, 0.005)
+    ax2xlim = ax2.get_xlim()
+
+    ax1.set_xlim(0.0, 3.0)
+    ax1.set_ylabel('$\mathrm{phot} (\mathrm{ln}\, r^2)\,-\,\mathrm{spec} (\mathrm{ln}\, r^2)$')
+    ax1.set_xlabel('redshift')
+    ax1.set_title('{}-band'.format(filtername))
+
+    ax1.fill_between([0.0, 3.0], [-0.0004, -0.0004], [0.0004, 0.0004],
+                     color='gray', alpha=0.2)
+    ax2.fill_between([0.0, ax2xlim[1]], [-0.0004, -0.0004], [0.0004, 0.0004],
+                     color='gray', alpha=0.2)
+    ax2.set_xlim(ax2xlim)
+
+    plt.tight_layout()
+    plt.subplots_adjust(wspace=0)
+    plt.savefig('output/photoz_mc.S.{}.pdf'.format(filtername))
+
 if __name__ == '__main__':
-    plot_photoz_mc(1000, 'r', 30.0 * numpy.pi / 180)
+    plot_photoz_mc(2000, 'r', 30.0 * numpy.pi / 180)
