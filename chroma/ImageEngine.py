@@ -99,7 +99,7 @@ class GalSimBDEngine(GalSimEngine):
         return im.array
 
 class GalSimSEngine(GalSimEngine):
-    def gparam_to_galsim(self, gparam):
+    def _gparam_to_galsim(self, gparam):
         gal = galsim.Sersic(n=gparam['n'].value, half_light_radius=gparam['r_e'].value)
         gal.applyShift(gparam['x0'].value, gparam['y0'].value)
         gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
@@ -108,14 +108,14 @@ class GalSimSEngine(GalSimEngine):
 
     def get_uncvl_image(self, gparam, pixsize=1.0):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
-        sersic = self.gparam_to_galsim(gparam)
+        sersic = self._gparam_to_galsim(gparam)
         gal = self._get_uncvl_gal([sersic], pixsize)
         gal.draw(image=im, dx=pixsize)
         return im.array
 
     def get_image(self, gparam, PSF, pixsize=1.0):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
-        sersic = self.gparam_to_galsim(gparam)
+        sersic = self._gparam_to_galsim(gparam)
         gal = self._get_gal([(sersic, PSF)], pixsize)
         gal.draw(image=im, dx=pixsize)
         return im.array
