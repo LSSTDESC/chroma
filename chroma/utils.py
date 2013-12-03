@@ -1,7 +1,6 @@
 import operator
 
 import numpy
-import scipy
 
 import astropy.utils.console
 
