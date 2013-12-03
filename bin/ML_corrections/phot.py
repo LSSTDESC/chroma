@@ -157,3 +157,35 @@ def make_composite_spec(gal, filters, zps, wave_match):
     return {'wave':wave_match, 'flambda':(bulge_spec['flambda'] +
                                           disk_spec['flambda'] +
                                           AGN_spec['flambda'])}
+
+def make_bulge_spec(gal, filters, zps, wave_match):
+    SED_dir = os.environ['CAT_SHARE_DATA']+'data/'
+
+    if gal['sedPathBulge'] != 'None':
+        bulge_spec = read_spec(SED_dir+gal['sedPathBulge'])
+        bulge_spec = scale_spec(bulge_spec, gal['magNormBulge'],
+                                filters['norm'], zps['norm'])
+        bulge_spec = apply_extinction(bulge_spec,
+                                      A_v=gal['internalAVBulge'],
+                                      R_v=gal['internalRVBulge'])
+        bulge_spec = apply_redshift(bulge_spec, gal['redshift'])
+        bulge_spec = match_wavelengths(bulge_spec, wave_match)
+    else:
+        return None
+    return {'wave':wave_match, 'flambda':bulge_spec['flambda']}
+
+def make_disk_spec(gal, filters, zps, wave_match):
+    SED_dir = os.environ['CAT_SHARE_DATA']+'data/'
+
+    if gal['sedPathDisk'] != 'None':
+        disk_spec = read_spec(SED_dir+gal['sedPathDisk'])
+        disk_spec = scale_spec(disk_spec, gal['magNormDisk'],
+                                filters['norm'], zps['norm'])
+        disk_spec = apply_extinction(disk_spec,
+                                      A_v=gal['internalAVDisk'],
+                                      R_v=gal['internalRVDisk'])
+        disk_spec = apply_redshift(disk_spec, gal['redshift'])
+        disk_spec = match_wavelengths(disk_spec, wave_match)
+    else:
+        return None
+    return {'wave':wave_match, 'flambda':disk_spec['flambda']}
