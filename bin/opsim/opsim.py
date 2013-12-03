@@ -62,7 +62,8 @@ def opsim_parse():
                                 ('q', 'f8'),
                                 ('fieldRA', 'f8'),
                                 ('fieldDec', 'f8'),
-                                ('lst', 'f8')])
+                                ('lst', 'f8'),
+                                ('propID', 'i4')])
     with gzip.open('indata/output_opsim3_61.dat.gz', 'r') as f:
         with astropy.utils.console.Spinner('Loading OpSim data', 'green', step=10000) as sp:
             for i, l in enumerate(f):
@@ -76,8 +77,9 @@ def opsim_parse():
                 RA = float(s[28])
                 DEC = float(s[29])
                 LST = float(s[30])
+                propID = int(s[2])
                 out[i-1] = (fieldID, filt, airmass, numpy.nan, z_a2,
-                            numpy.nan, numpy.nan, RA, DEC, LST)
+                            numpy.nan, numpy.nan, RA, DEC, LST, propID)
     out = out[0:i] # trim
     print 'computing zenith and parallactic angles'
     HA = out['lst'] - out['fieldRA']
@@ -91,7 +93,8 @@ def loadcat():
 def lensing_visits(cat):
     r_cond = cat['filter'] == 'r'
     i_cond = cat['filter'] == 'i'
-    X_cond = cat['airmass'] < 2.0
+    # X_cond = cat['airmass'] < 2.0
+    X_cond = (cat['propID'] == 215) | (cat['propID'] == 216) | (cat['propID'] == 218)
     return numpy.logical_and(numpy.logical_or(r_cond, i_cond), X_cond)
 
 def airmass_dec_density(cat, hardcopy=False):
@@ -292,9 +295,9 @@ def airmass_density(cat, hardcopy=False):
     ax = f.add_subplot(111)
     ax.set_xlabel('airmass')
     ax.set_ylabel('visits')
-    ax.set_xlim(1.0, 1.8)
-    ax.set_ylim(0, 40000)
-    ax.hist(cat[w]['airmass'], bins=100)
+    ax.set_xlim(1.0, 1.6)
+    ax.set_ylim(0, 60000)
+    ax.hist(cat[w]['airmass'], bins=100, histtype='stepfilled')
     if hardcopy:
         f.savefig('output/airmass_density.pdf')
 
