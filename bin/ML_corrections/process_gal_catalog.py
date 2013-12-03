@@ -49,6 +49,36 @@ def compute_space_chromatic_corrections(spec, filters):
         S_p10[filter_name] = chroma.relative_second_moment_radius(wave, detected_photons, 1.0)
     return S_p06, S_p10
 
+def compute_color_gradient_separation_correction(b_spec, d_spec, filters):
+    """ Compute the difference in zenith-direction second moment due to spatial separation
+    of bulge and disk components."""
+
+    b_wave = b_spec['wave']
+    b_photons = b_wave * b_spec['flambda']
+    d_wave = d_spec['wave']
+    d_photons = d_wave * d_spec['flambda']
+    dVcg = {} # change in second moment due to bulge-disk color gradient spatial separation.
+
+    for filter_name, filter_ in filters.iteritems():
+        b_detected_photons = b_photons * filter_['throughput']
+        b_flux = scipy.integrate.simps(b_detected_photons, b_wave)
+        b_R = chroma.atm_refrac(b_wave, zenith=numpy.pi/4.0)
+        b_Rbar = scipy.integrate.simps(b_R * b_detected_photons, b_wave) / b_flux
+
+        d_detected_photons = d_photons * filter_['throughput']
+        d_flux = scipy.integrate.simps(d_detected_photons, d_wave)
+        d_R = chroma.atm_refrac(d_wave, zenith=numpy.pi/4.0)
+        d_Rbar = scipy.integrate.simps(d_R * d_detected_photons, d_wave) / d_flux
+
+        c_flux = b_flux + d_flux
+        b_frac = b_flux/c_flux
+        d_frac = d_flux/c_flux
+
+        c_Rbar = b_frac * b_Rbar  +  d_frac * d_Rbar
+
+        dVcg[filter_name] = b_frac * (b_Rbar - c_Rbar)**2 + d_frac * (d_Rbar - c_Rbar)**2
+    return dVcg
+
 def readfile(filename, nmax=None, debug=False, randomize=True):
     ground_filters = phot.load_LSST_filters()
     space_filters = phot.load_Euclid_filters()
@@ -107,6 +137,7 @@ def readfile(filename, nmax=None, debug=False, randomize=True):
                                    ('magCalc', ugrizyE),
                                    ('R', ugrizy),
                                    ('V', ugrizy),
+                                   ('dVcg', ugrizy),
                                    ('S_m02', ugrizy),
                                    ('S_p06', E),
                                    ('S_p10', E)])
@@ -149,12 +180,22 @@ def readfile(filename, nmax=None, debug=False, randomize=True):
                 magCalcs = phot.compute_mags(spec, filters, zps)
                 R, V, S_m02 = compute_ground_chromatic_corrections(spec, ground_filters)
                 S_p06, S_p10 = compute_space_chromatic_corrections(spec, space_filters)
+                if data[j].sedPathBulge != 'None' and data[j].sedPathDisk != 'None':
+                    b_spec = phot.make_bulge_spec(data[j], filters, zps, wave_match)
+                    d_spec = phot.make_disk_spec(data[j], filters, zps, wave_match)
+                    dVcg = compute_color_gradient_separation_correction(b_spec, d_spec,
+                                                                        ground_filters)
+                else:
+                    dVcg = {}
+                    for fname in 'ugrizy':
+                        dVcg['LSST_'+fname] = numpy.nan
                 for k, fname in enumerate('ugrizy'):
                     data[j]['mag']['LSST_'+fname] = float(s[5+k])
                     data[j]['magCalc']['LSST_'+fname] = magCalcs['LSST_'+fname]
                     data[j]['R']['LSST_'+fname] = R['LSST_'+fname]
                     data[j]['V']['LSST_'+fname] = V['LSST_'+fname]
                     data[j]['S_m02']['LSST_'+fname] = S_m02['LSST_'+fname]
+                    data[j]['dVcg']['LSST_'+fname] = dVcg['LSST_'+fname]
                 for fw in [150, 250, 350, 450]:
                     fname = 'Euclid_{}'.format(fw)
                     data[j]['magCalc'][fname] = magCalcs[fname]
