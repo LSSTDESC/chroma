@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colorbar as clb
 from matplotlib.backends.backend_pdf import PdfPages
 import galsim
+import astropy.io.fits as fits
 
 import _mypath
 import chroma
@@ -59,7 +60,6 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False, zeni
     bd_engine = chroma.ImageEngine.GalSimBDEngine(size=31,
                                                   gsp=galsim.GSParams(maximum_fft_size=32768))
     galtool = chroma.GalTools.SGalTool(s_engine)
-    bdtool = chroma.GalTools.BDGalTool(bd_engine)
 
     star_PSF_overim = s_engine.get_PSF_image(star_PSF, pixsize=1./7)
     star_mom = chroma.utils.moments(star_PSF_overim, pixsize=1./7)
@@ -262,6 +262,9 @@ def diagnostic_ringtest(gamma, n_ring, gparam, star_PSF, gal_PSF, bd=False, zeni
         plt.colorbar(img, cax=cbar_ax, orientation='horizontal')
         # plt.show()
         pp.savefig()
+
+        fitsfilename = 'output/cs.{}'
+
     pp.close()
     return out
 
@@ -373,13 +376,13 @@ def case_study(n, zenith=60*numpy.pi/180, bd=False):
 if __name__ == '__main__':
     case_study(0.5, zenith=numpy.pi*30/180, bd=False)
     # case_study(0.5, zenith=numpy.pi*30/180, bd=True)
-    case_study(0.5, zenith=numpy.pi*60/180, bd=False)
+    # case_study(0.5, zenith=numpy.pi*60/180, bd=False)
     # case_study(0.5, zenith=numpy.pi*60/180, bd=True)
-    case_study(1.0, zenith=numpy.pi*30/180, bd=False)
+    # case_study(1.0, zenith=numpy.pi*30/180, bd=False)
     # case_study(1.0, zenith=numpy.pi*30/180, bd=True)
-    case_study(1.0, zenith=numpy.pi*60/180, bd=False)
+    # case_study(1.0, zenith=numpy.pi*60/180, bd=False)
     # case_study(1.0, zenith=numpy.pi*60/180, bd=True)
-    case_study(4.0, zenith=numpy.pi*30/180, bd=False)
+    # case_study(4.0, zenith=numpy.pi*30/180, bd=False)
     # case_study(4.0, zenith=numpy.pi*30/180, bd=True)
-    case_study(4.0, zenith=numpy.pi*60/180, bd=False)
+    # case_study(4.0, zenith=numpy.pi*60/180, bd=False)
     # case_study(4.0, zenith=numpy.pi*60/180, bd=True)
