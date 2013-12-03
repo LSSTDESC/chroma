@@ -250,4 +250,7 @@ if __name__ == '__main__':
     R_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
     V_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
     S_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
+    R_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
+    V_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
+    S_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
     S_vs_redshift(gals, stars, 'Euclid_350', 'LSST_r', 'LSST_i', n=0.6, s=2)
