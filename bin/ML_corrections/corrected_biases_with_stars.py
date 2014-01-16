@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
-hist_axes_range = [0.19, 0.15, 0.1, 0.8]
-scatter_axes_range = [0.29, 0.15, 0.5, 0.8]
-colorbar_axes_range = [0.82, 0.15, 0.04, 0.8]
+hist_axes_range = [0.15, 0.12, 0.1, 0.8]
+scatter_axes_range = [0.25, 0.12, 0.55, 0.8]
+colorbar_axes_range = [0.85, 0.12, 0.04, 0.8]
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, **kwargs):
@@ -44,7 +44,7 @@ def set_range(x):
     span = high-low
     return [low - 0.3*span, high + 0.3*span]
 
-def R_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
+def R_vs_redshift(gals, stars, band, cband1, cband2, yrange=None, **kwargs):
     data_dir = '../../data/'
     filter_file = data_dir+'filters/{}.dat'.format(band)
     star_SED_file = data_dir+'SEDs/ukg5v.ascii'
@@ -61,16 +61,21 @@ def R_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
     y_uncorrected = gals['R'][band] * np.tan(np.pi/6) * 180/np.pi * 3600 - R0
     c = gals['magCalc'][cband1] - gals['magCalc'][cband2]
     clim = set_range(c)
+    clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(x, y, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel('redshift', fontsize=18)
+    ax.set_xlabel('redshift', fontsize=12)
+    ax.set_title('zenith angle = 30, filter = {}'.format(band), fontsize=12)
     ax.yaxis.set_ticklabels([])
-    xlim = (0,3)
+    xlim = (-0.1, 3)
     ax.set_xlim(xlim)
-    ylim = set_range(y_uncorrected)
+    if yrange is None:
+        ylim = set_range(y_uncorrected)
+    else:
+        ylim = yrange
     ax.set_ylim(ylim)
     ax.fill_between([0.0, 3.0], [ylim[0]]*2, [ylim[1]]*2, color='#AAAAAA', zorder=1)
     for label in ax.get_xticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
     # requirements
     ax.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#999999', zorder=2)
     ax.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#888888', zorder=3)
@@ -85,27 +90,27 @@ def R_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel('$\Delta$ PSF centroid (arcsec)', fontsize=18)
+    hist_ax.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)', fontsize=12)
     hist_with_peak((gals['photo_R'][band] - gals['R'][band])
                    * np.tan(np.pi/6) * 180/np.pi * 3600, bins=200,
                    range=ylim, orientation='horizontal', histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
-                 'stars', fontsize=18, color='blue')
+                 'stars', fontsize=12, color='blue')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
-                 'gals', fontsize=18, color='red')
+                 'gals', fontsize=12, color='red')
     for label in hist_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=18)
+    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=12)
     for label in cbar_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
-    f.savefig('output/c_dR_z_stars.{}.png'.format(band), dpi=220)
+    f.savefig('output/c_dR_z_stars.{}.png'.format(band), dpi=300)
 
-def V_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
+def V_vs_redshift(gals, stars, band, cband1, cband2, yrange=None, **kwargs):
     data_dir = '../../data/'
     filter_file = data_dir+'filters/{}.dat'.format(band)
     star_SED_file = data_dir+'SEDs/ukg5v.ascii'
@@ -122,16 +127,21 @@ def V_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
     y_uncorrected = gals['V'][band] * (np.tan(np.pi/6) * 180/np.pi * 3600)**2 - V0
     c = gals['magCalc'][cband1] - gals['magCalc'][cband2]
     clim = set_range(c)
+    clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(x, y, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel('redshift', fontsize=18)
+    ax.set_xlabel('redshift', fontsize=12)
+    ax.set_title('zenith angle = 30, filter = {}'.format(band), fontsize=12)
     ax.yaxis.set_ticklabels([])
-    xlim = (0,3)
+    xlim = (-0.1, 3)
     ax.set_xlim(xlim)
-    ylim = set_range(y_uncorrected)
+    if yrange is None:
+        ylim = set_range(y_uncorrected)
+    else:
+        ylim = yrange
     ax.set_ylim(ylim)
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#AAAAAA', zorder=1)
     for label in ax.get_xticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
     # requirements
     ax.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#999999', zorder=2)
     ax.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#888888', zorder=3)
@@ -146,28 +156,28 @@ def V_vs_redshift(gals, stars, band, cband1, cband2, **kwargs):
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel('$\Delta$ PSF second moment (arcsec$^2$)', fontsize=18)
+    hist_ax.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)', fontsize=12)
     hist_with_peak((gals['photo_V'][band] - gals['V'][band])
                    * (np.tan(np.pi/6) * 180/np.pi * 3600)**2, bins=200,
                    range=ylim, orientation='horizontal', histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
-                 'stars', fontsize=18, color='blue')
+                 'stars', fontsize=12, color='blue')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
-                 'gals', fontsize=18, color='red')
+                 'gals', fontsize=12, color='red')
     # hist_ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     for label in hist_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=18)
+    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=12)
     for label in cbar_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
-    f.savefig('output/c_dV_z_stars.{}.png'.format(band), dpi=220)
+    f.savefig('output/c_dV_z_stars.{}.png'.format(band), dpi=300)
 
-def S_vs_redshift(gals, stars, band, cband1, cband2, n=-0.2, **kwargs):
+def S_vs_redshift(gals, stars, band, cband1, cband2, n=-0.2, yrange=None, **kwargs):
     data_dir = '../../data/'
     filter_file = data_dir+'filters/{}.dat'.format(band)
     star_SED_file = data_dir+'SEDs/ukg5v.ascii'
@@ -194,16 +204,21 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, n=-0.2, **kwargs):
     y_uncorrected = np.log(gals[data_field][band] / S0 )
     c = gals['magCalc'][cband1] - gals['magCalc'][cband2]
     clim = set_range(c)
+    clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(x, y, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel('redshift', fontsize=18)
+    ax.set_xlabel('redshift', fontsize=12)
+    ax.set_title('filter = {}'.format(band), fontsize=12)
     ax.yaxis.set_ticklabels([])
-    xlim = (0,3)
+    xlim = (-0.1, 3)
     ax.set_xlim(xlim)
-    ylim = set_range(y_uncorrected)
+    if yrange is None:
+        ylim = set_range(y_uncorrected)
+    else:
+        ylim = yrange
     ax.set_ylim(ylim)
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#AAAAAA', zorder=1)
     for label in ax.get_xticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
     # requirements
     if n == -0.2:
         ax.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#999999', zorder=2)
@@ -224,33 +239,33 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, n=-0.2, **kwargs):
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel('$\Delta$ PSF area / PSF area', fontsize=18)
+    hist_ax.set_ylabel('$\Delta r^2_\mathrm{psf} / r^2_\mathrm{psf}$', fontsize=12)
     hist_with_peak(np.log(gals[c_data_field][band] / gals[data_field][band]), bins=200,
                    range=ylim, orientation='horizontal', histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
-                 'stars', fontsize=18, color='blue')
+                 'stars', fontsize=12, color='blue')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
-                 'gals', fontsize=18, color='red')
+                 'gals', fontsize=12, color='red')
     for label in hist_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=18)
+    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')), fontsize=12)
     for label in cbar_ax.get_yticklabels():
-        label.set_fontsize(18)
+        label.set_fontsize(12)
 
-    f.savefig('output/c_dS_z_stars.{}.{}.png'.format(band, data_field), dpi=220)
+    f.savefig('output/c_dS_z_stars.{}.{}.png'.format(band, data_field), dpi=300)
 
 
 if __name__ == '__main__':
     gals = cPickle.load(open('corrected_galaxy_data.pkl'))
     stars = cPickle.load(open('corrected_star_data.pkl'))
-    R_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
-    V_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
-    S_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2)
-    R_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
-    V_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
-    S_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2)
+    R_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2, yrange=[-0.030, 0.015])
+    V_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2, yrange=[-0.0008, 0.0005])
+    S_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2, yrange=[-0.02, 0.01])
+    R_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2, yrange=[-0.030, 0.015])
+    V_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2, yrange=[-0.0008, 0.0005])
+    S_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', s=2, yrange=[-0.02, 0.01])
     S_vs_redshift(gals, stars, 'Euclid_350', 'LSST_r', 'LSST_i', n=0.6, s=2)
