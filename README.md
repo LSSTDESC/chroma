@@ -1,4 +1,4 @@
 chroma
 ======
 
-Investigations of the effects of differential chromatic dispersion on the LSST PSF.
+Investigations of chromatic PSF effects and implications for studies of weak gravitational lensing.
