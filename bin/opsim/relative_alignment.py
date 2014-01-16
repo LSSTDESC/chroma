@@ -76,4 +76,4 @@ if __name__ == '__main__':
     ax.tick_params(axis='both', which='major', labelsize=18)
     fig.tight_layout()
     #plt.show()
-    plt.savefig('relative_alignment.png', dpi=300)
+    plt.savefig('output/relative_alignment.png', dpi=300)
