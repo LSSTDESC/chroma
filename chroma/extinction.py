@@ -1,4 +1,30 @@
-# Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Licensed under a 3-clause BSD style license:
+# Copyright (c) 2011, Astropy Developers
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without modification,
+# are permitted provided that the following conditions are met:
+
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright notice, this
+#   list of conditions and the following disclaimer in the documentation and/or
+#   other materials provided with the distribution.
+# * Neither the name of the Astropy Team nor the names of its contributors may be
+#   used to endorse or promote products derived from this software without
+#   specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """Extinction law functions."""
 
 from __future__ import division
@@ -116,7 +142,7 @@ def extinction(wave, ebv=None, a_v=None, r_v=3.1, model='f99'):
        not connect smoothly with longer and shorter wavelengths, it is
        not included here.
 
-    
+
     **Visual comparison of models**
 
     The plot below shows a comparison of the models for
@@ -147,7 +173,7 @@ def extinction(wave, ebv=None, a_v=None, r_v=3.1, model='f99'):
        plt.axvline(x=3030.3030, ls=':', c='k')
        plt.axvline(x=9090.9091, ls=':', c='k')
        plt.axvspan(wave[0], 1150., fc='0.8', ec='none', zorder=-1000)
-       plt.axvspan(1150., 1250., fc='0.9', ec='none', zorder=-1000)    
+       plt.axvspan(1150., 1250., fc='0.9', ec='none', zorder=-1000)
        plt.text(0.67, 0.95, '$R_V = 3.1$', transform=ax.transAxes, va='top',
                 size='x-large')
        plt.ylabel('Extinction ($A(\lambda)$ / $A_V$)')
@@ -429,7 +455,7 @@ def _f99_like(x, ebv, r_v, model='f99'):
 
         anchors_x = np.append(anchors_x, x_uv_spline)
         anchors_k = np.append(anchors_k, k_uv_spline)
-    
+
     # Note that interp1d requires that the input abscissa is monotonically
     # _increasing_. This is opposite the usual ordering of a spectrum, but
     # fortunately the _output_ abscissa does not have the same requirement.
