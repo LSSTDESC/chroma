@@ -200,7 +200,7 @@ def plot_two_cmap(filename):
     # cbar = plt.colorbar(img, cax=cbar_ax, orientation='horizontal', cmap=cmap_resid,
     #                     ticks=ticks)
 
-    plt.savefig('seeing_model_fit.png', dpi=300)
+    plt.savefig('output/seeing_model_fit.png', dpi=300)
 
 
 if __name__ == '__main__':
