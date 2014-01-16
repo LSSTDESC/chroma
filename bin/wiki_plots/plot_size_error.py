@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
+hist_axes_range = [0.15, 0.12, 0.1, 0.8]
+scatter_axes_range = [0.25, 0.12, 0.55, 0.8]
+colorbar_axes_range = [0.85, 0.12, 0.04, 0.8]
+
 def get_r2(s_wave, s_flux, f_wave, f_throughput, n=-0.2):
     wave = f_wave[f_wave > 300]
     flambda_i = numpy.interp(wave, s_wave, s_flux)
@@ -68,15 +72,17 @@ def compute_second_moment_radii(filter_name, n=-0.2):
                 bar.update()
     return star_diffs, gal_diffs
 
-def plot_size_error(filter_name, n):
+def plot_size_error(filter_name, n, yrange=None):
     a_star_diff, a_gal_diff = compute_second_moment_radii(filter_name, n)
 
-    f = plt.figure(figsize=(8,6), dpi=100)
-    ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 4.0)
-    ax1.set_ylabel('$\delta(\mathrm{ln}\, r_{PSF}^2)$')
+    f = plt.figure(figsize=(8,5))
+    ax1 = f.add_axes(scatter_axes_range)
+    ax1.set_xlim(-0.1, 3.0)
+    if yrange is not None:
+        ax1.set_ylim(yrange)
+    ax1.set_ylabel('$\Delta r^2_\mathrm{psf} / r^2_\mathrm{psf}$')
     ax1.set_xlabel('redshift')
-    ax1.set_title('filter = {}'.format(filter_name))
+    ax1.set_title('filter = {}'.format(filter_name), fontsize=12)
     if not os.path.exists('output/'):
         os.mkdir('output/')
 
@@ -101,9 +107,9 @@ def plot_size_error(filter_name, n):
         ax1.plot(zs, vals, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
-    f.savefig('output/dlogR2.{}.pdf'.format(filter_name))
+    f.savefig('output/dlogR2.{}.png'.format(filter_name), dpi=300)
 
 if __name__ == '__main__':
-    plot_size_error('LSST_r', -0.2)
-    plot_size_error('LSST_i', -0.2)
+    plot_size_error('LSST_r', -0.2, yrange=[-0.02, 0.01])
+    plot_size_error('LSST_i', -0.2, yrange=[-0.02, 0.01])
     plot_size_error('Euclid_350', 0.6)
