@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mpl as mpl
@@ -208,4 +209,4 @@ def plot_two_cmap(filename):
 
 
 if __name__ == '__main__':
-    plot_two_cmap('one_case.fits')
+    plot_two_cmap(sys.argv[1])
