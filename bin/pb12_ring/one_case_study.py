@@ -128,7 +128,7 @@ def one_case_study(Sersic_n, zenith, bd, gamma, beta,
     hdulist = fits.HDUList([uncvlim_HDU, gal_PSF_overim_HDU, overim_HDU, im_HDU,
                             fit_uncvlim_HDU, star_PSF_overim_HDU, fit_overim_HDU, fit_im_HDU,
                             nudge_uncvlim_HDU])
-    hdulist.writeto('one_case.fits', clobber=True)
+    hdulist.writeto('output/one_case.fits', clobber=True)
 
 if __name__ == '__main__':
     one_case_study(Sersic_n=1.0, zenith=60.0*np.pi/180, bd=True,
