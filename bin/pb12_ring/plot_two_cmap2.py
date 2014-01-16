@@ -205,7 +205,7 @@ def plot_two_cmap(filename):
     # cbar = plt.colorbar(img, cax=cbar_ax, orientation='horizontal', cmap=cmap_resid,
     #                     ticks=ticks)
 
-    plt.savefig('DCR_model_fit.pdf')
+    plt.savefig('output/DCR_model_fit.pdf')
 
 
 if __name__ == '__main__':
