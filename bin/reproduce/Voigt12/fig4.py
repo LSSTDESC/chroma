@@ -41,13 +41,15 @@ import chroma
 
 from fig_utils import *
 
+data_dir = '../../../data/'
+
 def fig4_bulge_sersic_index(bd_engine, PSF_model):
     '''Compute `m` dependence on bulge Sersic index (wrt fiducial galaxy)'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/Euclid_350.dat'
     redshift = 0.9
 
     print
@@ -71,9 +73,9 @@ def fig4_bulge_flux(bd_engine, PSF_model):
     '''Compute `m` dependence on bulge-to-total flux ratio (wrt fiducial galaxy)'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/Euclid_350.dat'
     redshift = 0.9
 
     print
@@ -83,7 +85,7 @@ def fig4_bulge_flux(bd_engine, PSF_model):
     if not os.path.isdir('output/'):
         os.mkdir('output/')
     fil = open('output/fig4_bulge_flux.dat', 'w')
-    for bulge_flux in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+    for bulge_flux in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
         gparam = fiducial_galaxy()
         gparam['b_flux'].value = bulge_flux
         gparam['d_flux'].value = 1.0 - bulge_flux
@@ -98,9 +100,9 @@ def fig4_gal_ellip(bd_engine, PSF_model):
     '''Compute `m` dependence on galaxy ellipticity (wrt fiducial galaxy)'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/Euclid_350.dat'
     redshift = 0.9
 
     print
@@ -125,9 +127,9 @@ def fig4_y0(bd_engine, PSF_model):
     '''Compute `m` dependence on y-coordinate of galaxy center (wrt fiducial galaxy)'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/voigt12_350.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/Euclid_350.dat'
     redshift = 0.9
 
     print
