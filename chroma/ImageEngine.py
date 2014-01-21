@@ -49,12 +49,12 @@ class GalSimEngine(object):
         Measures along a single row, so assumes that PSF is circularly symmetric.
         '''
         PSF_image = galsim.ImageD(self.oversize, self.oversize)
-        PSF.draw(image=PSF_image, dx=1.0/self.oversample_factor)
+        PSF.draw(image=PSF_image, scale=1.0/self.oversample_factor)
         return chroma.utils.FWHM(PSF_image.array, pixsize=self.overpixsize)
 
     def get_PSF_image(self, PSF, pixsize=1.0):
         PSF_image = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
-        PSF.draw(image=PSF_image, dx=pixsize)
+        PSF.draw(image=PSF_image, scale=pixsize)
         return PSF_image.array
 
     def get_FWHM(self, gparam, *PSFs):
@@ -88,14 +88,14 @@ class GalSimBDEngine(GalSimEngine):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         bulge, disk = self._gparam_to_galsim(gparam)
         gal = self._get_uncvl_gal([bulge, disk], pixsize)
-        gal.draw(image=im, dx=pixsize)
+        gal.draw(image=im, scale=pixsize)
         return im.array
 
     def get_image(self, gparam, bulge_PSF, disk_PSF, pixsize=1.0):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         bulge, disk = self._gparam_to_galsim(gparam)
         gal = self._get_gal([(bulge, bulge_PSF), (disk, disk_PSF)], pixsize)
-        gal.draw(image=im, dx=pixsize)
+        gal.draw(image=im, scale=pixsize)
         return im.array
 
 class GalSimSEngine(GalSimEngine):
@@ -110,14 +110,14 @@ class GalSimSEngine(GalSimEngine):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         sersic = self._gparam_to_galsim(gparam)
         gal = self._get_uncvl_gal([sersic], pixsize)
-        gal.draw(image=im, dx=pixsize)
+        gal.draw(image=im, scale=pixsize)
         return im.array
 
     def get_image(self, gparam, PSF, pixsize=1.0):
         im = galsim.ImageD(int(round(self.size/pixsize)), int(round(self.size/pixsize)))
         sersic = self._gparam_to_galsim(gparam)
         gal = self._get_gal([(sersic, PSF)], pixsize)
-        gal.draw(image=im, dx=pixsize)
+        gal.draw(image=im, scale=pixsize)
         return im.array
 
 class VoigtEngine(object):

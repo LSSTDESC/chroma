@@ -31,12 +31,14 @@ import chroma
 
 from fig_utils import *
 
+data_dir = '../../../data/'
+
 def fig3_fiducial(bd_engine, PSF_model):
     '''Generate `m` and `c` vs. filter width for the fiducial bulge+disk galaxy.'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
     print
@@ -48,7 +50,7 @@ def fig3_fiducial(bd_engine, PSF_model):
     fil = open('output/fig3_fiducial.dat', 'w')
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
-        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = data_dir+'/filters/Euclid_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, PSF_model, bd_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -60,8 +62,8 @@ def fig3_redshift(bd_engine, PSF_model):
     '''Generate `m` and `c` for the fiducial galaxy, but change the redshift to 1.4'''
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
     redshift = 1.4
 
     print
@@ -73,7 +75,7 @@ def fig3_redshift(bd_engine, PSF_model):
     fil = open('output/fig3_redshift.dat', 'w')
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
-        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = data_dir+'/filters/Euclid_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, PSF_model, bd_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -87,8 +89,8 @@ def fig3_bulge_radius(bd_engine, PSF_model):
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
     redshift = 0.9
 
     print
@@ -101,7 +103,7 @@ def fig3_bulge_radius(bd_engine, PSF_model):
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
         gparam['b_r_e'].value = gparam['b_r_e'].value * 0.4/1.1
-        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = data_dir+'/filters/Euclid_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, PSF_model, bd_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])
@@ -113,8 +115,8 @@ def fig3_disk_spectrum(bd_engine, PSF_model):
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Im_ext.ascii'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Im_ext.ascii'
     redshift = 0.9
 
     print
@@ -126,7 +128,7 @@ def fig3_disk_spectrum(bd_engine, PSF_model):
     fil = open('output/fig3_disk_spectrum.dat', 'w')
     for fw in [150, 250, 350, 450]:
         gparam = fiducial_galaxy()
-        filter_file = '../../data/filters/voigt12_{:03d}.dat'.format(fw)
+        filter_file = data_dir+'/filters/Euclid_{:03d}.dat'.format(fw)
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, PSF_model, bd_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])

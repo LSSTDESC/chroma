@@ -41,8 +41,8 @@ def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
     beta = phi * galsim.radians
     PSF.applyShear(g=ellipticity, beta=beta)
     im = galsim.ImageD(105, 105) #arbitrary numbers!
-    PSF.draw(image=im, dx=1.0/7)
-    PSF = galsim.InterpolatedImage(im, dx=1.0/7)
+    PSF.draw(image=im, scale=1.0/7)
+    PSF = galsim.InterpolatedImage(im, scale=1.0/7)
     return PSF
 
 def GSAtmPSF(wave, photons,
@@ -70,7 +70,7 @@ def GSAtmPSF(wave, photons,
     for i in range(315):
         w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
         PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
-    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
+    aPSF = galsim.InterpolatedImage(PSFim, scale=1.0/21, flux=1.0)
     mPSF = galsim.Moffat(beta=moffat_beta, fwhm=moffat_FWHM)
     mPSF.applyShear(g=moffat_ellip, beta=moffat_phi * galsim.radians)
     PSF = galsim.Convolve([aPSF, mPSF])
@@ -101,7 +101,7 @@ def GSGaussAtmPSF(wave, photons,
     for i in range(315):
         w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
         PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
-    aPSF = galsim.InterpolatedImage(PSFim, dx=1.0/21, flux=1.0)
+    aPSF = galsim.InterpolatedImage(PSFim, scale=1.0/21, flux=1.0)
     gPSF = galsim.Gaussian(fwhm=FWHM)
     gPSF.applyShear(g=gauss_ellip, beta=gauss_phi * galsim.radians)
     PSF = galsim.Convolve([aPSF, gPSF])
@@ -125,8 +125,8 @@ def GSAtmSeeingPSF(wave, photons, plate_scale=0.2, moffat_beta=2.5, moffat_FWHM_
     beta = moffat_phi * galsim.radians
     PSF.applyShear(g=moffat_ellip, beta=beta)
     im = galsim.ImageD(288, 288) #arbitrary numbers!
-    PSF.draw(image=im, dx=1./7)
-    PSF = galsim.InterpolatedImage(im, dx=1./7)
+    PSF.draw(image=im, scale=1./7)
+    PSF = galsim.InterpolatedImage(im, scale=1./7)
     return PSF
 
 def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
@@ -142,8 +142,8 @@ def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
     PSF = galsim.Add(mpsfs)
     PSF.applyShear(g=moffat_ellip, beta=moffat_beta * galsim.radians)
     im = galsim.ImageD(124, 124) #arbitrary numbers!  support up to 41x41 stamp
-    PSF.draw(image=im, dx=1./3)
-    PSF = galsim.InterpolatedImage(im, dx=1./3)
+    PSF.draw(image=im, scale=1./3)
+    PSF = galsim.InterpolatedImage(im, scale=1./3)
     return PSF
 
 class VoigtEuclidPSF(object):
