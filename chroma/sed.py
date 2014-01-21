@@ -24,13 +24,13 @@ class SED(object):
             self.needs_new_interp=False
         return self.interp
 
-    def scale(self, mag_norm, bandpass):
+    def set_scale(self, mag_norm, bandpass):
         current_mag = self.magnitude(bandpass)
         multiplier = 10**(-0.4 * (mag_norm - current_mag))
         self.flambda *= multiplier
         self.needs_new_interp=True
 
-    def apply_redshift(self, redshift):
+    def set_redshift(self, redshift):
         if redshift != self.redshift:
             self.redshift = redshift
             self.needs_new_interp=True

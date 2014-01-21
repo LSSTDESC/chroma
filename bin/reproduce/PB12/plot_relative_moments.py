@@ -29,8 +29,7 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
                   'ukf5v',
                   'ukg5v',
                   'ukk5v',
-                  'ukm5v',
-                  'ukg5v'] #extra G5v star to make 8
+                  'ukm5v']
     star_diffs = {}
     for star_type in star_types:
         star_diffs[star_type] = {}
@@ -59,7 +58,7 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
             gal_SED = chroma.SED(wave, flambda)
             for z in np.arange(0.0, 1.3, 0.02):
                 bar.update()
-                gal_SED.apply_redshift(z)
+                gal_SED.set_redshift(z)
                 m = gal_SED.DCR_moment_shifts(bandpass, zenith, **kwargs)
                 # rad -> arcsec, rad^2 -> arcsec^2
                 gal_diffs[gal_type]['M1'].append((m[0] - G5v_mom[0]) * 180 / np.pi * 3600)
