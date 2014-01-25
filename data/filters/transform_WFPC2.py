@@ -1,3 +1,5 @@
+# rewrite WFPC2 filters using nanometers for wavelengths instead of Angstroms
+
 import numpy
 
 f814_data = numpy.genfromtxt('WFPC2_F814W.angstrom.dat')
