@@ -1,3 +1,5 @@
+# resample spectra from Coleman, Wu, and Weedman (1980) to 0.5 nanometer resolution.
+
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
