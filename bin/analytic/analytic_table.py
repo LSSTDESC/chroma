@@ -104,7 +104,7 @@ def construct_analytic_table():
         star_data[i]['star_type'] = star_type
         for name in data.dtype.names:
             star_data[i][name] = data[name]
-    np.save('stars.npy', star_data)
+    cPickle.dump(star_data, open('stars.pkl', 'wb'))
 
     # now onto galaxies
     gal_data = np.recarray((len(gal_types)*100,), dtype = [('gal_type', 'a11'),
@@ -129,7 +129,7 @@ def construct_analytic_table():
                 for name in data.dtype.names:
                     gal_data[i][name] = data[name]
                 i += 1
-    np.save('galaxies.npy', gal_data)
+    cPickle.dump(gal_data, open('galaxies.pkl', 'wb'))
 
 if __name__ == '__main__':
     construct_analytic_table()

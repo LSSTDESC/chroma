@@ -1,79 +1,18 @@
+import cPickle
 import os
 
 import numpy as np
-import astropy.utils.console
 import matplotlib.pyplot as plt
 
-import _mypath
-import chroma
-
-# def compute_relative_moments(filter_name, zenith, **kwargs):
-#     spec_dir = '../../../data/SEDs/'
-#     filter_dir = '../../../data/filters/'
-
-#     f_wave, f_throughput = np.genfromtxt(filter_dir + '{}.dat'.format(filter_name)).T
-#     bandpass = chroma.Bandpass(f_wave, f_throughput)
-#     # KIN galaxy spectra are cut-off above 994nm, so truncate redward wavelengths
-#     # Note this makes y-band calculations impossible.
-#     # Also truncate out-of-band leaks below 5e-3.
-#     bandpass.truncate(rel_throughput=5.e-3, redlim=994)
-
-#     G5v_wave, G5v_flambda = np.genfromtxt(spec_dir + 'ukg5v.ascii').T
-#     G5v_SED = chroma.SED(G5v_wave, G5v_flambda)
-
-#     G5v_mom = G5v_SED.DCR_moment_shifts(bandpass, zenith, **kwargs)
-
-#     star_types = ['uko5v',
-#                   'ukb5iii',
-#                   'uka5v',
-#                   'ukf5v',
-#                   'ukg5v',
-#                   'ukk5v',
-#                   'ukm5v']
-#     star_diffs = {}
-#     for star_type in star_types:
-#         star_diffs[star_type] = {}
-#         wave, flambda = np.genfromtxt(spec_dir + star_type + '.ascii').T
-#         star_SED = chroma.SED(wave, flambda)
-
-#         m = star_SED.DCR_moment_shifts(bandpass, zenith, **kwargs)
-#         star_diffs[star_type]['M1'] = (m[0] - G5v_mom[0]) * 180 / np.pi * 3600 # rad -> arcsec
-#         # rad^2 -> arcsec^2
-#         star_diffs[star_type]['M2'] = (m[1] - G5v_mom[1]) * (180 / np.pi * 3600)**2
-
-#     gal_types= ['CWW_E_ext',
-#                 'KIN_Sa_ext',
-#                 'KIN_Sb_ext',
-#                 'CWW_Sbc_ext',
-#                 'CWW_Scd_ext',
-#                 'CWW_Im_ext',
-#                 'KIN_SB1_ext',
-#                 'KIN_SB6_ext']
-
-#     gal_diffs = {}
-#     with astropy.utils.console.ProgressBar(100 * len(gal_types)) as bar:
-#         for gal_type in gal_types:
-#             gal_diffs[gal_type] = {'M1':[], 'M2':[], 'wM2':[]}
-#             wave, flambda = np.genfromtxt(spec_dir + gal_type + '.ascii').T
-#             gal_SED = chroma.SED(wave, flambda)
-#             for z in np.arange(0.0, 1.3, 0.02):
-#                 bar.update()
-#                 gal_SED.set_redshift(z)
-#                 m = gal_SED.DCR_moment_shifts(bandpass, zenith, **kwargs)
-#                 # rad -> arcsec, rad^2 -> arcsec^2
-#                 gal_diffs[gal_type]['M1'].append((m[0] - G5v_mom[0]) * 180 / np.pi * 3600)
-#                 gal_diffs[gal_type]['M2'].append((m[1] - G5v_mom[1]) * (180 / np.pi * 3600)**2)
-#     return star_diffs, gal_diffs
-
 def plot_analytic_moments(filter_name, zenith=45.0):
-    stars = np.load('../../analytic/stars.npy')
-    gals = np.load('../../analytic/galaxies.npy')
+    stars = cPickle.load(open('../../analytic/stars.pkl'))
+    gals = cPickle.load(open('../../analytic/galaxies.pkl'))
 
     #------------------------------#
     # Differences in first moments #
     #------------------------------#
 
-    f = plt.figure(figsize=(8,6), dpi=100)
+    f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 1.3)
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)')
@@ -115,7 +54,7 @@ def plot_analytic_moments(filter_name, zenith=45.0):
     # Differences in second moments #
     #-------------------------------#
 
-    f = plt.figure(figsize=(8,6), dpi=100)
+    f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
     ax1.set_xlim(-0.1, 1.3)
     ax1.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)')
