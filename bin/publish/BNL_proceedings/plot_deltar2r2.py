@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
 
 def get_r2(s_wave, s_flux, f_wave, f_throughput, alpha=-0.2):
     wave = f_wave[f_wave > 300]
@@ -19,8 +20,8 @@ def get_r2(s_wave, s_flux, f_wave, f_throughput, alpha=-0.2):
     return r2
 
 def compute_second_moment_radii(filter_name, alpha=-0.2):
-    spec_dir = '../../data/SEDs/'
-    filter_dir = '../../data/filters/'
+    spec_dir = data_dir+'SEDs/'
+    filter_dir = data_dir+'filters/'
 
     f_data = numpy.genfromtxt(filter_dir + '{}.dat'.format(filter_name))
     f_wave, f_throughput = f_data[:,0], f_data[:,1]
