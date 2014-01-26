@@ -36,3 +36,6 @@ nosetests.xml
 
 # OS X junk
 .DS_Store
+
+# Generated data
+*.pkl
