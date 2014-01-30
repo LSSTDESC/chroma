@@ -73,4 +73,4 @@ def plot_one_case_study(filename, cmap='jet'):
 
 
 if __name__ == '__main__':
-    plot_one_case_study('one_case.fits')
+    plot_one_case_study('output/one_case.fits')

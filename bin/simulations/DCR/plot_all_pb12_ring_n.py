@@ -40,14 +40,14 @@ if __name__ == '__main__':
     ax2.set_ylabel('c')
     ax2.set_xlabel('z')
     ax1.set_xlim(0.0, 3.0)
-    ax1.set_ylim(-0.04, 0.12)
+    ax1.set_ylim(-0.01, 0.03)
     ax2.set_xlim(0.0, 3.0)
-    ax2.set_ylim(-0.04, 0.1)
+    ax2.set_ylim(-0.01, 0.02)
 
     color = ['blue', 'green', 'red']
     i=0
     for n in [0.5, 1.0, 4.0]:
-        add_to_plot('output/calib_vs_redshift.r.CWW_E_ext.ukg5v.{:3.1f}.z50.dat'.format(n), ax1, ax2,
+        add_to_plot('output/calib_vs_redshift.r.CWW_E_ext.ukg5v.{:3.1f}.z30.dat'.format(n), ax1, ax2,
                     color[i], str(n))
         i += 1
     fig.savefig('output/all_pb12_ring_n.pdf')

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
+
 def fiducial_galaxy():
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
@@ -79,7 +81,6 @@ def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/18
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0
-    data_dir = '../../data/'
     filter_file = data_dir+'filters/LSST_{}.dat'.format(filter_name)
     gal_SED_file = data_dir+'SEDs/{}.ascii'.format(gal)
     star_SED_file = data_dir+'SEDs/{}.ascii'.format(star)

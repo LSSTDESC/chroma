@@ -192,4 +192,4 @@ def plot_two_cmap(filename):
 
 
 if __name__ == '__main__':
-    plot_two_cmap('one_case.fits')
+    plot_two_cmap('output/one_case.fits')

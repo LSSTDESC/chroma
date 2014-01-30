@@ -10,6 +10,8 @@ import astropy.utils.console
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
+
 def fiducial_galaxy():
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
@@ -72,7 +74,6 @@ def calib_vs_redshift(filter_name, gal, star, n, zenith=30*numpy.pi/180):
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0
-    data_dir = '../../data/'
     filter_file = data_dir+'filters/LSST_{}.dat'.format(filter_name)
     gal_SED_file = data_dir+'SEDs/{}.ascii'.format(gal)
     star_SED_file = data_dir+'SEDs/{}.ascii'.format(star)

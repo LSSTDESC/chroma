@@ -10,6 +10,8 @@ import astropy.io.fits as fits
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
+
 def my_imshow(my_img,ax=None,**kwargs):
     if ax is None:
         ax = plt.gca()
@@ -32,7 +34,6 @@ def one_case_study(Sersic_n, zenith, bd, gamma, beta,
     PSF_model = chroma.PSF_model.GSAtmPSF
     PSF_ellip = 0.0
     PSF_phi = 0.0
-    data_dir = '../../data/'
     filter_file = data_dir+'filters/'+filter_name+'.dat'
     gal_SED_file = data_dir+'SEDs/'+gal_SED_name+'.ascii'
     star_SED_file = data_dir+'SEDs/'+star_SED_name+'.ascii'
