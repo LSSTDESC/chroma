@@ -1,0 +1,197 @@
+# Done      = 20
+# Todo      = 5
+# Unchecked = 59
+# Total     = 84
+
+  /data/
+
+  /data/filters/
+Done.                make_Voigt12_Euclid_filters.py
+Done.                transform_WFPC2.py
+
+  /data/SEDs/
+Done.                upsampleCWW.py
+Done.                make_monochromatic_spectra.py
+
+
+
+
+  /test/
+Done.                _mypath.py
+Done.                test_Sersic.py
+Done.                test_dispersion.py
+Todo.                test_re.py              Needs work for finite box size.
+
+
+
+
+  /doc/
+Done.                doc/shorten.py
+
+
+
+
+  /chroma/
+Done.                chroma_fill_plot.py
+Unchecked.           atmdisp.py             superceded by galsim?
+Todo.                Sersic.py              Add second moments as size/ellip parameterization.
+Unchecked.           seeing.py              Superceded by galsim?
+Done.                extinction.py          But should check on BSD licensing...
+Unchecked.           GalTools.py
+Unchecked.           utils.py
+Unchecked.           PSF_model.py
+Unchecked.           ImageEngine.py
+Unchecked.           sed.py                 Superceded by galsim?
+Unchecked.           __init__.py
+
+
+
+
+  /bin/
+
+  /bin/analytic/
+Done.                _mypath.py
+Done.                analytic_table.py
+Todo.                plot_PSF_size_shift.py       Needs whitespace reshaping.
+
+  /bin/didactic/
+Done.                _mypath.py
+Done.                DCR_PSF.py
+Todo.                photon_landings.py           Should this be part of publish?
+Todo.                refraction.py                Should this be broken apart?
+
+
+
+
+  /bin/simulations/
+
+  /bin/simulations/DCR+seeing/
+Unchecked.           _mypath.py
+Unchecked.           DCR.py
+Unchecked.           DCRseeing.py
+
+  /bin/simulations/DCR/
+Unchecked.           plot_m_vs_rPSF_z.py
+Unchecked.           plot_m_vs_n_rPSF.py
+Unchecked.           gal_vs_n.py
+Unchecked.           plot_pb12_ring_n.py
+Unchecked.           plot_all_pb12_ring_n.py
+Unchecked.           calibration_linearity.py
+Unchecked.           paranoid.py
+Unchecked.           case_study.py
+Unchecked.           plot_one_case_study.py
+Unchecked.           plot_two_cmap.py
+Unchecked.           plot_two_cmap2.py
+Unchecked.           one_case_study.py
+Unchecked.           _mypath.py
+Unchecked.           m_vs_n_rPSF.py
+Unchecked.           pb12_ring_n.py
+
+  /bin/simulations/seeing/
+Unchecked.           _mypath.py
+Unchecked.           sanity.py
+Unchecked.           plot_all_seeing_ring_n.py
+Unchecked.           seeing_ring_n.py
+Unchecked.           case_study.py
+Unchecked.           one_case_study.py
+Unchecked.           plot_two_cmap2.py
+
+
+
+
+  /bin/reproduce/
+
+  /bin/reproduce/Voigt12/
+Unchecked.           fig4plot.py
+Unchecked.           fig3plot.py
+Unchecked.           _mypath.py
+Unchecked.           fig4.py
+Unchecked.           fig_utils.py
+Unchecked.           fig3.py
+Unchecked.           new_fig3.py
+
+  /bin/reproduce/PB12/
+Unchecked.           pb12_color_corr.py
+Done.                _mypath.py
+Done.                plot_relative_moments.py
+
+
+
+  /bin/bias_corrections/
+
+  /bin/bias_corrections/photoz_MC/
+Done.                _mypath.py
+Done.                photoz_mc.py
+
+  /bin/bias_corrections/machine_learning/
+Unchecked.           SVR_correction.py
+Unchecked.           make_catalogs.py
+Unchecked.           process_star_catalog.py
+Unchecked.           compare_star_mags.py
+Unchecked.           compare_galaxy_mags.py
+Unchecked.           photo_z_performance.py
+Unchecked.           star_SVR.py
+Unchecked.           compare_z_dist.py
+Unchecked.           _mypath.py
+Unchecked.           phot.py
+Unchecked.           process_gal_catalog.py
+Unchecked.           gal_SVR.py
+Unchecked.           plot_uncorrected_biases.py
+Unchecked.           plot_corrected_biases.py
+Unchecked.           gal_spec_plot.py
+
+
+
+
+  /bin/opsim/
+Unchecked.           _mypath.py
+Unchecked.           opsim.py                      Break apart?  or not...
+Unchecked.           relative_alignment.py
+
+
+
+
+  /bin/publish/BNL_proceedings/
+Done.                _mypath.py
+Done.                plot_deltar2r2.py
+
+
+
+
+Postponing rewritig phosim scripts for the moment.
+  /bin/phosim/
+
+  /bin/phosim/validate/DCR/
+                     submit_job.py
+                     sextractor/measure_second_moments.py
+                     sextractor/add_noise.py
+                     relative_moments.py
+                     plot_relative_moments.py
+                     generate_batch_sextract.py
+                     estimate_moffat_params.py
+                     create_instance_catalog.py
+                     _mypath.py
+
+  /bin/phosim/validate/monochromatic_seeing/
+                     submit_job.py
+                     seeing_plot.py
+                     measure_moffat_fwhm.py
+                     create_instance_catalog.py
+
+  /bin/phosim/validate/chromatic_seeing_SED/
+                     submit_job.py
+                     _mypath.py
+                     plot_FWHM.py
+                     measure_moffat_fwhm.py
+                     create_instance_catalog.py
+                     coallesce.py
+
+  /bin/phosim/charcterize/off_axis_dispersion/
+                     _mypath.py
+                     create_instance_catalog.py
+                     submit_job.py
+                     sextractor/measure_second_moments.py
+                     sextractor/add_noise.py
+                     relative_moments.py
+                     plot_relative_moments.py
+                     generate_batch_sextract.py
