@@ -79,7 +79,7 @@ def compute_color_gradient_separation_correction(b_spec, d_spec, filters):
         dVcg[filter_name] = b_frac * (b_Rbar - c_Rbar)**2 + d_frac * (d_Rbar - c_Rbar)**2
     return dVcg
 
-def readfile(filename, nmax=None, debug=False, randomize=True):
+def readfile(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
     ground_filters = phot.load_LSST_filters()
     space_filters = phot.load_Euclid_filters()
     filters = ground_filters.copy()
@@ -145,8 +145,9 @@ def readfile(filename, nmax=None, debug=False, randomize=True):
     order = [d+1 for d in xrange(nrows)]
     if randomize:
         import random
+        random.seed(123456789)
         random.shuffle(order)
-    order = order[0:nmax]
+    order = order[start:start+nmax]
     order.sort()
     with open(filename) as f:
         if not debug:
@@ -176,7 +177,11 @@ def readfile(filename, nmax=None, debug=False, randomize=True):
                 data[j].internalRVBulge = float(s[18])
                 data[j].internalAVDisk = float(s[19])
                 data[j].internalRVDisk = float(s[20])
-                spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
+                if emission:
+                    spec = phot.make_composite_spec_with_emission_lines(data[j], filters,
+                                                                        zps, wave_match)
+                else:
+                    spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
                 magCalcs = phot.compute_mags(spec, filters, zps)
                 R, V, S_m02 = compute_ground_chromatic_corrections(spec, ground_filters)
                 S_p06, S_p10 = compute_space_chromatic_corrections(spec, space_filters)
@@ -214,12 +219,20 @@ def readfile(filename, nmax=None, debug=False, randomize=True):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--nmax', type=int, default=30000,
-                        help="maximum number of galaxies to process")
-    parser.add_argument('--outfile', default = 'galaxy_data.pkl',
-                        help="output filename")
     parser.add_argument('--infile', default = 'output/galaxy_catalog.dat',
-                        help="input filename")
+                        help="input filename. Default 'output/galaxy_catalog.dat'")
+    parser.add_argument('--outfile', default = 'galaxy_data.pkl',
+                        help="output filename. Default 'galaxy_data.pkl'")
+    parser.add_argument('--nmax', type=int, default=30000,
+                        help="maximum number of galaxies to process. Default 30000")
+    parser.add_argument('--start', type=int, default=0,
+                        help="starting index for catalog.  Default 0")
+    parser.add_argument('--emission', dest='emission', action='store_true',
+                        help="add emission lines to spectra")
     args = parser.parse_args()
 
-    cPickle.dump(readfile(args.infile, nmax=args.nmax), open(args.outfile, 'wb'))
+    cPickle.dump(readfile(args.infile,
+                          nmax=args.nmax,
+                          emission=args.emission,
+                          start=args.start),
+                 open(args.outfile, 'wb'))

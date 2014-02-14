@@ -4,11 +4,13 @@ import numpy
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
+
 def load_LSST_filters():
     """ Read the LSST filter definitions from disk.  Also add a normalization filter that is
     only non-zero at 500nm, which is used to define the CatSim/PhoSim normalization.
     """
-    filter_dir = '../../data/filters/'
+    filter_dir = data_dir+'filters/'
     filter_names = 'ugrizy'
     # establish wavelength array
     filters = {}
@@ -27,7 +29,7 @@ def load_Euclid_filters():
     """ Load Euclid filters as defined by Voigt+12, centered at 775nm with widths of 150, 250, 350,
     and 450 nm.  These are stored in the data directory."""
 
-    filter_dir = '../../data/filters/'
+    filter_dir = data_dir+'filters/'
     filter_names = ['Euclid_{}'.format(width) for width in [150,250,350,450]]
 
     filters = {}
@@ -139,6 +141,69 @@ def make_composite_spec(gal, filters, zps, wave_match):
         disk_spec = read_spec(SED_dir+gal['sedPathDisk'])
         disk_spec = scale_spec(disk_spec, gal['magNormDisk'],
                                 filters['norm'], zps['norm'])
+        disk_spec = apply_extinction(disk_spec,
+                                      A_v=gal['internalAVDisk'],
+                                      R_v=gal['internalRVDisk'])
+        disk_spec = apply_redshift(disk_spec, gal['redshift'])
+        disk_spec = match_wavelengths(disk_spec, wave_match)
+    else:
+        disk_spec = {'wave':wave_match, 'flambda':numpy.zeros_like(wave_match)}
+    if gal['sedPathAGN'] != 'None':
+        AGN_spec = read_spec(SED_dir+gal['sedPathAGN'])
+        AGN_spec = scale_spec(AGN_spec, gal['magNormAGN'],
+                              filters['norm'], zps['norm'])
+        AGN_spec = apply_redshift(AGN_spec, gal['redshift'])
+        AGN_spec = match_wavelengths(AGN_spec, wave_match)
+    else:
+        AGN_spec = {'wave':wave_match, 'flambda':numpy.zeros_like(wave_match)}
+    return {'wave':wave_match, 'flambda':(bulge_spec['flambda'] +
+                                          disk_spec['flambda'] +
+                                          AGN_spec['flambda'])}
+
+def get_UV_flux(spec):
+    # flambda in erg/s/cm^2/nm
+    UV_flambda = numpy.interp(230.0, spec['wave'], spec['flambda'])
+    # convert to erg/s/Hz
+    c = 29979245800.0 # cm/s
+    nm_to_cm = 1.0e-7
+    UV_fnu = UV_flambda * (230.0)**2 / c * nm_to_cm
+    return UV_fnu
+
+def add_emission_lines(spec):
+    wave = spec['wave'][:]
+    flambda = spec['flambda'][:]
+    UV_fnu = get_UV_flux(spec)
+    lines = ['OII','OIII','Hbeta','Halpha','Lya']
+    multipliers = numpy.array([1.0, 0.36, 0.61, 1.77, 2.0])*1.e13
+    waves = [372.7, 500.7, 486.1, 656.3, 121.5]
+    velocity = 200.0 # km/s
+    for line, m, w in zip(lines, multipliers, waves):
+        flux = UV_fnu * m
+        sigma = velocity / 299792.458 * w # sigma in Angstroms
+        amplitude = flux / sigma / numpy.sqrt(2.0 * numpy.pi)
+        flambda += amplitude * numpy.exp(-(w-spec['wave'])**2/(2*sigma**2))
+    return {'wave':wave, 'flambda':flambda}
+
+def make_composite_spec_with_emission_lines(gal, filters, zps, wave_match):
+    SED_dir = os.environ['CAT_SHARE_DATA']+'data/'
+
+    if gal['sedPathBulge'] != 'None':
+        bulge_spec = read_spec(SED_dir+gal['sedPathBulge'])
+        bulge_spec = scale_spec(bulge_spec, gal['magNormBulge'],
+                                filters['norm'], zps['norm'])
+        bulge_spec = add_emission_lines(bulge_spec)
+        bulge_spec = apply_extinction(bulge_spec,
+                                      A_v=gal['internalAVBulge'],
+                                      R_v=gal['internalRVBulge'])
+        bulge_spec = apply_redshift(bulge_spec, gal['redshift'])
+        bulge_spec = match_wavelengths(bulge_spec, wave_match)
+    else:
+        bulge_spec = {'wave':wave_match, 'flambda':numpy.zeros_like(wave_match)}
+    if gal['sedPathDisk'] != 'None':
+        disk_spec = read_spec(SED_dir+gal['sedPathDisk'])
+        disk_spec = scale_spec(disk_spec, gal['magNormDisk'],
+                                filters['norm'], zps['norm'])
+        disk_spec = add_emission_lines(disk_spec)
         disk_spec = apply_extinction(disk_spec,
                                       A_v=gal['internalAVDisk'],
                                       R_v=gal['internalRVDisk'])
