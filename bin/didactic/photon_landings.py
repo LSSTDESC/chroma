@@ -18,12 +18,12 @@ def moffat1d(fwhm, beta, center=0.0):
 cwave = numpy.linspace(500, 860, 256)
 fig, ax = plt.subplots(2, 2, figsize=(8,5))
 
-spectra = ['../../data/SEDs/'+s for s in ('ukk5v.ascii', 'CWW_Sbc_ext.ascii')]
+spectra = ['../../data/SEDs/'+s for s in ('ukg5v.ascii', 'CWW_Sbc_ext.ascii')]
 redshifts = [0.0, 0.7]
 filters = ['../../data/filters/'+s for s in ('LSST_r.dat', 'LSST_i.dat')]
 
-ax[1,0].set_xlabel('Wavelength (nm)', fontsize=18)
-ax[1,1].set_xlabel('Refraction (arcsec)', fontsize=18)
+ax[1,0].set_xlabel('Wavelength (nm)', fontsize=12)
+ax[1,1].set_xlabel('Refraction (arcsec)', fontsize=12)
 for i, s in enumerate(spectra):
     wave, flux = numpy.genfromtxt(s).T
     wave *= (1 + redshifts[i])
@@ -32,9 +32,9 @@ for i, s in enumerate(spectra):
     ax[i,0].plot(wave, photons/scale, color='black')
     ax[i,0].set_xlim(500, 900)
     ax[i,0].set_ylim(0.0, 1.0)
-    ax[i,0].set_ylabel('$d(\mathrm{N_{photons}})/d\lambda$', fontsize=18)
+    ax[i,0].set_ylabel('$d(\mathrm{N_{photons}})/d\lambda$', fontsize=12)
     ax[i,1].set_ylim(0.0, 1.0)
-    ax[i,1].set_ylabel('$d(\mathrm{N_{photons}})/d\mathrm{R}$', fontsize=18)
+    ax[i,1].set_ylabel('$d(\mathrm{N_{photons}})/d\mathrm{R}$', fontsize=12)
     xs = numpy.linspace(26.2, 27.2, 100)
     moffat = moffat1d(fwhm=0.6, beta=2.619, center=26.7)
     ax[i,1].plot(xs, moffat(xs)/1.2, color='black')
@@ -68,14 +68,14 @@ for i, s in enumerate(spectra):
         chroma.chroma_fill_plot(R[w], angle_dens[w]/angle_dens[w].max() / 1.2, color[w], axes=ax[i,1])
 
         for label in ax[i,1].get_xticklabels():
-            label.set_fontsize(14)
+            label.set_fontsize(10)
         for label in ax[i,1].get_yticklabels():
-            label.set_fontsize(14)
+            label.set_fontsize(10)
         for label in ax[i,0].get_xticklabels():
-            label.set_fontsize(14)
+            label.set_fontsize(10)
         for label in ax[i,0].get_yticklabels():
-            label.set_fontsize(14)
+            label.set_fontsize(10)
 
 
-fig.subplots_adjust(hspace=0.25, wspace=0.35, bottom=0.12, right=0.92, top=0.92)
+fig.subplots_adjust(hspace=0.23, wspace=0.32, bottom=0.12, right=0.92, top=0.92)
 plt.savefig('output/photon_landings.png', dpi=220)

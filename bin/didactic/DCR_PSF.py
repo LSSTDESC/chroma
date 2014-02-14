@@ -1,4 +1,4 @@
-# Make some photon histograms against wavelength and against refraction
+# Makes an animated gif file cycling through various SEDs and their corresponding amount of refraction.
 
 import os
 import subprocess
@@ -6,7 +6,7 @@ import subprocess
 import numpy
 import matplotlib.pyplot as plt
 
-import _mypath #adds chroma to PYTHONPATH
+import _mypath
 import chroma
 
 def moffat1d(fwhm, beta, center=0.0):
