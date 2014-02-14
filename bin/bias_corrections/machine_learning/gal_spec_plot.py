@@ -87,12 +87,16 @@ def spec_plot(infile, nmax=None, debug=False, randomize=True):
                 data[j].internalAVDisk = float(s[19])
                 data[j].internalRVDisk = float(s[20])
                 spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
-
+                spec2 = phot.make_composite_spec_with_emission_lines(data[j], filters,
+                                                                     zps, wave_match)
                 f = plt.figure(figsize=(8,5))
                 ax = f.add_subplot(111)
                 w = spec['wave']
                 p = spec['flambda']*w
+                w2 = spec2['wave']
+                p2 = spec2['flambda']*w2
                 ax.plot(w, p)
+                ax.plot(w2, p2)
                 ax.set_xlim(500, 950)
                 ylim = ax.get_ylim()
                 ax.set_ylim(0, ylim[1])
@@ -105,7 +109,7 @@ def spec_plot(infile, nmax=None, debug=False, randomize=True):
                 ax.fill_between([550, 900], [ylim[1]*0.7]*2, [0,0], color='black', alpha=0.1)
                 ax.fill_between([550, 685], [ylim[1]/2]*2, [0,0], color='blue', alpha=0.1)
                 ax.fill_between([685, 815], [ylim[1]/2]*2, [0,0], color='red', alpha=0.1)
-                f.savefig('output/{}.png'.format(j), dpi=100)
+                f.savefig('output/{:04d}.png'.format(j), dpi=100)
                 plt.close(f)
                 j += 1
 

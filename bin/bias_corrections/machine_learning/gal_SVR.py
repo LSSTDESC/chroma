@@ -4,76 +4,79 @@ from argparse import ArgumentParser
 import numpy
 import SVR_correction
 
-def SVR(objs, ntrain, ntest, predict_var=None, predict_band=None, use_color=False, use_colormag=False):
+def SVR(train_objs, test_objs, predict_var=None, predict_band=None,
+        use_color=False, use_colormag=False):
     if predict_var is None:
         raise ValueError
-    train_Y = numpy.empty([ntrain], dtype=numpy.float)
-    test_Y = numpy.empty([ntest], dtype=numpy.float)
+    ntrain = len(train_objs)
+    ntest = len(test_objs)
+    train_Y = numpy.empty(ntrain, dtype=numpy.float)
+    test_Y = numpy.empty(ntest, dtype=numpy.float)
     if predict_band is None:
-        train_Y[:] = objs[predict_var][0:ntrain]
-        test_Y[:] = objs[predict_var][ntrain:ntrain+ntest]
+        train_Y[:] = train_objs[predict_var]
+        test_Y[:] = test_objs[predict_var]
     else:
-        train_Y[:] = objs[predict_var][predict_band][0:ntrain]
-        test_Y[:] = objs[predict_var][predict_band][ntrain:ntrain+ntest]
+        train_Y[:] = train_objs[predict_var][predict_band]
+        test_Y[:] = test_objs[predict_var][predict_band]
 
-    if use_colormag:
+    if use_colormag: # use i-band magnitude, and five colors to train
         # r-band, V
         train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
 
         #training data
-        train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain] - objs['magCalc']['LSST_g'][0:ntrain]
-        train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain] - objs['magCalc']['LSST_r'][0:ntrain]
-        train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain] - objs['magCalc']['LSST_i'][0:ntrain]
-        train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain] - objs['magCalc']['LSST_z'][0:ntrain]
-        train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain] - objs['magCalc']['LSST_y'][0:ntrain]
-        train_X[:,5] = objs['magCalc']['LSST_i'][0:ntrain]
+        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
+        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
+        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
+        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
+        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
+        train_X[:,5] = train_objs['magCalc']['LSST_i']
 
         #test data
         test_X = numpy.empty([ntest, 6], dtype=numpy.float)
-        test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-        test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-        test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-        test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-        test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
-        test_X[:,5] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-    elif use_color:
+        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
+        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
+        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
+        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
+        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
+        test_X[:,5] = test_objs['magCalc']['LSST_i']
+    elif use_color: # only use five colors to train
         # r-band, V
         train_X = numpy.empty([ntrain, 5], dtype=numpy.float)
 
         #training data
-        train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain] - objs['magCalc']['LSST_g'][0:ntrain]
-        train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain] - objs['magCalc']['LSST_r'][0:ntrain]
-        train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain] - objs['magCalc']['LSST_i'][0:ntrain]
-        train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain] - objs['magCalc']['LSST_z'][0:ntrain]
-        train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain] - objs['magCalc']['LSST_y'][0:ntrain]
+        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
+        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
+        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
+        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
+        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
 
         #test data
         test_X = numpy.empty([ntest, 5], dtype=numpy.float)
-        test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-        test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-        test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-        test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-        test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
-    else:
+        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
+        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
+        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
+        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
+        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
+    else: #default use just magnitudes to train
         # r-band, V
         train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
 
         #training data
-        train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain]
-        train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain]
-        train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain]
-        train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain]
-        train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain]
-        train_X[:,5] = objs['magCalc']['LSST_y'][0:ntrain]
+        train_X[:,0] = train_objs['magCalc']['LSST_u']
+        train_X[:,1] = train_objs['magCalc']['LSST_g']
+        train_X[:,2] = train_objs['magCalc']['LSST_r']
+        train_X[:,3] = train_objs['magCalc']['LSST_i']
+        train_X[:,4] = train_objs['magCalc']['LSST_z']
+        train_X[:,5] = train_objs['magCalc']['LSST_y']
 
         #test data
         test_X = numpy.empty([ntest, 6], dtype=numpy.float)
-        test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest]
-        test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-        test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-        test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-        test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-        test_X[:,5] = objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
+        test_X[:,0] = test_objs['magCalc']['LSST_u']
+        test_X[:,1] = test_objs['magCalc']['LSST_g']
+        test_X[:,2] = test_objs['magCalc']['LSST_r']
+        test_X[:,3] = test_objs['magCalc']['LSST_i']
+        test_X[:,4] = test_objs['magCalc']['LSST_z']
+        test_X[:,5] = test_objs['magCalc']['LSST_y']
 
     learner = SVR_correction.SV_regress()
     learner.add_training_data(train_X, train_Y)
@@ -82,7 +85,7 @@ def SVR(objs, ntrain, ntest, predict_var=None, predict_band=None, use_color=Fals
 
     return predict_Y
 
-def SVR_all(objs, ntrain, ntest, **kwargs):
+def SVR_all(train_objs, test_objs, **kwargs):
     ugrizy = [('LSST_u', numpy.float32),
               ('LSST_g', numpy.float32),
               ('LSST_r', numpy.float32),
@@ -104,7 +107,7 @@ def SVR_all(objs, ntrain, ntest, **kwargs):
          ('Euclid_350', numpy.float32),
          ('Euclid_450', numpy.float32)]
 
-    data = numpy.recarray((ntest,),
+    data = numpy.recarray((len(test_objs),),
                           dtype = [('galTileID', numpy.uint64),
                                    ('objectID', numpy.uint64),
                                    ('raJ2000', numpy.float64),
@@ -141,43 +144,52 @@ def SVR_all(objs, ntrain, ntest, **kwargs):
 
     # poor man's rec_array extension
     for field in copy_fields:
-        data[field] = objs[field][ntrain:ntrain+ntest]
+        data[field] = test_objs[field]
 
     # so don't actually do all, just do WL relevant corrections...
 
     print 'training r-band centroid shifts'
-    data['photo_R']['LSST_r'] = SVR(objs, ntrain, ntest, predict_var='R', predict_band='LSST_r', **kwargs)
+    data['photo_R']['LSST_r'] = SVR(train_objs, test_objs,
+                                    predict_var='R', predict_band='LSST_r', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['R']['LSST_r'] - data['photo_R']['LSST_r']))
 
     print 'training r-band zenith second-moment shifts'
-    data['photo_V']['LSST_r'] = SVR(objs, ntrain, ntest, predict_var='V', predict_band='LSST_r', **kwargs)
+    data['photo_V']['LSST_r'] = SVR(train_objs, test_objs,
+                                    predict_var='V', predict_band='LSST_r', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['V']['LSST_r'] - data['photo_V']['LSST_r']))
 
     print 'training r-band seeing shifts'
-    data['photo_S_m02']['LSST_r'] = SVR(objs, ntrain, ntest, predict_var='S_m02', predict_band='LSST_r', **kwargs)
+    data['photo_S_m02']['LSST_r'] = SVR(train_objs, test_objs,
+                                        predict_var='S_m02', predict_band='LSST_r', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['S_m02']['LSST_r'] - data['photo_S_m02']['LSST_r']))
 
 
     print 'training i-band centroid shifts'
-    data['photo_R']['LSST_i'] = SVR(objs, ntrain, ntest, predict_var='R', predict_band='LSST_i', **kwargs)
+    data['photo_R']['LSST_i'] = SVR(train_objs, test_objs,
+                                    predict_var='R', predict_band='LSST_i', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['R']['LSST_i'] - data['photo_R']['LSST_i']))
 
     print 'training i-band zenith second-moment shifts'
-    data['photo_V']['LSST_i'] = SVR(objs, ntrain, ntest, predict_var='V', predict_band='LSST_i', **kwargs)
+    data['photo_V']['LSST_i'] = SVR(train_objs, test_objs,
+                                    predict_var='V', predict_band='LSST_i', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['V']['LSST_i'] - data['photo_V']['LSST_i']))
 
     print 'training i-band seeing shifts'
-    data['photo_S_m02']['LSST_i'] = SVR(objs, ntrain, ntest, predict_var='S_m02', predict_band='LSST_i', **kwargs)
+    data['photo_S_m02']['LSST_i'] = SVR(train_objs, test_objs,
+                                        predict_var='S_m02', predict_band='LSST_i', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['S_m02']['LSST_i'] - data['photo_S_m02']['LSST_i']))
 
 
     print 'training Euclid_350 diffraction limit shifts'
-    data['photo_S_p06']['Euclid_350'] = SVR(objs, ntrain, ntest, predict_var='S_p06',
+    data['photo_S_p06']['Euclid_350'] = SVR(train_objs, test_objs,
+                                            predict_var='S_p06',
                                             predict_band='Euclid_350', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['S_p06']['Euclid_350'] - data['photo_S_p06']['Euclid_350']))
+    print 'resid std: {}'.format(numpy.std(data['S_p06']['Euclid_350']
+                                           - data['photo_S_p06']['Euclid_350']))
 
     print 'training photometric redshifts'
-    data['photo_redshift'] = SVR(objs, ntrain, ntest, predict_var='redshift', **kwargs)
+    data['photo_redshift'] = SVR(train_objs, test_objs,
+                                 predict_var='redshift', **kwargs)
     print 'resid std: {}'.format(numpy.std(data['redshift'] - data['photo_redshift']))
     print 'std((zphot - zspec)/(1+zspec)): {}'.format(
         numpy.std((data['photo_redshift'] - data['redshift'])/(1+data['redshift'])))
@@ -186,24 +198,35 @@ def SVR_all(objs, ntrain, ntest, **kwargs):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--infile', default='galaxy_data.pkl',
-                        help="input file")
+    parser.add_argument('--trainfile', default='galaxy_data.pkl',
+                        help='file containing training data')
+    parser.add_argument('--testfile', default='galaxy_data.pkl',
+                        help='file containing testing data')
     parser.add_argument('--outfile', default='corrected_galaxy_data.pkl',
-                        help="output file")
+                        help='output file')
+    parser.add_argument('--trainstart', type=int, default=0,
+                        help='object index at which to start training')
     parser.add_argument('--ntrain', type=int, default=16000,
-                        help="number of objects on which to train SVR")
+                        help='number of objects on which to train SVR')
+    parser.add_argument('--teststart', type=int, default=16000,
+                        help='object index at which to start training')
     parser.add_argument('--ntest', type=int, default=4000,
-                        help="number of objects on which to test SVR")
+                        help='number of objects on which to test SVR')
     parser.add_argument('--use_color', action='store_true',
                         help="use colors instead of magnitudes as predictors")
     parser.add_argument('--use_colormag', action='store_true',
                         help="use colors and one magnitude as predictors")
     args = parser.parse_args()
 
-    gals = cPickle.load(open(args.infile))
-
+    train_objs = cPickle.load(open(args.trainfile))
+    test_objs = cPickle.load(open(args.testfile))
     # kill everything with an AGN for now since mags don't match well.
-    w = numpy.isnan(gals.magNormAGN)
-    gals = gals[w]
-    out = SVR_all(gals, ntrain=args.ntrain, ntest=args.ntest, use_color=args.use_color, use_colormag=args.use_colormag)
+    w = numpy.isnan(train_objs.magNormAGN)
+    train_objs = train_objs[w]
+    w = numpy.isnan(test_objs.magNormAGN)
+    test_objs = test_objs[w]
+    out = SVR_all(train_objs[args.trainstart:args.trainstart+args.ntrain],
+                  test_objs[args.teststart:args.teststart+args.ntest],
+                  use_color=args.use_color,
+                  use_colormag=args.use_colormag)
     cPickle.dump(out, open(args.outfile, 'wb'))
