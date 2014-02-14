@@ -83,3 +83,5 @@ def plot_analytic_moments(filter_name, zenith=45.0):
 
 if __name__ == '__main__':
     plot_analytic_moments('LSST_g', 45.0)
+    plot_analytic_moments('LSST_r', 45.0)
+    plot_analytic_moments('LSST_i', 45.0)
