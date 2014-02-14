@@ -12,6 +12,8 @@ import astropy.utils.console
 import _mypath
 import chroma
 
+data_dir = '../../../data/'
+
 def moments(s_wave, s_flux, f_wave, f_throughput, zenith, **kwargs):
     wave = f_wave[f_wave > 300]
     flambda_i = numpy.interp(wave, s_wave, s_flux)
@@ -22,26 +24,19 @@ def moments(s_wave, s_flux, f_wave, f_throughput, zenith, **kwargs):
     s = chroma.relative_second_moment_radius(wave, photons)
 
     return m[0], m[1], s
-    # gaussian_sigma = 1.0 / 2.35 # 1 arcsec FWHM -> sigma
-    # m2 = chroma.weighted_second_moment(wave, photons, 1.0,
-    #                                    zenith=zenith,
-    #                                    Rbar=m[0], **kwargs)
-    # return m[0], m[1], m2
 
 def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
-    SED_dir = '../../data/SEDs/'
     gal_SEDs = ['CWW_E_ext', 'CWW_Im_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
                 'KIN_Sa_ext', 'KIN_Sb_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
 
-    filter_dir = '../../data/filters/'
-    filter_file = filter_dir + 'LSST_{}.dat'.format(filtername)
+    filter_file = data_dir + 'filters/LSST_{}.dat'.format(filtername)
 
     f_wave, f_throughput = numpy.genfromtxt(filter_file).T
 
     s_waves = []
     s_photons = []
     for s in gal_SEDs:
-        SED_file = SED_dir + s + '.ascii'
+        SED_file = data_dir+'SEDs/'+s+'.ascii'
         s_wave, s_photon = numpy.genfromtxt(SED_file).T
         s_waves.append(s_wave)
         s_photons.append(s_photon * s_wave)
@@ -76,7 +71,7 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     R *= 3600 * 180 / numpy.pi
     V *= (3600 * 180 / numpy.pi)**2
 
-    f = plt.figure(figsize=(8,6), dpi=180)
+    f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot2grid((2,4), (0,0), colspan=3)
     ax2 = plt.subplot2grid((2,4), (0,3))
     ax3 = plt.subplot2grid((2,4), (1,0), colspan=3)
@@ -88,10 +83,18 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     ax4.get_yaxis().set_visible(False)
     plt.subplots_adjust(wspace=0, hspace=0.1)
 
-    ax1.scatter(z, R)
+    ax1.scatter(z, R, s=3)
     ax2.hist(R, bins=50, color='Red', orientation='horizontal', range=[-0.006, 0.006])
-    ax3.scatter(z, V)
+    ax2xlim=ax2.get_xlim()
+    ax1.fill_between([0.0, 3.0], [-6e-3, -6e-3], [6e-3, 6e-3], color='gray', alpha=0.2)
+    ax2.fill_between([0.0, ax2xlim[1]], [-6e-3, -6e-3], [6e-3, 6e-3], color='gray', alpha=0.2)
+
+    ax3.scatter(z, V, s=3)
     ax4.hist(V, bins=50, color='Red', orientation='horizontal', range=[-0.0003, 0.0003])
+    ax4xlim=ax4.get_xlim()
+    ax3.fill_between([0.0, 3.0], [-1e-4, -1e-4], [1e-4, 1e-4], color='gray', alpha=0.2)
+    ax4.fill_between([0.0, ax4xlim[1]], [-1e-4, -1e-4], [1e-4, 1e-4], color='gray', alpha=0.2)
+    ax4.set_xlim(ax4xlim)
 
     ax1.set_ylim([-0.006, 0.006])
     ax2.set_ylim([-0.006, 0.006])
@@ -110,7 +113,8 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     if not os.path.exists('output/'):
         os.mkdir('output/')
     plt.savefig('output/photoz_mc.{}.z{}.png'.format(filtername,
-                                                     int(round(zenith * 180 / numpy.pi))))
+                                                     int(round(zenith * 180 / numpy.pi))),
+                dpi=200)
 
     f = plt.figure(figsize=(8,3.5))
     ax1 = plt.subplot2grid((1, 4), (0, 0), colspan=3)
@@ -125,7 +129,7 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     ax2xlim = ax2.get_xlim()
 
     ax1.set_xlim(0.0, 3.0)
-    ax1.set_ylabel('$\mathrm{phot} (\mathrm{ln}\, r^2)\,-\,\mathrm{spec} (\mathrm{ln}\, r^2)$')
+    ax1.set_ylabel('$\mathrm{phot} (\Delta r^2/r^2)\,-\,\mathrm{spec} (\Delta r^2/r^2)$')
     ax1.set_xlabel('redshift')
     ax1.set_title('{}-band'.format(filtername))
 
@@ -137,7 +141,8 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
 
     plt.tight_layout()
     plt.subplots_adjust(wspace=0)
-    plt.savefig('output/photoz_mc.S.{}.pdf'.format(filtername))
+    plt.savefig('output/photoz_mc.S.{}.png'.format(filtername),
+                dpi=200)
 
 if __name__ == '__main__':
     plot_photoz_mc(2000, 'r', 30.0 * numpy.pi / 180)
