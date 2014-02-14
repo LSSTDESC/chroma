@@ -117,7 +117,7 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2, yrange=None, pr
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel('$\Delta r^2_\mathrm{psf} / r^2_\mathrm{psf}$', fontsize=12)
+    hist_ax.set_ylabel('$\Delta r^2_\mathrm{PSF} / r^2_\mathrm{PSF}$', fontsize=12)
     hist_with_peak(np.log(gals[c_powidx][band] / gals[powidx][band]), bins=200,
                    range=ylim, orientation='horizontal', histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,

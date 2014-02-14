@@ -131,7 +131,7 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2, yrange=None, **
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(12)
 
-    f.savefig('output/dS_{}_{}.png'.format(band, powidx), dpi=200)
+    f.savefig('output/dS_{}_{}.png'.format(band, powidx), dpi=300)
 
 if __name__ == '__main__':
     pkl_dir = '../../bias_corrections/machine_learning/'
