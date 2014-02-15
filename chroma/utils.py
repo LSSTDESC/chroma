@@ -1,23 +1,21 @@
-import operator
-
-import numpy
+import numpy as np
 
 import astropy.utils.console
 
 def get_photons(SED_file, filter_file, redshift):
-    fwave, throughput = numpy.genfromtxt(filter_file).T
-    swave, flux = numpy.genfromtxt(SED_file).T
+    fwave, throughput = np.genfromtxt(filter_file).T
+    swave, flux = np.genfromtxt(SED_file).T
     swave *= (1.0 + redshift)
-    flux_i = numpy.interp(fwave, swave, flux)
+    flux_i = np.interp(fwave, swave, flux)
     photons = flux_i * throughput * fwave
     return fwave, photons
 
 def shear_galaxy(c_ellip, c_gamma):
-    '''Compute complex ellipticity after shearing by complex shear `c_gamma`.'''
+    """Compute complex ellipticity after shearing by complex shear `c_gamma`."""
     return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
 
 def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, silent=False):
-    ''' Performs a shear calibration ringtest.
+    """ Performs a shear calibration ringtest.
 
     Produces "true" images uniformly spread along a ring in ellipticity space using the supplied
     `gen_target_image` function.  Then tries to fit these images, (returning ellipticity estimates)
@@ -30,9 +28,9 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
 
     Ultimately returns an estimate of the applied shear (`gamma_hat`), which can then be compared to
     the input shear `gamma` in an external function to estimate shear calibration parameters.
-    '''
+    """
 
-    betas = numpy.linspace(0.0, 2.0 * numpy.pi, n_ring, endpoint=False)
+    betas = np.linspace(0.0, 2.0 * np.pi, n_ring, endpoint=False)
     ellip0s = []
     ellip180s = []
 
@@ -49,8 +47,8 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
         ellip0s.append(ellip0)
 
         #repeat with beta on opposite side of the ring (i.e. +180 deg)
-        target_image180 = gen_target_image(gamma, beta + numpy.pi)
-        init_param180 = gen_init_param(gamma, beta + numpy.pi)
+        target_image180 = gen_target_image(gamma, beta + np.pi)
+        init_param180 = gen_init_param(gamma, beta + np.pi)
         ellip180 = measure_ellip(target_image180, init_param180)
         ellip180s.append(ellip180)
 
@@ -69,40 +67,22 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
             work()
 
     gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
-    gamma_hat = numpy.mean(gamma_hats)
+    gamma_hat = np.mean(gamma_hats)
     # print
     # print gamma_hat
     return gamma_hat
 
-def FWHM(data, pixsize=1.0):
-    '''Compute the full-width at half maximum of a symmetric 2D distribution.  Assumes that measuring
-    along the x-axis is sufficient (ignores all but one row, the one containing the distribution
-    maximum).  Scales result by `pixsize` for non-unit width pixels.
+def moments(image):
+    """Compute first and second (quadrupole) moments of `image`.  Scales result for non-unit width
+    pixels.
 
-    Arguments
-    ---------
-    data -- array to analyze
-    pixsize -- linear size of a pixel
-    '''
-    height = data.max()
-    w = numpy.where(data == height)
-    y0, x0 = w[0][0], w[1][0]
-    xs = numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize
-    low = numpy.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
-    high = numpy.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
-    return abs(high-low)
-
-def moments(data, pixsize=1.0):
-    '''Compute first and second (quadrupole) moments of `data`.  Scales result by `pixsize` for
-    non-unit width pixels.
-
-    Arguments
-    ---------
-    data -- array to analyze
-    pixsize -- linear size of a pixel
-    '''
-    xs, ys = numpy.meshgrid(numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize,
-                            numpy.arange(data.shape[0], dtype=numpy.float64) * pixsize)
+    @param image   galsim.Image to analyze
+    @returns       x0, y0, Ixx, Iyy, Ixy - first and second moments of image.
+    """
+    data = image.array
+    scale = image.scale
+    xs, ys = np.meshgrid(np.arange(data.shape[0], dtype=np.float64) * scale,
+                            np.arange(data.shape[0], dtype=np.float64) * scale)
     total = data.sum()
     xbar = (data * xs).sum() / total
     ybar = (data * ys).sum() / total
@@ -111,31 +91,71 @@ def moments(data, pixsize=1.0):
     Ixy = (data * (xs - xbar) * (ys - ybar)).sum() / total
     return xbar, ybar, Ixx, Iyy, Ixy
 
-def AHM(data, pixsize=1.0, height=None):
-    ''' Compute area above half maximum as a potential replacement for FWHM.
+def my_imshow(im, ax=None, **kwargs):
+    import matplotlib.pyplot as plt
+    if ax is None:
+        ax = plt.gca()
+    def format_coord(x, y):
+        x = int(x + 0.5)
+        y = int(y + 0.5)
+        try:
+            return '%8e @ [%4i, %4i]' % (im[y, x], x, y)
+        except IndexError:
+            return ''
+    img = ax.imshow(im, **kwargs)
+    ax.format_coord=format_coord
+    return img
 
-    Arguments
-    ---------
-    data -- array to analyze
-    pixsize -- linear size of a pixel
-    height -- optional maximum height of data (defaults to sample maximum).
-    '''
-    if height is None:
-        height = data.max()
-    return (data > (0.5 * height)).sum() * scale**2
+# def FWHM(data, pixsize=1.0):
+#     """Compute the full-width at half maximum of a symmetric 2D distribution.  Assumes that measuring
+#     along the x-axis is sufficient (ignores all but one row, the one containing the distribution
+#     maximum).  Scales result by `pixsize` for non-unit width pixels.
+
+#     Arguments
+#     ---------
+#     data -- array to analyze
+#     pixsize -- linear size of a pixel
+#     """
+#     height = data.max()
+#     w = np.where(data == height)
+#     y0, x0 = w[0][0], w[1][0]
+#     xs = np.arange(data.shape[0], dtype=np.float64) * pixsize
+#     low = np.interp(0.5*height, data[x0, 0:x0], xs[0:x0])
+#     high = np.interp(0.5*height, data[x0+1, -1:x0:-1], xs[-1:x0:-1])
+#     return abs(high-low)
+
+# def AHM(data, pixsize=1.0, height=None):
+#     """ Compute area above half maximum as a potential replacement for FWHM.
+
+#     Arguments
+#     ---------
+#     data -- array to analyze
+#     pixsize -- linear size of a pixel
+#     height -- optional maximum height of data (defaults to sample maximum).
+#     """
+#     if height is None:
+#         height = data.max()
+#     return (data > (0.5 * height)).sum() * scale**2
 
 def Sersic_r_2nd_moment_over_r_e(n):
-    ''' Factor to convert the half light radius r_e to the 2nd moment radius defined
+    """ Factor to convert the half light radius r_e to the 2nd moment radius defined
     as sqrt(Ixx + Iyy) where Ixx and Iyy are the second central moments of a distribution
     in the perpendicular directions.  Depends on the Sersic index n.  The polynomial
     below is derived from a Mathematica fit to the exact relation, and should be good to
     ~(0.01 - 0.04)% over than range 0.2 < n < 8.0.
-    '''
+    """
     return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
                      n * (-0.000154064 + n * 0.0000219636)))))
 
-def component_r_2nd_moment(ns, weights, r_es):
-    t = numpy.array(weights).sum()
+def component_r_2nd_moment(ns, weights, hlrs):
+    """ Calculate second moments of concentric multi-Sersic galaxy.
+
+    @param  ns       List of Sersic indices in model.
+    @param  weights  Relative flux of each component
+    @param  hrls     List of half-light-radii of each component
+    @returns         Second moment radius.
+    """
+    t = np.array(weights).sum()
     ws = [w / t for w in weights]
     r2s = [Sersic_r_2nd_moment_over_r_e(n) * r_e for n, r_e in zip(ns, r_es)]
-    return numpy.sqrt(reduce(operator.mul, [r2**2 * w for r2, w in zip(r2s, ws)]))
+    return np.sqrt(reduce(lambda x,y:x*y, [r2**2 * w for r2, w in zip(r2s, ws)]))
