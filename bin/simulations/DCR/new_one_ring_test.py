@@ -63,6 +63,7 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     ellip180s = []
 
     def work():
+        print 'working'
         #measure ellipticity at beta along the ring
         target_image0 = gen_target_image(gamma, beta)
         init_param0 = gen_init_param(gamma, beta)
@@ -95,7 +96,7 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     # print gamma_hat
     return gamma_hat
 
-def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size, N=100):
+def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size):
     '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
 
     pix = galsim.Pixel(pixel_scale)
@@ -105,7 +106,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     # generate target image using ringed gparam and PSFs
     def gen_target_image(gamma, beta):
         ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
-        target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear, N=N)
+        target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear)
         # imshow(target_image.array)
         # title('new')
         # show()
@@ -115,7 +116,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
 
     def measure_ellip(target_image, init_param):
         def resid(param):
-            image = fit_tool.get_image(param, N=N)
+            image = fit_tool.get_image(param)
             # print
             # print param['x0'].value / pixel_scale
             # print param['y0'].value / pixel_scale
@@ -196,6 +197,7 @@ def new_one_ring_test(args):
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
     bandpass = bandpass.truncate(blue_limit=args.bluelim, red_limit=args.redlim)
+    bandpass = bandpass.thin(args.thin)
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
@@ -254,7 +256,7 @@ def new_one_ring_test(args):
 
     # Measure shear bias
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
-                               args.pixel_scale, args.stamp_size, N=args.N)
+                               args.pixel_scale, args.stamp_size)
 
     analytic1 = star_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
     analytic2 = gal_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
@@ -269,6 +271,35 @@ def new_one_ring_test(args):
     logger.info('ring     {:12.8f} {:12.8f} {:12.8f} {:12.8f}'.format(m[0], m[1], c[0], c[1]))
 
     return m, c
+
+def runme():
+    class junk(object):
+        pass
+    args = junk()
+    args.starspec = 'SEDs/ukg5v.ascii'
+    args.galspec = 'SEDs/CWW_E_ext.ascii'
+    args.redshift = 0.0
+    args.filter = 'filters/LSST_r.dat'
+    args.zenith_angle = 45.0
+    args.datadir = '../../../data/'
+    args.PSF_beta = 2.5
+    args.PSF_FWHM = 0.7
+    args.PSF_phi = 0.0
+    args.PSF_ellip = 0.0
+    args.sersic_n = 0.5
+    args.gal_ellip = 0.3
+    args.gal_x0 = 0.0
+    args.gal_y0 = 0.0
+    args.gal_r2 = 0.27
+    args.gal_nring = 3
+    args.pixel_scale = 0.2
+    args.stamp_size = 31
+    args.gaussian = True
+    args.N = 100
+    args.bluelim = 500
+    args.redlim = 750
+    args.thin = 150
+    new_one_ring_test(args)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -316,6 +347,7 @@ if __name__ == '__main__':
                         help="Number of wavelength samples in intregrand (Default 100)")
     parser.add_argument('--bluelim', type=float, default=300)
     parser.add_argument('--redlim', type=float, default=1200)
+    parser.add_argument('--thin', type=int, default=50)
 
 
     args = parser.parse_args()
