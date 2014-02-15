@@ -50,18 +50,18 @@ class BDGalTool(object):
         # radius rescaling
         rescale = numpy.sqrt(1.0 - abs(gamma)**2.0)
 
-        gparam1['b_y0'].value \
-          = gparam0['b_y0'].value * numpy.sin(beta / 2.0) \
-          + gparam0['b_x0'].value * numpy.cos(beta / 2.0)
         gparam1['b_x0'].value \
-          = gparam0['b_y0'].value * numpy.cos(beta / 2.0) \
-          - gparam0['b_x0'].value * numpy.sin(beta / 2.0)
-        gparam1['d_y0'].value \
-          = gparam0['d_y0'].value * numpy.sin(beta / 2.0) \
-          + gparam0['d_x0'].value * numpy.cos(beta / 2.0)
+          = gparam0['b_x0'].value * numpy.cos(beta / 2.0) \
+          - gparam0['b_y0'].value * numpy.sin(beta / 2.0)
+        gparam1['b_y0'].value \
+          = gparam0['b_x0'].value * numpy.sin(beta / 2.0) \
+          + gparam0['b_y0'].value * numpy.cos(beta / 2.0)
         gparam1['d_x0'].value \
-          = gparam0['d_y0'].value * numpy.cos(beta / 2.0) \
-          - gparam0['d_x0'].value * numpy.sin(beta / 2.0)
+          = gparam0['d_x0'].value * numpy.cos(beta / 2.0) \
+          - gparam0['d_y0'].value * numpy.sin(beta / 2.0)
+        gparam1['d_y0'].value \
+          = gparam0['d_x0'].value * numpy.sin(beta / 2.0) \
+          + gparam0['d_y0'].value * numpy.cos(beta / 2.0)
         gparam1['b_gmag'].value = b_s_gmag
         gparam1['d_gmag'].value = d_s_gmag
         gparam1['b_phi'].value = b_s_phi
@@ -153,12 +153,12 @@ class SGalTool(object):
         # radius rescaling
         rescale = numpy.sqrt(1.0 - abs(gamma)**2.0)
 
-        gparam1['y0'].value \
-          = gparam0['y0'].value * numpy.sin(beta / 2.0) \
-          + gparam0['x0'].value * numpy.cos(beta / 2.0)
         gparam1['x0'].value \
-          = gparam0['y0'].value * numpy.cos(beta / 2.0) \
-          - gparam0['x0'].value * numpy.sin(beta / 2.0)
+          = gparam0['x0'].value * numpy.cos(beta / 2.0) \
+          - gparam0['y0'].value * numpy.sin(beta / 2.0)
+        gparam1['y0'].value \
+          = gparam0['x0'].value * numpy.sin(beta / 2.0) \
+          + gparam0['y0'].value * numpy.cos(beta / 2.0)
         gparam1['gmag'].value = s_gmag
         gparam1['phi'].value = s_phi
         gparam1['r_e'].value = gparam0['r_e'].value * rescale
