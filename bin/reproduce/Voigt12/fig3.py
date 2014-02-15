@@ -112,6 +112,7 @@ def fig3_bulge_radius(bd_engine, PSF_model):
     fil.close()
 
 def fig3_disk_spectrum(bd_engine, PSF_model):
+    '''Generate `m` and `c` for the fiducial galaxy, but change the disk spectrum.'''
     filter_widths = [150, 250, 350, 450]
     PSF_ellip = 0.05
     PSF_phi = 0.0
