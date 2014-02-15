@@ -1,5 +1,4 @@
 import os
-import sys
 
 import numpy
 import lmfit
@@ -8,6 +7,8 @@ import scipy.integrate
 
 import _mypath
 import chroma
+
+data_dir = '../../../data/'
 
 def fiducial_galaxy():
     gparam = lmfit.Parameters()
@@ -113,9 +114,9 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
 def panel1_bulge_sersic_index(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/LSST_r.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/LSST_r.dat'
     redshift = 0.9
 
     print
@@ -139,9 +140,9 @@ def panel1_bulge_sersic_index(bd_engine, PSF_model):
 def panel1_bulge_flux(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/LSST_r.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/LSST_r.dat'
     redshift = 0.9
 
     print
@@ -169,9 +170,9 @@ def panel1_bulge_flux(bd_engine, PSF_model):
 def panel1_gal_ellip(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/LSST_r.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/LSST_r.dat'
     redshift = 0.9
 
     print
@@ -196,9 +197,9 @@ def panel1_gal_ellip(bd_engine, PSF_model):
 def panel1_y0(bd_engine, PSF_model):
     PSF_ellip = 0.05
     PSF_phi = 0.0
-    bulge_SED_file = '../../data/SEDs/CWW_E_ext.ascii'
-    disk_SED_file = '../../data/SEDs/CWW_Sbc_ext.ascii'
-    filter_file = '../../data/filters/LSST_r.dat'
+    bulge_SED_file = data_dir+'/SEDs/CWW_E_ext.ascii'
+    disk_SED_file = data_dir+'/SEDs/CWW_Sbc_ext.ascii'
+    filter_file = data_dir+'/filters/LSST_r.dat'
     redshift = 0.9
 
     print
@@ -369,21 +370,7 @@ def panel1plot():
 
     plt.savefig('output/panel1.pdf')
 
-def panel1data(argv):
-    # if len(argv) == 1:
-    #     use='gs'
-    # else:
-    #     use=argv[1]
-    # if use == 'voigt':
-    #     bd_engine = chroma.ImageEngine.VoigtBDEngine()
-    #     PSF_model = chroma.PSF_model.VoigtAtmPSF
-    # elif use == 'gs':
-    #     bd_engine = chroma.ImageEngine.GalSimBDEngine()
-    #     PSF_model = chroma.PSF_model.GSAtmPSF
-    # else:
-    #     print 'unknown or missing command line option'
-    #     sys.exit()
-
+def panel1data():
     bd_engine = chroma.ImageEngine.GalSimBDEngine()
     PSF_model = chroma.PSF_model.GSAtmPSF
 
@@ -392,6 +379,6 @@ def panel1data(argv):
     panel1_gal_ellip(bd_engine, PSF_model)
     panel1_y0(bd_engine, PSF_model)
 
-# if __name__ == '__main__':
-#     panel1data(sys.argv)
-#     panel1plot()
+if __name__ == '__main__':
+    panel1data()
+    panel1plot()
