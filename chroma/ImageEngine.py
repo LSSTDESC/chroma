@@ -70,6 +70,10 @@ class GalSimEngine(object):
         xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=self.overpixsize)
         return Ixx + Iyy
 
+    def get_uncvl_r2(self, gparam, pixsize):
+        im = self.get_uncvl_image(gparam, pixsize=pixsize)
+        xbar, ybar, Ixx, Iyy, Ixy = chroma.utils.moments(im, pixsize=pixsize)
+        return Ixx + Iyy
 
 class GalSimBDEngine(GalSimEngine):
     def _gparam_to_galsim(self, gparam):
