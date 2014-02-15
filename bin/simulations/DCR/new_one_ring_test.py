@@ -101,18 +101,16 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
 
     pix = galsim.Pixel(pixel_scale)
 
-    #target_tool = chroma.new_galtool.SersicTool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
-    target_tool = chroma.new_galtool.SersicFastTool(gal_SED, bandpass, PSF,
-                                                    stamp_size, pixel_scale)
+    #target_tool = chroma.SersicTool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
+    target_tool = chroma.SersicFastTool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
     # generate target image using ringed gparam and PSFs
     def gen_target_image(gamma, beta):
         ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
         target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear)
         return target_image
 
-    #fit_tool = chroma.new_galtool.SersicTool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
-    fit_tool = chroma.new_galtool.SersicFastTool(star_SED, bandpass, PSF,
-                                                 stamp_size, pixel_scale)
+    #fit_tool = chroma.SersicTool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
+    fit_tool = chroma.SersicFastTool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
 
     def measure_ellip(target_image, init_param):
         def resid(param):
@@ -203,10 +201,8 @@ def new_one_ring_test(args):
     logger.info('Galaxy r2: {} arcsec'.format(args.gal_r2))
 
     # This line could be replaced with SersicFastTool(...)
-    #gtool = chroma.new_galtool.SersicTool(gal_SED, bandpass, PSF,
-    #                                      args.stamp_size, args.pixel_scale)
-    gtool = chroma.new_galtool.SersicFastTool(gal_SED, bandpass, PSF,
-                                              args.stamp_size, args.pixel_scale)
+    #gtool = chroma.SersicTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
+    gtool = chroma.SersicFastTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
     gparam = gtool.set_uncvl_r2(gparam, (args.gal_r2)**2)
 
     # Measure shear bias

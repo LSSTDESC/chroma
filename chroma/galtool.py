@@ -2,7 +2,6 @@
 Some tools to conveniently translate lmfit.Parameters into GalSim.Image's.
 """
 
-
 import copy
 
 import numpy as np
@@ -233,7 +232,7 @@ class SersicTool(GalTool):
 
 class SersicFastTool(SersicTool):
     def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale):
-        """ Initialize a single Sersic profile chromatic galaxy.  Internally do some trickery to
+        """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
         speed up image drawing by cacheing an effective PSF.
 
         @param SED          galsim.SED galaxy spectrum
@@ -252,7 +251,7 @@ class SersicFastTool(SersicTool):
         N = prof0.SBProfile.getGoodImageSize(scale,1.0)
         im = galsim.ImageD(N, N, scale=scale)
         prof.draw(bandpass, image=im)
-        self.PSF = galsim.InterpolatedImage(im)
+        self.PSF = galsim.InterpolatedImage(im) # remember the effective PSF
 
     def _gparam_to_galsim(self, gparam):
         # Turn lmfit.gparam into a galsim.ChromaticObject
@@ -263,100 +262,100 @@ class SersicFastTool(SersicTool):
         mono_gal.setFlux(gparam['flux'].value)
         return mono_gal
 
-class DoubleSersicTool(GalTool):
-    def __init__(self, SED1, SED2, bandpass, PSF, stamp_size, pixel_scale):
-        self.SED1 = SED1
-        self.SED2 = SED2
-        self.bandpass = bandpass
-        self.PSF = PSF
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
+# class DoubleSersicTool(GalTool):
+#     def __init__(self, SED1, SED2, bandpass, PSF, stamp_size, pixel_scale):
+#         self.SED1 = SED1
+#         self.SED2 = SED2
+#         self.bandpass = bandpass
+#         self.PSF = PSF
+#         self.stamp_size = stamp_size
+#         self.pixel_scale = pixel_scale
 
-    def _gparam_to_galsim(self, gparam):
-        mono_gal1 = galsim.Sersic(n=gparam['n_1'].value,
-                                 half_light_radius=gparam['hlr_1'].value)
-        mono_gal1.applyShift(gparam['x0_1'].value, gparam['y0_1'].value)
-        mono_gal1.applyShear(g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
-        mono_gal1.setFlux(gparam['flux_1'].value)
-        gal1 = galsim.Chromatic(mono_gal1, self.SED1)
+#     def _gparam_to_galsim(self, gparam):
+#         mono_gal1 = galsim.Sersic(n=gparam['n_1'].value,
+#                                  half_light_radius=gparam['hlr_1'].value)
+#         mono_gal1.applyShift(gparam['x0_1'].value, gparam['y0_1'].value)
+#         mono_gal1.applyShear(g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
+#         mono_gal1.setFlux(gparam['flux_1'].value)
+#         gal1 = galsim.Chromatic(mono_gal1, self.SED1)
 
-        mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
-                                 half_light_radius=gparam['hlr_2'].value)
-        mono_gal2.applyShift(gparam['x0_2'].value, gparam['y0_2'].value)
-        mono_gal2.applyShear(g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
-        mono_gal2.setFlux(gparam['flux_2'].value)
-        gal2 = galsim.Chromatic(mono_gal2, self.SED2)
+#         mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
+#                                  half_light_radius=gparam['hlr_2'].value)
+#         mono_gal2.applyShift(gparam['x0_2'].value, gparam['y0_2'].value)
+#         mono_gal2.applyShear(g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
+#         mono_gal2.setFlux(gparam['flux_2'].value)
+#         gal2 = galsim.Chromatic(mono_gal2, self.SED2)
 
-        gal = gal1 + gal2
-        return gal
+#         gal = gal1 + gal2
+#         return gal
 
-    def set_r2(self, gparam, target_r2, oversample=16):
-        def r2_resid(scale):
-            g1 = copy.deepcopy(gparam)
-            g1['hlr_1'].value *= scale
-            g1['hlr_2'].value *= scale
-            current_r2 = self.get_r2(g1, oversample=oversample)
-            return current_r2 - target_r2
-        scale = newton(r2_resid, 1.0)
-        gparam['hlr_1'].value *= scale
-        gparam['hlr_2'].value *= scale
-        return gparam
+#     def set_r2(self, gparam, target_r2, oversample=16):
+#         def r2_resid(scale):
+#             g1 = copy.deepcopy(gparam)
+#             g1['hlr_1'].value *= scale
+#             g1['hlr_2'].value *= scale
+#             current_r2 = self.get_r2(g1, oversample=oversample)
+#             return current_r2 - target_r2
+#         scale = newton(r2_resid, 1.0)
+#         gparam['hlr_1'].value *= scale
+#         gparam['hlr_2'].value *= scale
+#         return gparam
 
-    def set_uncvl_r2(self, gparam, target_r2, oversample=16):
-        def r2_resid(scale):
-            g1 = copy.deepcopy(gparam)
-            g1['hlr_1'].value *= scale
-            g1['hlr_2'].value *= scale
-            current_r2 = self.get_uncvl_r2(g1, oversample=oversample)
-            return current_r2 - target_r2
-        scale = newton(r2_resid, 1.0)
-        gparam['hlr_1'].value *= scale
-        gparam['hlr_2'].value *= scale
-        return gparam
+#     def set_uncvl_r2(self, gparam, target_r2, oversample=16):
+#         def r2_resid(scale):
+#             g1 = copy.deepcopy(gparam)
+#             g1['hlr_1'].value *= scale
+#             g1['hlr_2'].value *= scale
+#             current_r2 = self.get_uncvl_r2(g1, oversample=oversample)
+#             return current_r2 - target_r2
+#         scale = newton(r2_resid, 1.0)
+#         gparam['hlr_1'].value *= scale
+#         gparam['hlr_2'].value *= scale
+#         return gparam
 
-    def get_ring_params(self, gparam, ring_beta, ring_shear):
-        c_gamma = ring_shear.g1 + 1j * ring_shear.g2
-        gparam1 = copy.deepcopy(gparam)
+#     def get_ring_params(self, gparam, ring_beta, ring_shear):
+#         c_gamma = ring_shear.g1 + 1j * ring_shear.g2
+#         gparam1 = copy.deepcopy(gparam)
 
-        # gal1
-        rot_phi_1 = gparam['phi_1'].value + ring_beta/2.0
-        # complex ellipticity
-        c_ellip_1 = gparam['gmag_1'].value * \
-          complex(np.cos(2.0 * rot_phi_1), np.sin(2.0 * rot_phi_1))
-        # sheared complex ellipticity
-        s_c_ellip_1 = shear_galaxy(c_ellip_1, c_gamma)
-        s_gmag_1 = abs(s_c_ellip_1)
-        s_phi_1 = np.angle(s_c_ellip_1) / 2.0
+#         # gal1
+#         rot_phi_1 = gparam['phi_1'].value + ring_beta/2.0
+#         # complex ellipticity
+#         c_ellip_1 = gparam['gmag_1'].value * \
+#           complex(np.cos(2.0 * rot_phi_1), np.sin(2.0 * rot_phi_1))
+#         # sheared complex ellipticity
+#         s_c_ellip_1 = shear_galaxy(c_ellip_1, c_gamma)
+#         s_gmag_1 = abs(s_c_ellip_1)
+#         s_phi_1 = np.angle(s_c_ellip_1) / 2.0
 
-        gparam1['x0_1'].value \
-          = gparam['x0_1'].value * np.cos(ring_beta / 2.0) \
-          - gparam['y0_1'].value * np.sin(ring_beta / 2.0)
-        gparam1['y0_1'].value \
-          = gparam['x0_1'].value * np.sin(ring_beta / 2.0) \
-          + gparam['y0_1'].value * np.cos(ring_beta / 2.0)
-        gparam1['gmag_1'].value = s_gmag_1
-        gparam1['phi_1'].value = s_phi_1
+#         gparam1['x0_1'].value \
+#           = gparam['x0_1'].value * np.cos(ring_beta / 2.0) \
+#           - gparam['y0_1'].value * np.sin(ring_beta / 2.0)
+#         gparam1['y0_1'].value \
+#           = gparam['x0_1'].value * np.sin(ring_beta / 2.0) \
+#           + gparam['y0_1'].value * np.cos(ring_beta / 2.0)
+#         gparam1['gmag_1'].value = s_gmag_1
+#         gparam1['phi_1'].value = s_phi_1
 
-        # gal2
-        rot_phi_2 = gparam['phi_2'].value + ring_beta/2.0
-        # complex ellipticity
-        c_ellip_2 = gparam['gmag_2'].value * \
-          complex(np.cos(2.0 * rot_phi_2), np.sin(2.0 * rot_phi_2))
-        # sheared complex ellipticity
-        s_c_ellip_2 = shear_galaxy(c_ellip_2, c_gamma)
-        s_gmag_2 = abs(s_c_ellip_2)
-        s_phi_2 = np.angle(s_c_ellip_2) / 2.0
+#         # gal2
+#         rot_phi_2 = gparam['phi_2'].value + ring_beta/2.0
+#         # complex ellipticity
+#         c_ellip_2 = gparam['gmag_2'].value * \
+#           complex(np.cos(2.0 * rot_phi_2), np.sin(2.0 * rot_phi_2))
+#         # sheared complex ellipticity
+#         s_c_ellip_2 = shear_galaxy(c_ellip_2, c_gamma)
+#         s_gmag_2 = abs(s_c_ellip_2)
+#         s_phi_2 = np.angle(s_c_ellip_2) / 2.0
 
-        gparam1['x0_2'].value \
-          = gparam['x0_2'].value * np.cos(ring_beta / 2.0) \
-          - gparam['y0_2'].value * np.sin(ring_beta / 2.0)
-        gparam1['y0_2'].value \
-          = gparam['x0_2'].value * np.sin(ring_beta / 2.0) \
-          + gparam['y0_2'].value * np.cos(ring_beta / 2.0)
-        gparam1['gmag_2'].value = s_gmag_2
-        gparam1['phi_2'].value = s_phi_2
+#         gparam1['x0_2'].value \
+#           = gparam['x0_2'].value * np.cos(ring_beta / 2.0) \
+#           - gparam['y0_2'].value * np.sin(ring_beta / 2.0)
+#         gparam1['y0_2'].value \
+#           = gparam['x0_2'].value * np.sin(ring_beta / 2.0) \
+#           + gparam['y0_2'].value * np.cos(ring_beta / 2.0)
+#         gparam1['gmag_2'].value = s_gmag_2
+#         gparam1['phi_2'].value = s_phi_2
 
-        return gparam1
+#         return gparam1
 
 # class DoubleSersicFastTool(DoubleSersicTool):
 #     def __init__(self, SED1, SED2, bandpass, PSF, stamp_size, pixel_scale):
