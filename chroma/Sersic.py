@@ -19,8 +19,8 @@ class Sersic(object):
                  # if neither of the above two triplets is provided, then one of the following size
                  # parameters must be provided
                  FWHM=None, r_e=None,
-                 # if specifying ellipticity in polar units (together with phi above), then
-                 # one of the following three is required
+                 # if specifying ellipticity as a magnitude and position angle (using phi above),
+                 # then one of the following three is required
                  b_over_a=None, emag=None, gmag=None,
                  # if specifying ellipticity in complex components, then one of the following pairs
                  # is required
