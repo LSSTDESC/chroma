@@ -1,3 +1,191 @@
+import hashlib
+
+import galsim
+import scipy
+import numpy
+import astropy.utils.console
+
+import chroma
+
+def GSEuclidPSF(wave, photons, ellipticity=0.0, phi=0.0):
+    ''' Returns a Galsim SBProfile object representing the SED-dependent Euclid PSF as described in
+    Voigt+12.
+    '''
+    hlr = lambda wave: 0.7 * (wave / 520.0)**0.6 # pixels
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p in zip(wave, photons):
+        mpsfs.append(galsim.Gaussian(flux=p, half_light_radius=hlr(w)))
+    PSF = galsim.Add(mpsfs)
+    beta = phi * galsim.radians
+    PSF.applyShear(g=ellipticity, beta=beta)
+    return PSF
+
+
+def GSEuclidPSFInt(wave, photons, ellipticity=0.0, phi=0.0):
+    ''' Returns a Galsim SBProfile object representing the SED-dependent Euclid PSF as described in
+    Voigt+12.  To make life faster, caches the result in a single 7 times oversampled image, instead
+    of carrying around a sum of thousands of Gaussians.
+    '''
+    hlr = lambda wave: 0.7 * (wave / 520.0)**0.6 # pixels
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p in zip(wave, photons):
+        mpsfs.append(galsim.Gaussian(flux=p, half_light_radius=hlr(w)))
+    PSF = galsim.Add(mpsfs)
+    beta = phi * galsim.radians
+    PSF.applyShear(g=ellipticity, beta=beta)
+    im = galsim.ImageD(105, 105) #arbitrary numbers!
+    PSF.draw(image=im, scale=1.0/7)
+    PSF = galsim.InterpolatedImage(im, scale=1.0/7)
+    return PSF
+
+
+def GSAtmPSF(wave, photons,
+             pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
+             moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
+    # get photon density binned by refraction angle
+    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
+    # need to take out the huge zenith angle dependence, normalize to whatever the
+    # refraction is at 685 nm
+    R685 = chroma.atm_refrac(685.0, **kwargs)
+    pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale # radians -> pixels
+    sort = numpy.argsort(pixels)
+    pixels = pixels[sort]
+    angle_dens = angle_dens[sort]
+    # now sample a size of 15 pixels oversampled by a factor of 21 => 315 subpixels
+    pixmin = -7.5 + 1./42
+    pixmax = 7.5 - 1./42
+    y = numpy.linspace(pixmin, pixmax, 315) # coords of subpixel centers
+    yboundaries = numpy.concatenate([numpy.array([y[0] - 1./42]), y + 1./42])
+    yunion = numpy.union1d(pixels, yboundaries)
+    angle_dens_interp = numpy.interp(yunion, pixels, angle_dens, left=0.0, right=0.0)
+    PSFim = galsim.ImageD(315, 315)
+    for i in range(315):
+        w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
+        PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
+    aPSF = galsim.InterpolatedImage(PSFim, scale=1.0/21, flux=1.0)
+    mPSF = galsim.Moffat(beta=moffat_beta, fwhm=moffat_FWHM)
+    mPSF.applyShear(g=moffat_ellip, beta=moffat_phi * galsim.radians)
+    PSF = galsim.Convolve([aPSF, mPSF])
+    return PSF
+
+
+def GSAtmPSF2(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
+              moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
+    R = chroma.atm_refrac(wave, **kwargs)
+    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p, Rp in zip(wave, photons, R_pixels):
+        psf1 = galsim.Moffat(flux=p*0.1, fwhm=moffat_FWHM, beta=moffat_beta)
+        psf1.applyShift(0.0, Rp)
+        mpsfs.append(psf1)
+    PSF = galsim.Add(mpsfs)
+    beta = moffat_phi * galsim.radians
+    PSF.applyShear(g=moffat_ellip, beta=beta)
+    im = galsim.ImageD(288, 288) #arbitrary numbers!
+    PSF.draw(image=im, scale=1./7)
+    PSF = galsim.InterpolatedImage(im, scale=1./7)
+    return PSF
+
+
+def GSAtmPSF3(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
+              moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
+    R = chroma.atm_refrac(wave, **kwargs)
+    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    im = galsim.ImageD(288, 288, scale=1./7)
+    for w, p, Rp in zip(wave, photons, R_pixels):
+        psf1 = galsim.Moffat(flux=p*0.1, fwhm=moffat_FWHM, beta=moffat_beta)
+        psf1.applyShift(0.0, Rp)
+        psf1.draw(image=im, add_to_image=True)
+    PSF = galsim.InterpolatedImage(im, scale=1./7)
+    return PSF
+
+
+def GSGaussAtmPSF(wave, photons,
+                  pixel_scale=0.2, FWHM=3.5,
+                  gauss_phi=0.0, gauss_ellip=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
+    convolving a Gaussian PSF with a DCR kernel in the zenith (y) direction.'''
+    # get photon density binned by refraction angle
+    R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
+    # need to take out the huge zenith angle dependence:
+    # normalize to whatever the refraction is at 685 nm
+    R685 = chroma.atm_refrac(685.0, **kwargs)
+    pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale # degrees -> pixels
+    sort = numpy.argsort(pixels)
+    pixels = pixels[sort]
+    angle_dens = angle_dens[sort]
+    # now sample a size of 15 pixels oversampled by a factor of 21 => 315 subpixels
+    pixmin = -7.5 + 1./42
+    pixmax = 7.5 - 1./42
+    y = numpy.linspace(pixmin, pixmax, 315) # coords of subpixel centers
+    yboundaries = numpy.concatenate([numpy.array([y[0] - 1./42]), y + 1./42])
+    yunion = numpy.union1d(pixels, yboundaries)
+    angle_dens_interp = numpy.interp(yunion, pixels, angle_dens, left=0.0, right=0.0)
+    PSFim = galsim.ImageD(315,315)
+    for i in range(315):
+        w = numpy.logical_and(yunion >= yboundaries[i], yunion <= yboundaries[i+1])
+        PSFim.array[i,157] = scipy.integrate.simps(angle_dens_interp[w], yunion[w])
+    aPSF = galsim.InterpolatedImage(PSFim, scale=1.0/21, flux=1.0)
+    gPSF = galsim.Gaussian(fwhm=FWHM)
+    gPSF.applyShear(g=gauss_ellip, beta=gauss_phi * galsim.radians)
+    PSF = galsim.Convolve([aPSF, gPSF])
+    return PSF
+
+
+def GSAtmSeeingPSF(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM_500=3.5,
+                   moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
+    ''' Returns a Galsim SBProfile object representing an atmospheric chromatic PSF characterized by
+    both DCR and seeing chromatic effects.'''
+    R = chroma.atm_refrac(wave, **kwargs)
+    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p, Rp in zip(wave, photons, R_pixels):
+        fwhm = moffat_FWHM_500 * (w / 500.0)**(-0.2)
+        psf1 = galsim.Moffat(flux=p, fwhm=fwhm, beta=moffat_beta)
+        psf1.applyShift(0.0, Rp)
+        mpsfs.append(psf1)
+    PSF = galsim.Add(mpsfs)
+    beta = moffat_phi * galsim.radians
+    PSF.applyShear(g=moffat_ellip, beta=beta)
+    im = galsim.ImageD(288, 288) #arbitrary numbers!
+    PSF.draw(image=im, scale=1./7)
+    PSF = galsim.InterpolatedImage(im, scale=1./7)
+    return PSF
+
+
+def GSSeeingPSF(wave, photons, moffat_beta=2.5, moffat_FWHM_500=3.5,
+                moffat_ellip=0.0, moffat_phi=0.0):
+    ''' Returns a Galsim SBProfile object representing an atmospheric chromatic PSF characterized by
+    both DCR and seeing chromatic effects.'''
+    mpsfs = []
+    photons /= scipy.integrate.simps(photons, wave)
+    for w, p in zip(wave, photons):
+        fwhm = moffat_FWHM_500 * (w / 500.0)**(-0.2)
+        psf1 = galsim.Moffat(flux=p, fwhm=fwhm, beta=moffat_beta)
+        mpsfs.append(psf1)
+    PSF = galsim.Add(mpsfs)
+    PSF.applyShear(g=moffat_ellip, beta=moffat_beta * galsim.radians)
+    im = galsim.ImageD(124, 124) #arbitrary numbers!  support up to 41x41 stamp
+    PSF.draw(image=im, scale=1./3)
+    PSF = galsim.InterpolatedImage(im, scale=1./3)
+    return PSF
+
+
 class VoigtEuclidPSF(object):
     '''Class to handle the Euclid-like chromatic PSF defined in the Voigt+12 color gradient paper.'''
     def __init__(self, wave, photons, ellipticity=0.0, phi=0.0, y0=0.0, x0=0.0):
@@ -93,102 +281,6 @@ class VoigtEuclidPSF(object):
         print "Integrating over wavelengths"
         return scipy.integrate.trapz(psfcube, self.wave)
 
-class MoffatPSF(object):
-    def __init__(self, y0, x0, beta, # required
-                 flux=None, # required right now, eventually allow peak as alternative?
-                 C11=None, C12=None, C22=None, # one possibility for size/ellipticity
-                 a=None, b=None, phi=None, # another possibility for size/ellipticity
-                 # if neither of the above two triplets is provided, then one of the following size
-                 # parameters must be provided
-                 FWHM=None, alpha=None,
-                 # if specifying ellipticity in polar units (including phi above), then
-                 # one of the following three params is required
-                 b_over_a=None, emag=None, gmag=None,
-                 # if specifying ellipticity in complex components, then one of the following pairs
-                 # is required
-                 e1=None, e2=None,
-                 g1=None, g2=None):
-        self.y0 = y0
-        self.x0 = x0
-        self.beta = beta
-        self.flux = flux
-
-        if C11 is not None and C12 is not None and C22 is not None:
-            self.C11 = C11
-            self.C12 = C12
-            self.C22 = C22
-            # want to keep some additional bookkeepping parameters around as well...
-            one_over_a_squared = 0.5 * (C11 + C22 + numpy.sqrt((C11 - C22)**2 + 4.0 * C12**2))
-            one_over_b_squared = C11 + C22 - one_over_a_squared
-            # there's degeneracy between a, b and phi at this point so enforce a > b
-            if one_over_a_squared > one_over_b_squared:
-                one_over_a_squared, one_over_b_squared = one_over_b_squared, one_over_a_squared
-            self.a = numpy.sqrt(1.0 / one_over_a_squared)
-            self.b = numpy.sqrt(1.0 / one_over_b_squared)
-            self.alpha = numpy.sqrt(self.a * self.b)
-            self.phi = 0.5 * numpy.arctan2(2.0 * C12 / (one_over_a_squared - one_over_b_squared),
-                                           (C11 - C22) / (one_over_a_squared - one_over_b_squared))
-
-        else:
-            # goal for this block is to determine a, b, phi
-            # first check the direct case
-            if a is not None and b is not None and phi is not None:
-                self.a = a
-                self.b = b
-                self.phi = phi
-                self.alpha = numpy.sqrt(a * b)
-            else: # now check a hierarchy of size & ellip possibilities
-                # first the size must be either FWHM or r_e
-                if FWHM is not None:
-                    self.alpha = FWHM / (2.0 * numpy.sqrt(2.0**(1.0/self.beta) - 1.0))
-                else:
-                    assert alpha is not None, "need to specify a size parameter"
-                    self.alpha = alpha
-                # goal here is to determine the axis ratio b_over_a, and position angle phi
-                if phi is not None: # must be doing a polar decomposition
-                    self.phi = phi
-                    if gmag is not None:
-                        b_over_a = (1.0 - gmag)/(1.0 + gmag)
-                    elif emag is not None:
-                        b_over_a = numpy.sqrt((1.0 - emag)/(1.0 + emag))
-                    else:
-                        assert b_over_a is not None, "need to specify ellipticity magnitude"
-                else: #doing a complex components decomposition
-                    if g1 is not None and g2 is not None:
-                        self.phi = 0.5 * numpy.arctan2(g2, g1)
-                        gmag = numpy.sqrt(g1**2.0 + g2**2.0)
-                        b_over_a = (1.0 - gmag)/(1.0 + gmag)
-                    else:
-                        assert e1 is not None and e2 is not None, "need to specify ellipticty"
-                        self.phi = 0.5 * numpy.arctan2(e2, e1)
-                        emag = numpy.sqrt(e1**2.0 + e2**2.0)
-                        b_over_a = numpy.sqrt((1.0 - emag)/(1.0 + emag))
-
-                self.a = self.alpha / numpy.sqrt(b_over_a)
-                self.b = self.alpha * numpy.sqrt(b_over_a)
-            cph = numpy.cos(self.phi)
-            sph = numpy.sin(self.phi)
-            self.C11 = (cph/self.a)**2 + (sph/self.b)**2
-            self.C12 = 0.5 * (1.0/self.a**2 - 1.0/self.b**2) * numpy.sin(2.0 * self.phi)
-            self.C22 = (sph/self.a)**2 + (cph/self.b)**2
-
-        det = self.C11 * self.C22 - self.C12**2.0
-        self.norm = self.flux * (self.beta - 1.0) / (numpy.pi / numpy.sqrt(abs(det)))
-
-        self.key = self.hash()
-
-    def hash(self):
-        m = hashlib.md5()
-        m.update(str((self.x0, self.y0, self.beta)))
-        m.update(str((self.C11, self.C12, self.C22)))
-        m.update(str(self.flux))
-        return m.hexdigest()
-
-    def __call__(self, y, x):
-        xp = x - self.x0
-        yp = y - self.y0
-        base = 1.0 + self.C11 * xp**2.0 + 2.0 * self.C12 * xp * yp + self.C22 * yp**2.0
-        return self.norm * base**(-self.beta)
 
 class AtmDispPSF(object):
     def __init__(self, wave, photons, pixel_scale=0.2, xloc=0.0, **kwargs):
@@ -232,6 +324,7 @@ class AtmDispPSF(object):
         assert minx < 1.e-10
         PSF *= (abs(self.xloc - x) < 1.e-10)
         return PSF
+
 
 class ConvolvePSF(object):
     def __init__(self, PSFs, factor=3):
@@ -285,6 +378,7 @@ class ConvolvePSF(object):
             over = scipy.signal.fftconvolve(over, PSF(ysub, xsub), mode='same')
         return self._rebin(over, x.shape)
 
+
 class VoigtAtmPSF(object):
     def __init__(self, wave, photons,
                  pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5, **kwargs):
@@ -298,6 +392,7 @@ class VoigtAtmPSF(object):
 
     def __call__(self, y, x):
         return self.cPSF(y, x)
+
 
 class VoigtGaussAtmPSF(object):
     def __init__(self, wave, photons, aPSF_kwargs=None, gPSF_kwargs=None):
