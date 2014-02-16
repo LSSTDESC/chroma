@@ -2,15 +2,33 @@ import numpy as np
 
 import astropy.utils.console
 
-def get_photons(SED_file, filter_file, redshift):
-    fwave, throughput = np.genfromtxt(filter_file).T
-    swave, flux = np.genfromtxt(SED_file).T
-    swave *= (1.0 + redshift)
-    flux_i = np.interp(fwave, swave, flux)
-    photons = flux_i * throughput * fwave
-    return fwave, photons
+def Sersic_r2_over_hlr(n):
+    """ Factor to convert the half light radius `hlr` to the 2nd moment radius `r^2` defined as
+    sqrt(Ixx + Iyy) where Ixx and Iyy are the second central moments of a distribution in
+    perpendicular directions.  Depends on the Sersic index n.  The polynomial below is derived from
+    a Mathematica fit to the exact relation, and should be good to ~(0.01 - 0.04)% over the range
+    0.2 < n < 8.0.
 
-def shear_galaxy(c_ellip, c_gamma):
+    @param n Sersic index
+    @returns ratio r^2  / hlr
+    """
+    return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
+                     n * (-0.000154064 + n * 0.0000219636)))))
+
+def component_Sersic_r2(ns, weights, hlrs):
+    """ Calculate second moments of concentric multi-Sersic galaxy.
+
+    @param  ns       List of Sersic indices in model.
+    @param  weights  Relative flux of each component
+    @param  hrls     List of half-light-radii of each component
+    @returns         Second moment radius.
+    """
+    t = np.array(weights).sum()
+    ws = [w / t for w in weights]
+    r2s = [Sersic_r2_over_hlr(n) * r_e for n, r_e in zip(ns, r_es)]
+    return np.sqrt(reduce(lambda x,y:x*y, [r2**2 * w for r2, w in zip(r2s, ws)]))
+
+def apply_shear(c_ellip, c_gamma):
     """Compute complex ellipticity after shearing by complex shear `c_gamma`."""
     return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
 
@@ -37,11 +55,6 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     def work():
         #measure ellipticity at beta along the ring
         target_image0 = gen_target_image(gamma, beta)
-        #debug
-        # import astropy.io.fits as fits
-        # fits.writeto('fig3_target.fits', target_image0)
-        # import sys; sys.exit()
-        #end debug
         init_param0 = gen_init_param(gamma, beta)
         ellip0 = measure_ellip(target_image0, init_param0)
         ellip0s.append(ellip0)
@@ -52,24 +65,23 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
         ellip180 = measure_ellip(target_image180, init_param180)
         ellip180s.append(ellip180)
 
-        # print
-        # print ellip0
-        # print ellip180
-        # print 0.5 * (ellip0 + ellip180)
-
+    # Use fancy console updating if astropy is installed and not silenced
     if not silent:
-        with astropy.utils.console.ProgressBar(n_ring) as bar:
+        try:
+            import astropy.utils.console
+            with astropy.utils.console.ProgressBar(n_ring) as bar:
+                for beta in betas:
+                    work()
+                    bar.update()
+        except:
             for beta in betas:
                 work()
-                bar.update()
     else:
         for beta in betas:
             work()
 
     gamma_hats = [0.5 * (e0 + e1) for e0, e1 in zip(ellip0s, ellip180s)]
     gamma_hat = np.mean(gamma_hats)
-    # print
-    # print gamma_hat
     return gamma_hat
 
 def moments(image):
@@ -136,26 +148,3 @@ def my_imshow(im, ax=None, **kwargs):
 #     if height is None:
 #         height = data.max()
 #     return (data > (0.5 * height)).sum() * scale**2
-
-def Sersic_r_2nd_moment_over_r_e(n):
-    """ Factor to convert the half light radius r_e to the 2nd moment radius defined
-    as sqrt(Ixx + Iyy) where Ixx and Iyy are the second central moments of a distribution
-    in the perpendicular directions.  Depends on the Sersic index n.  The polynomial
-    below is derived from a Mathematica fit to the exact relation, and should be good to
-    ~(0.01 - 0.04)% over than range 0.2 < n < 8.0.
-    """
-    return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
-                     n * (-0.000154064 + n * 0.0000219636)))))
-
-def component_r_2nd_moment(ns, weights, hlrs):
-    """ Calculate second moments of concentric multi-Sersic galaxy.
-
-    @param  ns       List of Sersic indices in model.
-    @param  weights  Relative flux of each component
-    @param  hrls     List of half-light-radii of each component
-    @returns         Second moment radius.
-    """
-    t = np.array(weights).sum()
-    ws = [w / t for w in weights]
-    r2s = [Sersic_r_2nd_moment_over_r_e(n) * r_e for n, r_e in zip(ns, r_es)]
-    return np.sqrt(reduce(lambda x,y:x*y, [r2**2 * w for r2, w in zip(r2s, ws)]))

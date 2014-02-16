@@ -6,39 +6,9 @@ import copy
 
 import numpy as np
 from scipy.optimize import newton
-
 import galsim
 
-def getmoments(im):
-    """Return first and second central moments of a galsim.Image
-    """
-    xgrid, ygrid = np.meshgrid(np.arange(im.array.shape[1])*im.scale + im.getXMin(),
-                               np.arange(im.array.shape[0])*im.scale + im.getYMin())
-    xgrid *= im.scale
-    ygrid *= im.scale
-    mx = np.sum(xgrid * im.array) / np.sum(im.array)
-    my = np.sum(ygrid * im.array) / np.sum(im.array)
-    mxx = np.sum(((xgrid-mx)**2) * im.array) / np.sum(im.array)
-    myy = np.sum(((ygrid-my)**2) * im.array) / np.sum(im.array)
-    mxy = np.sum((xgrid-mx) * (ygrid-my) * im.array) / np.sum(im.array)
-    return mx, my, mxx, myy, mxy
-
-def shear_galaxy(c_ellip, c_gamma):
-    """Compute complex ellipticity after shearing by complex shear `c_gamma`."""
-    return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
-
-def Sersic_r_2nd_moment_over_r_e(n):
-    """ Factor to convert the half light radius `hlr` to the 2nd moment radius `r^2` defined as
-    sqrt(Ixx + Iyy) where Ixx and Iyy are the second central moments of a distribution in
-    perpendicular directions.  Depends on the Sersic index n.  The polynomial below is derived from
-    a Mathematica fit to the exact relation, and should be good to ~(0.01 - 0.04)% over the range
-    0.2 < n < 8.0.
-
-    @param n Sersic index
-    @returns ratio r^2  / hlr
-    """
-    return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
-                     n * (-0.000154064 + n * 0.0000219636)))))
+import chroma
 
 class GalTool(object):
     """ Some generic utilities for drawing ringtest images using GalSim and measuring second moment
@@ -95,7 +65,7 @@ class GalTool(object):
         @returns        Second moment radius (in arcsec)
         """
         im = self.get_image(gparam, oversample=oversample)
-        mx, my, mxx, myy, mxy = getmoments(im)
+        mx, my, mxx, myy, mxy = chroma.moments(im)
         return mxx + myy
 
     def get_uncvl_image(self, gparam, ring_beta=None, ring_shear=None, oversample=1):
@@ -129,7 +99,7 @@ class GalTool(object):
         @returns        Second moment radius (in arcsec)
         """
         im = self.get_uncvl_image(gparam, oversample=oversample)
-        mx, my, mxx, myy, mxy = getmoments(im)
+        mx, my, mxx, myy, mxy = chroma.moments(im)
         return mxx + myy
 
 
@@ -183,7 +153,7 @@ class SersicTool(GalTool):
         @gparam   lmfit.Parameters
         """
         return (gparam['hlr'].value *
-                Sersic_r_2nd_moment_over_r_e(gparam['n'].value))**2
+                chroma.Sersic_r2_over_hlr(gparam['n'].value))**2
 
     def set_uncvl_r2(self, gparam, r2):
         """ Set the second moment square radius of the pre-PSF-convolved profile using polynomial
@@ -216,7 +186,7 @@ class SersicTool(GalTool):
           complex(np.cos(2.0 * rot_phi), np.sin(2.0 * rot_phi))
         c_gamma = ring_shear.g1 + 1j * ring_shear.g2
         # sheared complex ellipticity
-        s_c_ellip = shear_galaxy(c_ellip, c_gamma)
+        s_c_ellip = chroma.apply_shear(c_ellip, c_gamma)
         s_gmag = abs(s_c_ellip)
         s_phi = np.angle(s_c_ellip) / 2.0
 
@@ -229,6 +199,7 @@ class SersicTool(GalTool):
         gparam1['gmag'].value = s_gmag
         gparam1['phi'].value = s_phi
         return gparam1
+
 
 class SersicFastTool(SersicTool):
     def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale):
@@ -323,7 +294,7 @@ class SersicFastTool(SersicTool):
 #         c_ellip_1 = gparam['gmag_1'].value * \
 #           complex(np.cos(2.0 * rot_phi_1), np.sin(2.0 * rot_phi_1))
 #         # sheared complex ellipticity
-#         s_c_ellip_1 = shear_galaxy(c_ellip_1, c_gamma)
+#         s_c_ellip_1 = chroma.apply_shear(c_ellip_1, c_gamma)
 #         s_gmag_1 = abs(s_c_ellip_1)
 #         s_phi_1 = np.angle(s_c_ellip_1) / 2.0
 
@@ -342,7 +313,7 @@ class SersicFastTool(SersicTool):
 #         c_ellip_2 = gparam['gmag_2'].value * \
 #           complex(np.cos(2.0 * rot_phi_2), np.sin(2.0 * rot_phi_2))
 #         # sheared complex ellipticity
-#         s_c_ellip_2 = shear_galaxy(c_ellip_2, c_gamma)
+#         s_c_ellip_2 = chroma.apply_shear(c_ellip_2, c_gamma)
 #         s_gmag_2 = abs(s_c_ellip_2)
 #         s_phi_2 = np.angle(s_c_ellip_2) / 2.0
 

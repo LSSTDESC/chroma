@@ -27,6 +27,14 @@ def my_imshow(my_img,ax=None,**kwargs):
     ax.format_coord = format_coord
     return img
 
+def moffat_to_r2(fwhm, q, phi, beta):
+    cph = np.cos(phi)
+    sph = np.sin(phi)
+    R = np.matrix([[cph,-sph],[sph,cph]])
+    II = fwhm**2 / (8.0 * (2.0**(1.0/beta)-1.0) * (beta - 2.0)) * np.matrix([[1./q, 0.0], [0.0, q]])
+    I = R*II*R.T
+    return I[0,0] + I[1,1]
+
 def moffat_to_I(fwhm, q, phi, beta):
     cph = np.cos(phi)
     sph = np.sin(phi)
