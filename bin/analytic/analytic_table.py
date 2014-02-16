@@ -85,9 +85,7 @@ def construct_analytic_table():
                    'Euclid_150', 'Euclid_250', 'Euclid_350', 'Euclid_450']
     filters = {}
     for f in filter_names:
-        f_wave, f_throughput = np.genfromtxt(filter_dir + '{}.dat'.format(f)).T
-        filters[f] = chroma.Bandpass(f_wave, f_throughput)
-        filters[f].truncate(rel_throughput=0.01)
+        filters[f] = chroma.Bandpass(filter_dir + '{}.dat'.format(f))
 
     # start with stars
     star_data = np.recarray((len(star_types),), dtype = [('star_type', 'a11'),
@@ -98,8 +96,7 @@ def construct_analytic_table():
                                                          ('S_p06', E),
                                                          ('S_p10', E)])
     for i, star_type in enumerate(star_types):
-        s_wave, s_flambda = np.genfromtxt(spec_dir + star_type + '.ascii').T
-        star_SED = chroma.SED(s_wave, s_flambda)
+        star_SED = chroma.SED(spec_dir + star_type + '.ascii')
         data = compute_mags_moments(star_SED, filters)
         star_data[i]['star_type'] = star_type
         for name in data.dtype.names:
@@ -118,11 +115,10 @@ def construct_analytic_table():
     i=0
     with console.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:
-            g_wave, g_flambda = np.genfromtxt(spec_dir + gal_type + '.ascii').T
-            gal_SED = chroma.SED(g_wave, g_flambda)
+            gal_SED = chroma.SED(spec_dir + gal_type + '.ascii')
             for z in np.arange(0.0, 3.0, 0.03):
                 bar.update()
-                gal_SED.set_redshift(z)
+                gal_SED.setRedshift(z)
                 data = compute_mags_moments(gal_SED, filters)
                 gal_data[i]['gal_type'] = gal_type
                 gal_data[i]['redshift'] = z
