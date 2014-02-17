@@ -1,15 +1,22 @@
+"""Process galaxy catalog produced by make_catalogs.py to add columns for
+DCR biases, chromatic seeing biases, and chromatic diffraction limit biases.
+"""
+
 import os
 import sys
 import cPickle
 from argparse import ArgumentParser
 
 import numpy
-import scipy
 import astropy.utils.console as console
+import galsim
 
 import _mypath
 import chroma
 import phot
+
+
+datadir = '../../../data/'
 
 def file_len(fname):
     """Count '\n's in file.
@@ -19,78 +26,57 @@ def file_len(fname):
             pass
     return i + 1
 
-def compute_ground_chromatic_corrections(spec, filters):
-    """ Compute the chromatic correction coefficients for given spectrum and filter set.
-    """
-    wave = spec['wave']
-    photons = wave * spec['flambda']
-    R = {} # centroid shift due to differential chromatic refraction (DCR)
-    V = {} # zenith direction second moment shift due to DCR
-    S_m02 = {} # relative scale of PSF second moments from chromatic seeing
+def composite_spectrum(gal, norm):
+    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    wave_match = numpy.arange(300, 1201, dtype=float)
+    if gal['sedPathBulge'] != 'None':
+        bulge_SED = chroma.SED(SED_dir+gal['sedPathBulge'])
+        bulge_SED = bulge_SED.set_magnitude(norm, gal['magNormBulge'])
+        ext = lambda w: chroma.extinction.reddening(w*10,
+                                                    a_v=gal['internalAVBulge'],
+                                                    r_v=gal['internalRVBulge'],
+                                                    model='f99')
+        bulge_SED = bulge_SED / ext
+        bulge_SED = bulge_SED.setRedshift(gal['redshift'])
+    else:
+        bulge_SED = chroma.SED('0')
+    if gal['sedPathDisk'] != 'None':
+        disk_SED = chroma.SED(SED_dir+gal['sedPathDisk'])
+        disk_SED = disk_SED.set_magnitude(norm, gal['magNormDisk'])
+        ext = lambda w: chroma.extinction.reddening(w*10,
+                                                    a_v=gal['internalAVDisk'],
+                                                    r_v=gal['internalRVDisk'],
+                                                    model='f99')
+        disk_SED = disk_SED / ext
+        disk_SED = disk_SED.setRedshift(gal['redshift'])
+    else:
+        disk_SED = chroma.SED('0')
+    if gal['sedPathAGN'] != 'None':
+        AGN_SED = chroma.SED(SED_dir+gal['sedPathAGN'])
+        AGN_SED = AGN_SED.set_magnitude(norm, gal['magNormAGN'])
+        AGN_SED = AGN_SED.setRedshift(gal['redshift'])
+    else:
+        AGN_SED = chroma.SED('0')
 
-    for filter_name, filter_ in filters.iteritems():
-        detected_photons = photons * filter_['throughput']
-        R[filter_name], V[filter_name] = \
-          chroma.disp_moments(wave, detected_photons, zenith=numpy.pi/4.0)
-        S_m02[filter_name] = chroma.relative_second_moment_radius(wave, detected_photons, -0.2)
-    return R, V, S_m02
+    # Re-evaluate all the spectra once, so this doesn't have to be repeated for every bandpass
+    # magnitude & bias correction
+    SED = bulge_SED+disk_SED+AGN_SED
+    wgood = ((wave_match / (1.0 + gal['redshift']) > 91.0) & # extinction only calculable
+             (wave_match / (1.0 + gal['redshift']) < 6000))  # in this range of wavelengths
+    SED = chroma.SED(galsim.LookupTable(wave_match[wgood], SED(wave_match[wgood])),
+                     flux_type='fphotons')
+    return SED
 
-def compute_space_chromatic_corrections(spec, filters):
-    """ Compute the chromatic correction coefficients for given spectrum and filter set.
-    """
-    wave = spec['wave']
-    photons = wave * spec['flambda']
-    S_p06 = {} # relative scale of PSF second moments from total Euclid PSF
-    S_p10 = {} # relative scale of PSF second moments from Diffraction limit
+def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
+    filters = {}
+    for f in 'ugrizy':
+        ffile = datadir+'filters/LSST_{}.dat'.format(f)
+        filters['LSST_{}'.format(f)] = chroma.Bandpass(ffile).thin(10)
+    for width in [150,250,350,450]:
+        ffile = datadir+'filters/Euclid_{}.dat'.format(width)
+        filters['Euclid_{}'.format(width)] = chroma.Bandpass(ffile).thin(10)
+    filters['norm'] = chroma.Bandpass(galsim.LookupTable([499, 500, 501], [0, 1, 0]))
 
-    for filter_name, filter_ in filters.iteritems():
-        detected_photons = photons * filter_['throughput']
-        S_p06[filter_name] = chroma.relative_second_moment_radius(wave, detected_photons, 0.6)
-        S_p10[filter_name] = chroma.relative_second_moment_radius(wave, detected_photons, 1.0)
-    return S_p06, S_p10
-
-def compute_color_gradient_separation_correction(b_spec, d_spec, filters):
-    """ Compute the difference in zenith-direction second moment due to spatial separation
-    of bulge and disk components."""
-
-    b_wave = b_spec['wave']
-    b_photons = b_wave * b_spec['flambda']
-    d_wave = d_spec['wave']
-    d_photons = d_wave * d_spec['flambda']
-    dVcg = {} # change in second moment due to bulge-disk color gradient spatial separation.
-
-    for filter_name, filter_ in filters.iteritems():
-        b_detected_photons = b_photons * filter_['throughput']
-        b_flux = scipy.integrate.simps(b_detected_photons, b_wave)
-        b_R = chroma.atm_refrac(b_wave, zenith=numpy.pi/4.0)
-        b_Rbar = scipy.integrate.simps(b_R * b_detected_photons, b_wave) / b_flux
-
-        d_detected_photons = d_photons * filter_['throughput']
-        d_flux = scipy.integrate.simps(d_detected_photons, d_wave)
-        d_R = chroma.atm_refrac(d_wave, zenith=numpy.pi/4.0)
-        d_Rbar = scipy.integrate.simps(d_R * d_detected_photons, d_wave) / d_flux
-
-        c_flux = b_flux + d_flux
-        b_frac = b_flux/c_flux
-        d_frac = d_flux/c_flux
-
-        c_Rbar = b_frac * b_Rbar  +  d_frac * d_Rbar
-
-        dVcg[filter_name] = b_frac * (b_Rbar - c_Rbar)**2 + d_frac * (d_Rbar - c_Rbar)**2
-    return dVcg
-
-def readfile(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
-    ground_filters = phot.load_LSST_filters()
-    space_filters = phot.load_Euclid_filters()
-    filters = ground_filters.copy()
-    for fname, f in space_filters.iteritems(): #Add `Euclid_filters` to `filters`
-        if fname != 'norm':
-            filters[fname] = f
-    wave_match = filters['norm']['wave']
-    filters = phot.match_filter_wavelengths(filters, wave_match)
-    ground_filters = phot.match_filter_wavelengths(ground_filters, wave_match)
-    space_filters = phot.match_filter_wavelengths(space_filters, wave_match)
-    zps = phot.AB_zeropoints(filters)
     nrows = file_len(filename)
     if nmax is None:
         nmax = nrows
@@ -177,52 +163,61 @@ def readfile(filename, nmax=None, debug=False, randomize=True, emission=False, s
                 data[j].internalRVBulge = float(s[18])
                 data[j].internalAVDisk = float(s[19])
                 data[j].internalRVDisk = float(s[20])
-                if emission:
-                    spec = phot.make_composite_spec_with_emission_lines(data[j], filters,
-                                                                        zps, wave_match)
-                else:
-                    spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
-                magCalcs = phot.compute_mags(spec, filters, zps)
-                R, V, S_m02 = compute_ground_chromatic_corrections(spec, ground_filters)
-                S_p06, S_p10 = compute_space_chromatic_corrections(spec, space_filters)
-                if data[j].sedPathBulge != 'None' and data[j].sedPathDisk != 'None':
-                    b_spec = phot.make_bulge_spec(data[j], filters, zps, wave_match)
-                    d_spec = phot.make_disk_spec(data[j], filters, zps, wave_match)
-                    dVcg = compute_color_gradient_separation_correction(b_spec, d_spec,
-                                                                        ground_filters)
-                else:
-                    dVcg = {}
-                    for fname in 'ugrizy':
-                        dVcg['LSST_'+fname] = numpy.nan
-                for k, fname in enumerate('ugrizy'):
-                    data[j]['mag']['LSST_'+fname] = float(s[5+k])
-                    data[j]['magCalc']['LSST_'+fname] = magCalcs['LSST_'+fname]
-                    data[j]['R']['LSST_'+fname] = R['LSST_'+fname]
-                    data[j]['V']['LSST_'+fname] = V['LSST_'+fname]
-                    data[j]['S_m02']['LSST_'+fname] = S_m02['LSST_'+fname]
-                    data[j]['dVcg']['LSST_'+fname] = dVcg['LSST_'+fname]
+
+                spec = composite_spectrum(data[j], filters['norm'])
+                for k, f in enumerate('ugrizy'):
+                    # grab catalog magnitude
+                    data[j]['mag']['LSST_'+f] = float(s[5+k])
+                    bp = filters['LSST_'+f] # for brevity
+                    try:
+                        data[j]['magCalc']['LSST_'+f] = spec.magnitude(bp)
+                        dcr = spec.DCR_moment_shifts(bp, numpy.pi/4)
+                        data[j]['R']['LSST_'+f] = dcr[0]
+                        data[j]['V']['LSST_'+f] = dcr[1]
+                        data[j]['S_m02']['LSST_'+f] = spec.seeing_shift(bp, alpha=-0.2)
+                    except:
+                        data[j]['magCalc']['LSST_'+f] = numpy.nan
+                        data[j]['R']['LSST_'+f] = numpy.nan
+                        data[j]['V']['LSST_'+f] = numpy.nan
+                        data[j]['S_m02']['LSST_'+f] = numpy.nan
                 for fw in [150, 250, 350, 450]:
                     fname = 'Euclid_{}'.format(fw)
-                    data[j]['magCalc'][fname] = magCalcs[fname]
-                    data[j]['S_p06'][fname] = S_p06[fname]
-                    data[j]['S_p10'][fname] = S_p10[fname]
+                    bp = filters[fname]
+                    try:
+                        data[j]['magCalc'][fname] = spec.magnitude(bp)
+                        data[j]['S_p06'][fname] = spec.seeing_shift(bp, alpha=0.6)
+                        data[j]['S_p10'][fname] = spec.seeing_shift(bp, alpha=1.0)
+                    except:
+                        data[j]['magCalc'][fname] = numpy.nan
+                        data[j]['S_p06'][fname] = numpy.nan
+                        data[j]['S_p10'][fname] = numpy.nan
+
+                # if emission:
+                #     spec = phot.make_composite_spec_with_emission_lines(data[j], filters,
+                #                                                         zps, wave_match)
+                # else:
+                #     spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
                 if debug:
                     print
-                    print 'mag:    ' + ' '.join(['{:6.3f}'.format(magCalcs['LSST_'+fname])
+                    print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
-                    print 'syn:    ' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
+                    print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
-                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(magCalcs['Euclid_{}'.format(fw)])
+                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['Euclid_{}'.format(fw)])
                                                  for fw in [150, 250, 350, 450]])
                 j += 1
     return data
+
+def runme():
+    junk = process_gal_file('output/galaxy_catalog.dat', nmax=25, emission=False, start=0, debug=True)
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--infile', default = 'output/galaxy_catalog.dat',
                         help="input filename. Default 'output/galaxy_catalog.dat'")
-    parser.add_argument('--outfile', default = 'galaxy_data.pkl',
-                        help="output filename. Default 'galaxy_data.pkl'")
+    parser.add_argument('--outfile', default = 'output/galaxy_data.pkl',
+                        help="output filename. Default 'output/galaxy_data.pkl'")
     parser.add_argument('--nmax', type=int, default=30000,
                         help="maximum number of galaxies to process. Default 30000")
     parser.add_argument('--start', type=int, default=0,
@@ -231,8 +226,9 @@ if __name__ == '__main__':
                         help="add emission lines to spectra")
     args = parser.parse_args()
 
-    cPickle.dump(readfile(args.infile,
-                          nmax=args.nmax,
-                          emission=args.emission,
-                          start=args.start),
+    cPickle.dump(process_gal_file(args.infile,
+                                  nmax=args.nmax,
+                                  emission=args.emission,
+                                  start=args.start,
+                                  debug=False),
                  open(args.outfile, 'wb'))
