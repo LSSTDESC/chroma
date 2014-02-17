@@ -59,6 +59,11 @@ class Bandpass(galsim.Bandpass):
             self.zp = -2.5 * np.log10(AB_flux)
         return self.zp
 
+    def thin(self, step):
+        ret = galsim.Bandpass.thin(self, step)
+        ret.__class__ = chroma.sed.Bandpass
+        return ret
+
 
 if __name__ == '__main__':
     spec = SED('../data/SEDs/CWW_E_ext.ascii')
