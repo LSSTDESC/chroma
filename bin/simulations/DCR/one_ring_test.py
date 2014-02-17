@@ -10,8 +10,6 @@ import astropy.utils.console
 import _mypath
 import chroma
 
-from pylab import *
-
 def fiducial_galaxy():
     '''Setup lmfit.Parameters to represent a Single Sersic galaxy.
     '''
@@ -70,7 +68,6 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     return m, c
 
 def one_ring_test(args):
-    # In non-script code, use getLogger(__name__) at module scope instead.
     logging.basicConfig(format="%(message)s", level=logging.INFO)
     logger = logging.getLogger("one_ring_test")
 
@@ -119,6 +116,7 @@ def one_ring_test(args):
     else:
         PSF = galsim.ChromaticObject(PSF685)
         PSF.applyDilation(lambda w:(w/685)**args.alpha)
+
     logger.info('')
     if not args.gaussian:
         logger.info('Moffat PSF settings')
@@ -138,6 +136,11 @@ def one_ring_test(args):
         logger.info('--------------------')
         logger.info('zenith angle: {} degrees'.format(args.zenith_angle))
 
+    if args.slow:
+        galtool = chroma.SersicTool
+    else:
+        galtool = chroma.SersicFastTool
+
     gparam = fiducial_galaxy()
     gparam['n'].value = args.sersic_n
     gparam['x0'].value = args.gal_x0 * args.pixel_scale
@@ -151,11 +154,6 @@ def one_ring_test(args):
     logger.info('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
     logger.info('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
     logger.info('Galaxy sqrt(r2): {} arcsec'.format(args.gal_r2))
-
-    if args.slow:
-        galtool = chroma.SersicTool
-    else:
-        galtool = chroma.SersicFastTool
 
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
     gparam = gtool.set_uncvl_r2(gparam, (args.gal_r2)**2)
@@ -203,12 +201,9 @@ def one_ring_test(args):
     logger.info('')
     logger.info('Shear Calibration Results')
     logger.info('-------------------------')
-    logger.info('         {:>12s} {:>12s} {:>12s} {:>12s}'.format('m1','m2','c1','c2'))
-    logger.info('analytic {:12.8f} {:12.8f} {:12.8f} {:12.8f}'.format(m1, m2,
-                                                                      c1, c2))
-    logger.info('ring     {:12.8f} {:12.8f} {:12.8f} {:12.8f}'.format(m[0], m[1], c[0], c[1]))
-
-    return m, c
+    logger.info(('        ' + ' {:>12s}'*4).format('m1','m2','c1','c2'))
+    logger.info(('analytic' + ' {:12.8f}'*4).format(m1, m2, c1, c2))
+    logger.info(('ring    ' + ' {:12.8f}'*4).format(m[0], m[1], c[0], c[1]))
 
 def runme():
     """Useful for profiling one_ring_test() using IPython and prun.
