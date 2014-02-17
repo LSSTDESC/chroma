@@ -1,2 +1,6 @@
 wiki
 output
+bin
+chroma
+.DS_store
+.DS_store?
