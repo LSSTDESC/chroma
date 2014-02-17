@@ -1,13 +1,16 @@
+works
+-----
 _mypath.py                               import chroma
+one_ring_test.py                         Do a single star/gal spectrum combo ring test
+ring_vs_z.py                             Do star/gal combo across range of redshifts
+plot_DCR_ring_vs_z.py                    Plot ring_vs_z results for DCR
+
+make work
+---------
 calibration_linearity.py                 checks that g_hat = c + (1+m) * g is reasonable.
-case_study.py                            diagnostic plots for very specific ring test
-gal_vs_n.py                              sanity check Sersic indices
-m_vs_n_rPSF.py                           m as function of n and r^2 for specific settings...
-plot_m_vs_n_rPSF.py                      ... and corresponding plot
-one_case_study.py                        specific diagnostic plots, make fits file output
-plot_one_case_study.py                   ... and corresponding plot  buggy
-pb12_ring_n.py                           Think this is the magic file I'm looking for...
-plot_pb12_ring_n.py                      ... and corresponding plot
-plot_all_pb12_ring_n.py                  ... same but only plot 1 sersic index
-plot_two_cmap.py                         ... diagnostic plots (buggy)
-plot_two_cmap2.py                        ... diagnostic plots (buggy)
+
+todo
+----
+integrate case study into one_ring_test.py
+integrate second moment Moffat correction into one_ring_test.py
+plot_case_study   -   Plot results of case study using fits file output
