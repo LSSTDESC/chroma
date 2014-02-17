@@ -1,5 +1,4 @@
 import numpy
-import scipy.integrate
 
 def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067):
     '''Return the refractive index of air as function of wavelength.
@@ -100,9 +99,9 @@ def disp_moments(wave, photons, **kwargs):
     '''
 
     R = atm_refrac(wave, **kwargs)
-    norm = scipy.integrate.simps(photons, wave)
-    Rbar = scipy.integrate.simps(photons * R, wave) / norm
-    V = scipy.integrate.simps(photons * ((R - Rbar)**2.0), wave) / norm
+    norm = numpy.trapz(photons, wave)
+    Rbar = numpy.trapz(photons * R, wave) / norm
+    V = numpy.trapz(photons * ((R - Rbar)**2.0), wave) / norm
     return Rbar, V
 
 def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
@@ -142,9 +141,9 @@ def wave_dens_to_angle_dens(wave, wave_dens, **kwargs):
 def disp_moments_R(wave, photons, **kwargs):
     '''Same as disp_moments, but integrates against refraction instead of wavelength; sanity check'''
     R, photons_per_dR = wave_dens_to_angle_dens(wave, photons, **kwargs)
-    norm = scipy.integrate.simps(photons_per_dR, R)
-    Rbar = scipy.integrate.simps(R * photons_per_dR, R)/norm
-    V = scipy.integrate.simps((R - Rbar)**2.0 * photons_per_dR, R)/norm
+    norm = numpy.trapz(photons_per_dR, R)
+    Rbar = numpy.trapz(R * photons_per_dR, R)/norm
+    V = numpy.trapz((R - Rbar)**2.0 * photons_per_dR, R)/norm
     return Rbar, V
 
 def weighted_second_moment(wave, photons, sigma,
@@ -219,8 +218,8 @@ def weighted_second_moment(wave, photons, sigma,
     # create zenith-direction PSF
     R, zen_PSF = zenith_PSF(wave, photons, moffat_FWHM, moffat_beta, Rbar=Rbar, V=V, **kwargs)
     gaussian = lambda x: numpy.exp(-0.5 * ((x - Rbar) / sigma)**2.0)
-    norm = scipy.integrate.simps(gaussian(R) * zen_PSF, R)
-    return scipy.integrate.simps(gaussian(R) * zen_PSF * (R - Rbar)**2, R)/norm
+    norm = numpy.trapz(gaussian(R) * zen_PSF, R)
+    return numpy.trapz(gaussian(R) * zen_PSF * (R - Rbar)**2, R)/norm
 
 if __name__ == '__main__':
     wave, fthroughput = numpy.genfromtxt('../data/filters/LSST_r.dat').T
