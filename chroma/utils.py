@@ -32,7 +32,8 @@ def apply_shear(c_ellip, c_gamma):
     """Compute complex ellipticity after shearing by complex shear `c_gamma`."""
     return (c_ellip + c_gamma) / (1.0 + c_gamma.conjugate() * c_ellip)
 
-def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, silent=False):
+def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, silent=False,
+             diagnostic=None):
     """ Performs a shear calibration ringtest.
 
     Produces "true" images uniformly spread along a ring in ellipticity space using the supplied
@@ -54,15 +55,15 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
 
     def work():
         #measure ellipticity at beta along the ring
-        target_image0 = gen_target_image(gamma, beta)
+        target_image0 = gen_target_image(gamma, beta, diagnostic)
         init_param0 = gen_init_param(gamma, beta)
-        ellip0 = measure_ellip(target_image0, init_param0)
+        ellip0 = measure_ellip(target_image0, init_param0, diagnostic)
         ellip0s.append(ellip0)
 
         #repeat with beta on opposite side of the ring (i.e. +180 deg)
-        target_image180 = gen_target_image(gamma, beta + np.pi)
+        target_image180 = gen_target_image(gamma, beta + np.pi, diagnostic)
         init_param180 = gen_init_param(gamma, beta + np.pi)
-        ellip180 = measure_ellip(target_image180, init_param180)
+        ellip180 = measure_ellip(target_image180, init_param180, diagnostic)
         ellip180s.append(ellip180)
 
     # Use fancy console updating if astropy is installed and not silenced

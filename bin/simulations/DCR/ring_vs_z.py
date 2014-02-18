@@ -31,14 +31,14 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
 
     target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
     # generate target image using ringed gparam and PSFs
-    def gen_target_image(gamma, beta):
+    def gen_target_image(gamma, beta, diag=None):
         ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
         target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear)
         return target_image
 
     fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
 
-    def measure_ellip(target_image, init_param):
+    def measure_ellip(target_image, init_param, diag=None):
         def resid(param):
             image = fit_tool.get_image(param)
             return (image.array - target_image.array).flatten()

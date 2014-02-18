@@ -5,7 +5,7 @@ import logging
 import lmfit
 import galsim
 import numpy as np
-import astropy.utils.console
+import astropy.io.fits as fits
 
 import _mypath
 import chroma
@@ -24,25 +24,54 @@ def fiducial_galaxy():
     return gparam
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool):
+                        ring_n, galtool, diagnostic=None):
     '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
 
     pix = galsim.Pixel(pixel_scale)
-
     target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
     # generate target image using ringed gparam and PSFs
-    def gen_target_image(gamma, beta):
+    def gen_target_image(gamma, beta, diag=None):
         ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
         target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear)
+        if diag is not None:
+            hdu = fits.ImageHDU(target_image.array, name='TARGET')
+            hdu.header.append(('GAMMA1', gamma.real))
+            hdu.header.append(('GAMMA2', gamma.imag))
+            hdu.header.append(('BETA', beta))
+            diag.append(hdu)
+            # now the high res version
+            target_hr = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear,
+                                              oversample=4)
+            hdu = fits.ImageHDU(target_hr.array, name='TARGETHR')
+            diag.append(hdu)
+            # and the unconvolved version
+            target_uncvl = target_tool.get_uncvl_image(gparam, ring_beta=beta,
+                                                       ring_shear=ring_shear, oversample=4)
+            hdu = fits.ImageHDU(target_uncvl.array, name='TARGETUC')
+            diag.append(hdu)
+
         return target_image
 
     fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
 
-    def measure_ellip(target_image, init_param):
+    def measure_ellip(target_image, init_param, diag=None):
         def resid(param):
             image = fit_tool.get_image(param)
             return (image.array - target_image.array).flatten()
         result = lmfit.minimize(resid, init_param)
+        if diag is not None:
+            fit = fit_tool.get_image(result.params)
+            hdu = fits.ImageHDU(fit.array, name='FIT')
+            diag.append(hdu)
+            # now the high res version
+            fit_hr = fit_tool.get_image(result.params, oversample=4)
+            hdu = fits.ImageHDU(fit_hr.array, name='FITHR')
+            diag.append(hdu)
+            # and the unconvolved version
+            fit_uncvl = fit_tool.get_uncvl_image(result.params, oversample=4)
+            hdu = fits.ImageHDU(fit_uncvl.array, name='FITUC')
+            diag.append(hdu)
+
         gmag = result.params['gmag'].value
         phi = result.params['phi'].value
         return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
@@ -50,20 +79,29 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     def get_ring_params(gamma, beta):
         return fit_tool.get_ring_params(gparam, beta, galsim.Shear(g1=gamma.real, g2=gamma.imag))
 
+    if diagnostic is not None:
+        diag = fits.HDUList()
+
+    else:
+        diag = None
+
     # Ring test for two values of gamma, solve for m and c.
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.ringtest(gamma0, ring_n, gen_target_image, get_ring_params, measure_ellip,
-                                 silent=True)
+                                 silent=True, diagnostic=diag)
     # c is just gamma_hat when input gamma_true is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.ringtest(gamma1, ring_n, gen_target_image, get_ring_params, measure_ellip,
-                                 silent=True)
+                                 silent=True, diagnostic=diag)
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
+
+    if diagnostic is not None:
+        diag.writeto(diagnostic, clobber=True)
 
     return m, c
 
@@ -161,7 +199,7 @@ def one_ring_test(args):
     # Measure shear bias
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
-                               galtool)
+                               galtool, args.diagnostic)
 
     # Now do the analytic part, which can be a little tricky.
 
@@ -288,7 +326,8 @@ if __name__ == '__main__':
     parser.add_argument('--noDCR', action='store_true',
                         help="Implement differential chromatic refraction (DCR) in PSF? "
                         +" (Default: True)")
-
+    parser.add_argument('--diagnostic',
+                        help="Filename to which to write diagnostic images (Default: '')")
 
     args = parser.parse_args()
 
