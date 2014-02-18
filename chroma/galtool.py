@@ -84,11 +84,16 @@ class GalTool(object):
         gal = self._gparam_to_galsim(gparam)
         pix = galsim.Pixel(pixel_scale)
         if ring_beta is not None:
-            gal.applyRotation(ring_phi / 2.0 * galsim.radians)
+            gal.applyRotation(ring_beta / 2.0 * galsim.radians)
         if ring_shear is not None:
             gal.applyShear(ring_shear)
         final = galsim.Convolve(gal, pix)
-        final.draw(self.bandpass, image=im)
+        if isinstance(final, galsim.ChromaticObject):
+            final.draw(self.bandpass, image=im)
+        elif isinstance(final, galsim.GSObject):
+            final.draw(image=im)
+        else:
+            raise ValueError("Don't recognize galaxy object type in GalTool.")
         return im
 
     def get_uncvl_r2(self, gparam, oversample=1):
