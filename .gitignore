@@ -17,6 +17,7 @@ develop-eggs
 lib64
 output
 wiki
+_site
 
 # Installer logs
 pip-log.txt
