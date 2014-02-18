@@ -8,3 +8,4 @@ repository: https://github.com/DarkEnergyScienceCollaboration/chroma
 # markdown: redcarpet
 # pygments: true
 baseurl: /chroma
+url: /chroma
