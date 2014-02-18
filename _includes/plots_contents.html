@@ -8,8 +8,7 @@
       {% else %}
         {% assign c = '' %}
       {% endif %}
-
-      <li class="{{ c }}"><a href={{ plot_url }}>{{ section.title }}</a></li>
+      <li class="{{ c }}"><a href={{site.url}}{{ plot_url }}>{{ section.title }}</a></li>
     {% endfor %}
   </aside>
 </div>
