@@ -1,8 +1,8 @@
 ---
-layout: plots
+layout: results
 title: Differential Chromatic Refraction
 next_section: "Chromatic-Seeing"
-permalink: /plots/dcr/
+permalink: /results/dcr/
 ---
 
 This is the DCR page.

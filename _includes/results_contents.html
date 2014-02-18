@@ -1,0 +1,14 @@
+<div class="unit one-fifth hide-on-mobiles">
+  <aside>
+    {% for section in site.data.results %}
+      {% assign result_url = section.url | prepend:'/results/' | append:'/' %}
+
+      {% if result_url == page.url %}
+        {% assign c = 'current' %}
+      {% else %}
+        {% assign c = '' %}
+      {% endif %}
+      <li class="{{ c }}"><a href={{site.url}}{{ result_url }}>{{ section.title }}</a></li>
+    {% endfor %}
+  </aside>
+</div>
