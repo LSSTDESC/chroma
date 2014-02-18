@@ -193,8 +193,6 @@ def ring_vs_z(args):
             seeing1 = star_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
             seeing2 = gal_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
             dr2r2 = (seeing2 - seeing1)/seeing1
-            logger.info("star seeing correction: {}".format(seeing1))
-            logger.info("galaxy seeing correction: {}".format(seeing2))
         else:
             dr2r2 = 0.0
 
