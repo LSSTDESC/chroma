@@ -1,0 +1,15 @@
+<div class="unit one-fifth hide-on-mobiles">
+  <aside>
+    {% for section in site.data.plots %}
+      {% assign plot_url = section.url | prepend:'/plots/' | append:'/' %}
+
+      {% if plot_url == page.url %}
+        {% assign c = 'current' %}
+      {% else %}
+        {% assign c = '' %}
+      {% endif %}
+
+      <li class="{{ c }}"><a href={{ plot_url }}>{{ section.title }}</a></li>
+    {% endfor %}
+  </aside>
+</div>

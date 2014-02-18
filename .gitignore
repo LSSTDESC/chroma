@@ -2,5 +2,9 @@ wiki
 output
 bin
 chroma
-.DS_store
-.DS_store?
+.DS_Store
+.DS_Store?
+_site/
+*.swp
+pkg/
+test/
