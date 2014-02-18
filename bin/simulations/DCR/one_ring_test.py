@@ -81,6 +81,8 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
 
     if diagnostic is not None:
         diag = fits.HDUList()
+        diag.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
+        diag.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
 
     else:
         diag = None

@@ -57,6 +57,25 @@ class GalTool(object):
             raise ValueError("Don't recognize galaxy object type in GalTool.")
         return im
 
+    def get_PSF_image(self, oversample=1):
+        """ Draw an image of the effective PSF.  Note that we choose to convolve by the pixel
+        response function too here.
+
+        @param oversample  Integer factor by which to scale output image resolution and size.
+        """
+        stamp_size = self.stamp_size * oversample
+        pixel_scale = self.pixel_scale / float(oversample)
+        im = galsim.ImageD(stamp_size, stamp_size, scale=pixel_scale)
+        pix = galsim.Pixel(pixel_scale)
+        final = galsim.Convolve(self.PSF, pix)
+        if isinstance(final, galsim.ChromaticObject):
+            final.draw(self.bandpass, image=im)
+        elif isinstance(final, galsim.GSObject):
+            final.draw(image=im)
+        else:
+            raise ValueError("Don't recognize galaxy object type in GalTool.")
+        return im
+
     def get_r2(self, gparam, oversample=1):
         """ Compute object second moment radius directly from image.  This may be biased if the
         object wings are significant or the postage stamp size is too small.
