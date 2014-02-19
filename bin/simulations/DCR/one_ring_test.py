@@ -24,11 +24,13 @@ def fiducial_galaxy():
     return gparam
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagnostic=None):
+                        ring_n, galtool, diagfile=None, maximum_fft_size=32768):
     '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
 
     pix = galsim.Pixel(pixel_scale)
-    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale)
+    gsparams = galsim.GSParams()
+    gsparams.maximum_fft_size = maximum_fft_size
+    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
     # generate target image using ringed gparam and PSFs
     def gen_target_image(gamma, beta, diag=None):
         ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
@@ -46,13 +48,14 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
             diag.append(hdu)
             # and the unconvolved version
             target_uncvl = target_tool.get_uncvl_image(gparam, ring_beta=beta,
-                                                       ring_shear=ring_shear, oversample=4)
+                                                       ring_shear=ring_shear, oversample=4,
+                                                       center=True)
             hdu = fits.ImageHDU(target_uncvl.array, name='TARGETUC')
             diag.append(hdu)
 
         return target_image
 
-    fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale)
+    fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
 
     def measure_ellip(target_image, init_param, diag=None):
         def resid(param):
@@ -68,7 +71,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
             hdu = fits.ImageHDU(fit_hr.array, name='FITHR')
             diag.append(hdu)
             # and the unconvolved version
-            fit_uncvl = fit_tool.get_uncvl_image(result.params, oversample=4)
+            fit_uncvl = fit_tool.get_uncvl_image(result.params, oversample=4, center=True)
             hdu = fits.ImageHDU(fit_uncvl.array, name='FITUC')
             diag.append(hdu)
 
@@ -79,7 +82,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     def get_ring_params(gamma, beta):
         return fit_tool.get_ring_params(gparam, beta, galsim.Shear(g1=gamma.real, g2=gamma.imag))
 
-    if diagnostic is not None:
+    if diagfile is not None:
         diag = fits.HDUList()
         diag.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
         diag.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
@@ -102,8 +105,8 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
 
-    if diagnostic is not None:
-        diag.writeto(diagnostic, clobber=True)
+    if diagfile is not None:
+        diag.writeto(diagfile, clobber=True)
 
     return m, c
 

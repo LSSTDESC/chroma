@@ -87,7 +87,7 @@ class GalTool(object):
         mx, my, mxx, myy, mxy = chroma.moments(im)
         return mxx + myy
 
-    def get_uncvl_image(self, gparam, ring_beta=None, ring_shear=None, oversample=1):
+    def get_uncvl_image(self, gparam, ring_beta=None, ring_shear=None, oversample=1, center=False):
         """ Draw a galaxy image, not convolved with a PSF, using GalSim.  Potentially rotate and
         shear the galaxy as part of a ring test.  Optionally draw a high-resolution image.
 
@@ -95,12 +95,16 @@ class GalTool(object):
         @param ring_beta   Angle around ellipticity ring in ring test.
         @param ring_shear  Shear to apply after rotation as part of ring test. (type=?)
         @param oversample  Integer factor by which to scale output image resolution and size.
+        @param center      Force center of profile to (0,0).
         @returns  galsim.Image
         """
         stamp_size = self.stamp_size * oversample
         pixel_scale = self.pixel_scale / float(oversample)
         im = galsim.ImageD(stamp_size, stamp_size, scale=pixel_scale)
         gal = self._gparam_to_galsim(gparam)
+        if center:
+            centroid = gal.centroid()
+            gal.applyShift(-centroid)
         pix = galsim.Pixel(pixel_scale)
         if ring_beta is not None:
             gal.applyRotation(ring_beta / 2.0 * galsim.radians)
@@ -130,7 +134,7 @@ class GalTool(object):
 class SersicTool(GalTool):
     """ A GalTool to represent single Sersic profile chromatic galaxies.
     """
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale):
+    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
         """ Initialize a single Sersic profile chromatic galaxy.
 
         @param SED          galsim.SED galaxy spectrum
@@ -144,11 +148,13 @@ class SersicTool(GalTool):
         self.PSF = PSF
         self.stamp_size = stamp_size
         self.pixel_scale = pixel_scale
+        self.gsparams = gsparams
 
     def _gparam_to_galsim(self, gparam):
         # Turn lmfit.gparam into a galsim.ChromaticObject
         mono_gal = galsim.Sersic(n=gparam['n'].value,
-                                 half_light_radius=gparam['hlr'].value)
+                                 half_light_radius=gparam['hlr'].value,
+                                 gsparams=self.gsparams)
         mono_gal.applyShift(gparam['x0'].value, gparam['y0'].value)
         mono_gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
         mono_gal.setFlux(gparam['flux'].value)
@@ -226,7 +232,7 @@ class SersicTool(GalTool):
 
 
 class SersicFastTool(SersicTool):
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale):
+    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
         """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
         speed up image drawing by cacheing an effective PSF.
 
@@ -247,11 +253,13 @@ class SersicFastTool(SersicTool):
         im = galsim.ImageD(N, N, scale=scale)
         prof.draw(bandpass, image=im)
         self.PSF = galsim.InterpolatedImage(im) # remember the effective PSF
+        self.gsparams = gsparams
 
     def _gparam_to_galsim(self, gparam):
         # Turn lmfit.gparam into a galsim.ChromaticObject
         mono_gal = galsim.Sersic(n=gparam['n'].value,
-                                 half_light_radius=gparam['hlr'].value)
+                                 half_light_radius=gparam['hlr'].value,
+                                 gsparams=self.gsparams)
         mono_gal.applyShift(gparam['x0'].value, gparam['y0'].value)
         mono_gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
         mono_gal.setFlux(gparam['flux'].value)
