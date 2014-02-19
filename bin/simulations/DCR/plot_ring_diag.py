@@ -78,24 +78,23 @@ def symlogTicksAndLabels(vmin, vmax, linthresh, linscale):
 
 
 def plot_ring_diag(args):
-    #cmap_resid = cm.PiYG
     cmap_resid = chroma.bipolar.bipolar(n=1./3)
     cmap_flux = cm.Blues_r
 
     # load data
     hdulist = fits.open(args.infile)
-    gal_PSF_overim = hdulist[0].data[28:96,28:96].T
-    star_PSF_overim = hdulist[1].data[28:96,28:96].T
+    gal_PSF_overim = np.abs(hdulist[0].data[28:96,28:96].T)
+    star_PSF_overim = np.abs(hdulist[1].data[28:96,28:96].T)
 
     nring = (len(hdulist)-2)/6
     for i in range(nring):
     # for i in range(1):
-        im = hdulist[2+6*i].data[7:24,7:24].T
-        overim = hdulist[3+6*i].data[28:96,28:96].T
-        uncvlim = hdulist[4+6*i].data[28:96,28:96].T
-        fit_im = hdulist[5+6*i].data[7:24,7:24].T
-        fit_overim = hdulist[6+6*i].data[28:96,28:96].T
-        fit_uncvlim = hdulist[7+6*i].data[28:96,28:96].T
+        im = np.abs(hdulist[2+6*i].data[7:24,7:24].T)
+        overim = np.abs(hdulist[3+6*i].data[28:96,28:96].T)
+        uncvlim = np.abs(hdulist[4+6*i].data[28:96,28:96].T)
+        fit_im = np.abs(hdulist[5+6*i].data[7:24,7:24].T)
+        fit_overim = np.abs(hdulist[6+6*i].data[28:96,28:96].T)
+        fit_uncvlim = np.abs(hdulist[7+6*i].data[28:96,28:96].T)
         nudge_uncvlim = fit_uncvlim
         g1 = hdulist[2+6*i].header['GAMMA1']
         g2 = hdulist[2+6*i].header['GAMMA2']
