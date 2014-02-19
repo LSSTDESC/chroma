@@ -159,7 +159,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--nmax', type=int, default=30000,
                         help="maximum number of stars to process")
-    parser.add_argument('--outfile', default = 'star_data.pkl',
+    parser.add_argument('--outfile', default = 'output/star_data.pkl',
                         help="output filename")
     parser.add_argument('--infile', default = 'output/star_catalog.dat',
                         help="input filename")
