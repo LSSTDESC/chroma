@@ -49,7 +49,7 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     the input shear `gamma` in an external function to estimate shear calibration parameters.
     """
 
-    betas = np.linspace(0.0, 2.0 * np.pi, n_ring, endpoint=False)
+    betas = np.linspace(0.0, np.pi, n_ring, endpoint=False)
     ellip0s = []
     ellip180s = []
 
