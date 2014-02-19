@@ -2,7 +2,7 @@ import cPickle
 
 import matplotlib.pyplot as plt
 
-a = cPickle.load(open('corrected_galaxy_data.pkl'))
+a = cPickle.load(open('output/corrected_galaxy_data.pkl'))
 
 axes1 = [0.12, 0.16, 0.5, 0.76]
 axes2 = [0.7, 0.16, 0.25, 0.76]
