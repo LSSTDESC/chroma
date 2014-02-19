@@ -13,8 +13,6 @@ import galsim
 
 import _mypath
 import chroma
-import phot
-
 
 datadir = '../../../data/'
 
