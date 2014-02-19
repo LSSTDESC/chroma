@@ -1,7 +1,7 @@
 import cPickle
 import matplotlib.pyplot as plt
 
-a = cPickle.load(open('star_data.pkl'))
+a = cPickle.load(open('output/star_data.pkl'))
 
 f = plt.figure(figsize=(5,3))
 ax = f.add_subplot(111)
@@ -24,4 +24,4 @@ ax.set_xlim(-0.2, 0.05)
 ax.set_xlabel('catalog mag - synphot mag')
 ax.set_ylabel('#')
 f.tight_layout()
-plt.savefig('output/compare_star_mags.pdf', dpi=300)
+plt.savefig('output/compare_star_mags.png', dpi=300)
