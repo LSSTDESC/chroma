@@ -1,10 +1,14 @@
+"""Plot differential chromatic refraction data placed in pickle files by analytic_table.py in this
+directory.
+"""
+
 import cPickle
 import os
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_DCR_moment_shifts(filter_name, zenith=45.0):
+def plot_DCR_moment_shifts(filter_name):
     stars = cPickle.load(open('output/stars.pkl'))
     gals = cPickle.load(open('output/galaxies.pkl'))
 
@@ -17,7 +21,7 @@ def plot_DCR_moment_shifts(filter_name, zenith=45.0):
     ax1.set_xlim(-0.1, 1.3)
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)')
     ax1.set_xlabel('redshift')
-    ax1.set_title('zenith angle = {}, filter = {}'.format(zenith, filter_name))
+    ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')
 
@@ -25,6 +29,7 @@ def plot_DCR_moment_shifts(filter_name, zenith=45.0):
     star_types = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
+    # Normalize all chromatic shifts to the shift for a G5v star.
     G_idx = stars['star_type'] == 'ukg5v'
 
     #plot stars
@@ -48,7 +53,7 @@ def plot_DCR_moment_shifts(filter_name, zenith=45.0):
         ax1.plot(zs, dRbar, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
-    f.savefig('output/Rbar.{}.z{}.png'.format(filter_name, zenith))
+    f.savefig('output/Rbar.{}.png'.format(filter_name))
 
     #-------------------------------#
     # Differences in second moments #
@@ -59,7 +64,7 @@ def plot_DCR_moment_shifts(filter_name, zenith=45.0):
     ax1.set_xlim(-0.1, 1.3)
     ax1.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)')
     ax1.set_xlabel('redshift')
-    ax1.set_title('zenith angle = {}, filter = {}'.format(zenith, filter_name))
+    ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
     if not os.path.exists('output/'):
         os.mkdir('output/')
 
@@ -79,9 +84,9 @@ def plot_DCR_moment_shifts(filter_name, zenith=45.0):
         ax1.plot(zs, dV, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
-    f.savefig('output/V.{}.z{}.png'.format(filter_name, zenith))
+    f.savefig('output/V.{}.png'.format(filter_name))
 
 if __name__ == '__main__':
-    plot_DCR_moment_shifts('LSST_g', 45.0)
-    plot_DCR_moment_shifts('LSST_r', 45.0)
-    plot_DCR_moment_shifts('LSST_i', 45.0)
+    plot_DCR_moment_shifts('LSST_g')
+    plot_DCR_moment_shifts('LSST_r')
+    plot_DCR_moment_shifts('LSST_i')
