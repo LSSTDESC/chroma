@@ -234,9 +234,9 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2,
         ax.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#999999', zorder=2)
         ax.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#777777', zorder=2)
     elif alpha == 0.6:
-        ax.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#999999', zorder=2)
+        ax.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#777777', zorder=2)
     elif alpha == 1.0:
-        ax.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#999999', zorder=2)
+        ax.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#777777', zorder=2)
     else:
         raise ValueError
 
@@ -305,4 +305,4 @@ if __name__ == '__main__':
     S_vs_redshift(gals, stars, 'LSST_i', 'LSST_r', 'LSST_i', corrected=args.corrected,
                   s=2, yrange=[-0.02, 0.01])
     S_vs_redshift(gals, stars, 'Euclid_350', 'LSST_r', 'LSST_i', corrected=args.corrected,
-                  alpha=0.6, s=2)
+                  alpha=0.6, s=2, yrange=[-0.05, 0.15])
