@@ -3,89 +3,9 @@ from argparse import ArgumentParser
 
 import numpy
 import regressor
-import sklearn.svm
-import sklearn.ensemble
-
-# def SVR(objs, ntrain, ntest, predict_var=None, predict_band=None, use_color=False, use_colormag=False):
-#     if predict_var is None:
-#         raise ValueError
-#     train_Y = numpy.empty([ntrain], dtype=numpy.float)
-#     test_Y = numpy.empty([ntest], dtype=numpy.float)
-#     if predict_band is None:
-#         train_Y[:] = objs[predict_var][0:ntrain]
-#         test_Y[:] = objs[predict_var][ntrain:ntrain+ntest]
-#     else:
-#         train_Y[:] = objs[predict_var][predict_band][0:ntrain]
-#         test_Y[:] = objs[predict_var][predict_band][ntrain:ntrain+ntest]
-
-#     if use_colormag:
-#         # r-band, V
-#         train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
-
-#         #training data
-#         train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain] - objs['magCalc']['LSST_g'][0:ntrain]
-#         train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain] - objs['magCalc']['LSST_r'][0:ntrain]
-#         train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain] - objs['magCalc']['LSST_i'][0:ntrain]
-#         train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain] - objs['magCalc']['LSST_z'][0:ntrain]
-#         train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain] - objs['magCalc']['LSST_y'][0:ntrain]
-#         train_X[:,5] = objs['magCalc']['LSST_i'][0:ntrain]
-
-#         #test data
-#         test_X = numpy.empty([ntest, 6], dtype=numpy.float)
-#         test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-#         test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-#         test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-#         test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-#         test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
-#         test_X[:,5] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-#     elif use_color:
-#         # r-band, V
-#         train_X = numpy.empty([ntrain, 5], dtype=numpy.float)
-
-#         #training data
-#         train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain] - objs['magCalc']['LSST_g'][0:ntrain]
-#         train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain] - objs['magCalc']['LSST_r'][0:ntrain]
-#         train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain] - objs['magCalc']['LSST_i'][0:ntrain]
-#         train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain] - objs['magCalc']['LSST_z'][0:ntrain]
-#         train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain] - objs['magCalc']['LSST_y'][0:ntrain]
-
-#         #test data
-#         test_X = numpy.empty([ntest, 5], dtype=numpy.float)
-#         test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-#         test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-#         test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-#         test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-#         test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest] - objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
-#     else:
-#         # r-band, V
-#         train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
-
-#         #training data
-#         train_X[:,0] = objs['magCalc']['LSST_u'][0:ntrain]
-#         train_X[:,1] = objs['magCalc']['LSST_g'][0:ntrain]
-#         train_X[:,2] = objs['magCalc']['LSST_r'][0:ntrain]
-#         train_X[:,3] = objs['magCalc']['LSST_i'][0:ntrain]
-#         train_X[:,4] = objs['magCalc']['LSST_z'][0:ntrain]
-#         train_X[:,5] = objs['magCalc']['LSST_y'][0:ntrain]
-
-#         #test data
-#         test_X = numpy.empty([ntest, 6], dtype=numpy.float)
-#         test_X[:,0] = objs['magCalc']['LSST_u'][ntrain:ntrain+ntest]
-#         test_X[:,1] = objs['magCalc']['LSST_g'][ntrain:ntrain+ntest]
-#         test_X[:,2] = objs['magCalc']['LSST_r'][ntrain:ntrain+ntest]
-#         test_X[:,3] = objs['magCalc']['LSST_i'][ntrain:ntrain+ntest]
-#         test_X[:,4] = objs['magCalc']['LSST_z'][ntrain:ntrain+ntest]
-#         test_X[:,5] = objs['magCalc']['LSST_y'][ntrain:ntrain+ntest]
-
-#     learner = SVR_correction.SV_regress()
-#     learner.add_training_data(train_X, train_Y)
-#     learner.train()
-#     predict_Y = learner.predict(test_X)
-
-#     return predict_Y
 
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
-        use_color=False, use_colormag=False):
+        use_color=False, use_mag=False):
 
     if predict_var is None:
         raise ValueError
@@ -100,28 +20,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         train_Y[:] = train_objs[predict_var][predict_band]
         test_Y[:] = test_objs[predict_var][predict_band]
 
-    if use_colormag: # use i-band magnitude, and five colors to train
-        # r-band, V
-        train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
-
-        # training data
-        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
-        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
-        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
-        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
-        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
-        train_X[:,5] = train_objs['magCalc']['LSST_i']
-
-        # test data
-        test_X = numpy.empty([ntest, 6], dtype=numpy.float)
-        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
-        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
-        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
-        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
-        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
-        test_X[:,5] = test_objs['magCalc']['LSST_i']
-    elif use_color: # only use five colors to train
-        # r-band, V
+    if use_color: # use only five colors to train
         train_X = numpy.empty([ntrain, 5], dtype=numpy.float)
 
         # training data
@@ -138,8 +37,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
         test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
         test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
-    else: #default use just magnitudes to train
-        # r-band, V
+    elif use_mag: # use only six magnitudes to train
         train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
 
         # training data
@@ -158,11 +56,30 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,3] = test_objs['magCalc']['LSST_i']
         test_X[:,4] = test_objs['magCalc']['LSST_z']
         test_X[:,5] = test_objs['magCalc']['LSST_y']
+    else: # default: use i-band magnitude, and five colors to train
+        train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
 
-    # import sklearn.svm
-    # learner = regressor.regress(sklearn.svm.SVR())
-    import sklearn.ensemble
-    learner = regressor.regress(sklearn.ensemble.RandomForestRegressor(50))
+        # training data
+        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
+        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
+        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
+        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
+        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
+        train_X[:,5] = train_objs['magCalc']['LSST_i']
+
+        # test data
+        test_X = numpy.empty([ntest, 6], dtype=numpy.float)
+        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
+        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
+        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
+        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
+        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
+        test_X[:,5] = test_objs['magCalc']['LSST_i']
+
+    import sklearn.svm
+    learner = regressor.regress(sklearn.svm.SVR(C=100, gamma=0.1))
+    # import sklearn.ensemble
+    # learner = regressor.regress(sklearn.ensemble.RandomForestRegressor(50))
     learner.add_training_data(train_X, train_Y)
     learner.train()
     predict_Y = learner.predict(test_X)
@@ -270,9 +187,9 @@ if __name__ == '__main__':
     parser.add_argument('--ntest', type=int, default=4000,
                         help='number of objects on which to test ML (Default: 4000)')
     parser.add_argument('--use_color', action='store_true',
-                        help="use colors instead of magnitudes as predictors")
-    parser.add_argument('--use_colormag', action='store_true',
-                        help="use colors and one magnitude as predictors")
+                        help="use only colors as features (Default: colors + 1 magnitude)")
+    parser.add_argument('--use_mag', action='store_true',
+                        help="use only magnitudes as features (Default: colors + 1 magnitude)")
     args = parser.parse_args()
 
     train_objs = cPickle.load(open(args.trainfile))
@@ -281,5 +198,5 @@ if __name__ == '__main__':
     out = ML_all(train_objs[args.trainstart:args.trainstart+args.ntrain],
                  test_objs[args.teststart:args.teststart+args.ntest],
                  use_color=args.use_color,
-                 use_colormag=args.use_colormag)
+                 use_mag=args.use_mag)
     cPickle.dump(out, open(args.outfile, 'wb'))
