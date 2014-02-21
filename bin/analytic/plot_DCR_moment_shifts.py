@@ -1,5 +1,4 @@
-"""Plot differential chromatic refraction data placed in pickle files by analytic_table.py in this
-directory.
+"""Plot differential chromatic refraction data placed in pickle files by analytic_table.py.
 """
 
 import cPickle
