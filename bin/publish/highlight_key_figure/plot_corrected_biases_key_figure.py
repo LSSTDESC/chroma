@@ -1,16 +1,14 @@
+import os
 import cPickle
-from argparse import ArgumentParser
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-import _mypath
-import chroma
 
 hist_axes_range = [0.13, 0.12, 0.1, 0.8]
 scatter_axes_range = [0.23, 0.12, 0.65, 0.8]
 colorbar_axes_range = [0.76, 0.15, 0.025, 0.35]
 data_dir = '../../../data/'
+star_table = '../../analytic/output/stars.pkl'
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, **kwargs):
@@ -46,31 +44,29 @@ def set_range(x):
     span = high-low
     return [low - 0.3*span, high + 0.3*span]
 
-def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2, yrange=None, prefix='', **kwargs):
-    filter_file = data_dir+'filters/{}.dat'.format(band)
-    star_SED_file = data_dir+'SEDs/ukg5v.ascii'
-    swave, sphotons = chroma.utils.get_photons(star_SED_file, filter_file, 0.0)
-    S0 = chroma.relative_second_moment_radius(swave, sphotons, alpha=alpha)
+def S_vs_redshift(gals, stars, band, cbands, alpha=-0.2, yrange=None, prefix='', **kwargs):
+    if alpha == -0.2:
+        alpha_idx = 'S_m02'
+        c_alpha_idx = 'photo_S_m02'
+    elif alpha == 0.6:
+        alpha_idx = 'S_p06'
+        c_alpha_idx = 'photo_S_p06'
+    elif alpha == 1.0:
+        alpha_idx = 'S_p10'
+        c_alpha_idx = 'photo_S_p10'
+    else:
+        raise ValueError("Unkwown value of alpha in S_vs_redshift")
+    table = cPickle.load(open(star_table))
+    S0 = table[table['star_type'] == 'ukg5v'][alpha_idx][band][0]
 
     f = plt.figure(figsize=(8, 6))
 
     # scatter plot
     ax = f.add_axes(scatter_axes_range)
     x = gals.redshift
-    if alpha == -0.2:
-        powidx = 'S_m02'
-        c_powidx = 'photo_S_m02'
-    elif alpha == 0.6:
-        powidx = 'S_p06'
-        c_powidx = 'photo_S_p06'
-    elif alpha == 1.0:
-        powidx = 'S_p10'
-        c_powidx = 'photo_S_p10'
-    else:
-        raise ValueError
-    y = np.log(gals[c_powidx][band] / gals[powidx][band])
-    y_uncorrected = np.log(gals[powidx][band] / S0 )
-    c = gals['magCalc'][cband1] - gals['magCalc'][cband2]
+    y = (gals[alpha_idx][band] - gals[c_alpha_idx][band]) / gals[c_alpha_idx][band]
+    y_uncorrected = (gals[alpha_idx][band] - S0) / S0
+    c = gals['magCalc'][cbands[0]] - gals['magCalc'][cbands[1]]
     clim = set_range(c)
     clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(x, y, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
@@ -110,16 +106,18 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2, yrange=None, pr
 
     # star histogram
     hist_ax = f.add_axes(hist_axes_range)
-    hist_with_peak(np.log(stars[c_powidx][band] / stars[powidx][band]), bins=200,
-                   range=ylim, orientation='horizontal', histtype='stepfilled', color='blue')
+    hist_with_peak(((stars[c_alpha_idx][band] - stars[alpha_idx][band])
+                    /stars[alpha_idx][band]), bins=200,
+                    range=ylim, orientation='horizontal', histtype='stepfilled', color='blue')
     hist_ax.xaxis.set_ticklabels([])
     hist_ax.set_ylim(ylim)
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
     hist_ax.set_ylabel('$\Delta r^2_\mathrm{PSF} / r^2_\mathrm{PSF}$', fontsize=12)
-    hist_with_peak(np.log(gals[c_powidx][band] / gals[powidx][band]), bins=200,
-                   range=ylim, orientation='horizontal', histtype='step', color='red')
+    hist_with_peak(((gals[c_alpha_idx][band] - gals[alpha_idx][band])
+                    /gals[alpha_idx][band]), bins=200,
+                    range=ylim, orientation='horizontal', histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
                  'stars', fontsize=12, color='blue')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
@@ -130,25 +128,19 @@ def S_vs_redshift(gals, stars, band, cband1, cband2, alpha=-0.2, yrange=None, pr
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel('{} - {}'.format(cband1.replace('LSST_',''), cband2.replace('LSST_','')),
+    cbar_ax.set_ylabel('{} - {}'.format(cbands[0].replace('LSST_',''), cbands[1].replace('LSST_','')),
                        fontsize=12)
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(12)
 
-    f.savefig('output/{}dS_corrected_{}_{}.png'.format(prefix, band, powidx), dpi=300)
+    if not os.path.isdir('output/'):
+        os.mkdir('output')
+    f.savefig('output/dS_corrected_{}_{}.png'.format(band, alpha_idx), dpi=300)
 
 if __name__ == '__main__':
-    pkl_dir = '../../bias_corrections/machine_learning/'
-    parser = ArgumentParser()
-    parser.add_argument('--galfile', default = pkl_dir+'nel2nel.pkl',
-                        help="input galaxy file.")
-    parser.add_argument('--starfile', default = pkl_dir+'corrected_star_data.pkl',
-                        help="input star file.")
-    parser.add_argument('--prefix', default = '',
-                        help="output png file prefix. Default is ''.")
-    args = parser.parse_args()
-
-    gals = cPickle.load(open(args.galfile))
-    stars = cPickle.load(open(args.starfile))
-    S_vs_redshift(gals, stars, 'LSST_r', 'LSST_r', 'LSST_i', s=2, yrange=[-0.02, 0.01],
-                  prefix=args.prefix)
+    pkl_dir = '../../bias_corrections/machine_learning/output/'
+    galfile = os.path.join(pkl_dir, 'corrected_galaxy_data.pkl')
+    starfile = os.path.join(pkl_dir, 'corrected_star_data.pkl')
+    gals = cPickle.load(open(galfile))
+    stars = cPickle.load(open(starfile))
+    S_vs_redshift(gals, stars, 'LSST_r', ['LSST_r', 'LSST_i'], s=2, yrange=[-0.02, 0.01])
