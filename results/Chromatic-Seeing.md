@@ -6,4 +6,4 @@ next_section: Diffraction-Limit
 permalink: /results/Chromatic-Seeing/
 ---
 
-This is the Chromatic Seeing page.
+<img src="{{site.url}}/img/dS_LSST_r_S_m02.png" height="400">

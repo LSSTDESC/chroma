@@ -6,4 +6,4 @@ next_section: Model-Fitting-Bias
 permalink: /results/Diffraction-Limit/
 ---
 
-This is the Diffraction limit page.
+<img src="{{site.url}}/img/dS_Euclid_350_S_p06.png" height="400">
