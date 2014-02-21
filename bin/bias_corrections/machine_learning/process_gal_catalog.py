@@ -37,7 +37,7 @@ def composite_spectrum(gal, norm):
         bulge_SED = bulge_SED / ext
         bulge_SED = bulge_SED.setRedshift(gal['redshift'])
     else:
-        bulge_SED = chroma.SED('0')
+        bulge_SED = chroma.SED('0') # easiest way to create a null SED
     if gal['sedPathDisk'] != 'None':
         disk_SED = chroma.SED(SED_dir+gal['sedPathDisk'])
         disk_SED = disk_SED.set_magnitude(norm, gal['magNormDisk'])
@@ -48,13 +48,13 @@ def composite_spectrum(gal, norm):
         disk_SED = disk_SED / ext
         disk_SED = disk_SED.setRedshift(gal['redshift'])
     else:
-        disk_SED = chroma.SED('0')
+        disk_SED = chroma.SED('0') # easiest way to create a null SED
     if gal['sedPathAGN'] != 'None':
         AGN_SED = chroma.SED(SED_dir+gal['sedPathAGN'])
         AGN_SED = AGN_SED.set_magnitude(norm, gal['magNormAGN'])
         AGN_SED = AGN_SED.setRedshift(gal['redshift'])
     else:
-        AGN_SED = chroma.SED('0')
+        AGN_SED = chroma.SED('0') # easiest way to create a null SED
 
     # Re-evaluate all the spectra once, so this doesn't have to be repeated for every bandpass
     # magnitude & bias correction
