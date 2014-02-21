@@ -4,9 +4,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_analytic_moments(filter_name, zenith=45.0):
-    stars = cPickle.load(open('../../analytic/stars.pkl'))
-    gals = cPickle.load(open('../../analytic/galaxies.pkl'))
+def plot_DCR_moment_shifts(filter_name, zenith=45.0):
+    stars = cPickle.load(open('output/stars.pkl'))
+    gals = cPickle.load(open('output/galaxies.pkl'))
 
     #------------------------------#
     # Differences in first moments #
@@ -82,6 +82,6 @@ def plot_analytic_moments(filter_name, zenith=45.0):
     f.savefig('output/V.{}.z{}.png'.format(filter_name, zenith))
 
 if __name__ == '__main__':
-    plot_analytic_moments('LSST_g', 45.0)
-    plot_analytic_moments('LSST_r', 45.0)
-    plot_analytic_moments('LSST_i', 45.0)
+    plot_DCR_moment_shifts('LSST_g', 45.0)
+    plot_DCR_moment_shifts('LSST_r', 45.0)
+    plot_DCR_moment_shifts('LSST_i', 45.0)

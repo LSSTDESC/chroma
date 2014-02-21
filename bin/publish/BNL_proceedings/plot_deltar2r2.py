@@ -35,8 +35,8 @@ def plot_gals(ax, stardata, galdata, column, band):
         ax.plot(zs, dSbyS, c=gal_color, label=gal_name)
 
 if __name__ == '__main__':
-    stardata = cPickle.load(open('../../analytic/stars.pkl'))
-    galdata = cPickle.load(open('../../analytic/galaxies.pkl'))
+    stardata = cPickle.load(open('../../analytic/output/stars.pkl'))
+    galdata = cPickle.load(open('../../analytic/output/galaxies.pkl'))
 
     # LSST r-band filter
     f = plt.figure(figsize=(6,4))

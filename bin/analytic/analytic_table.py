@@ -118,7 +118,7 @@ def construct_analytic_table():
             gal_SED = chroma.SED(spec_dir + gal_type + '.ascii')
             for z in np.arange(0.0, 3.0, 0.03):
                 bar.update()
-                gal_SED.setRedshift(z)
+                gal_SED = gal_SED.setRedshift(z)
                 data = compute_mags_moments(gal_SED, filters)
                 gal_data[i]['gal_type'] = gal_type
                 gal_data[i]['redshift'] = z
