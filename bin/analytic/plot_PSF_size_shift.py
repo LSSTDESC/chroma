@@ -49,7 +49,7 @@ def plot_PSF_size_shifts(filter_name, alpha):
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
     gal_types = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
                  'CWW_Im_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
-    gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue']
+    gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'Gray']
 
     #plot gals
     for gal_name, gal_type, gal_color in zip(gal_names, gal_types, gal_colors):
