@@ -2,11 +2,11 @@
   <li class="{% if page.overview %}current{% endif %}">
     <a href="{{ site.url }}/">Overview</a>
   </li>
-  <li class="{% if page.url contains '/install/' %}current{% endif %}">
-    <a href="{{ site.url }}/install/home/">Install</a>
-  </li>
   <li class="{% if page.url contains '/GalSim/' %}current{% endif %}">
     <a href="{{ site.url }}/GalSim/home/">GalSim</a>
+  </li>
+  <li class="{% if page.url contains '/requirements/' %}current{% endif %}">
+    <a href="{{ site.url }}/requirements/home/">Requirements</a>
   </li>
   <li class="{% if page.url contains '/results/' %}current{% endif %}">
     <a href="{{ site.url }}/results/dcr/">Results</a>

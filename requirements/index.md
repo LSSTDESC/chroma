@@ -1,8 +1,7 @@
 ---
 layout: text
 title: Install
-next_section: quickstart
-permalink: /install/home/
+permalink: /requirements/home/
 ---
 
 Chroma is written entirely in Python, and tested using version 2.7.6.  Once downloaded, there is

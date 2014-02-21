@@ -5,8 +5,15 @@ overview: true
 ---
 
 <p class="line">
-        The unprecedented statistical precision of LSST cosmic shear measurements will require a deeper understanding of potential systematic biases in galaxy shape measurement than has been achieved to date.  In this LSST feature project, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shape of a galaxy with a different spectral energy distribution (SED) than the star.  For both effects, we present analytic estimates for shape measurement biases. From simulated images, we also demonstrate an additional “model bias” due to the unknown shape of the point spread function.  We investigate techniques to correct these biases using multi-filter photometry to predict the individual SEDs of stars and galaxies and associated chromatic effects.
+  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deeper understanding of potential systematic biases in galaxy shape measurement than has been achieved to date will be required.  In this LSST DESC feature project, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of a galaxies with a different spectral energy distributions (SEDs) than the stars.
 </p>
 <p class="line">
-        In addition to its relevance to LSST, this analysis is applicable to other large-volume ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also qualitatively similar to the wavelength dependence of the diffraction limit, which will affect space-based cosmic shear surveys such as Euclid.  We have integrated the chromatic simulations software used here into the open source project GalSim, used for the GREAT3 shape measurement challenge and available on github.com.  Similarly, all of the specific analysis software for this project, including software for reproducing the tables and figures presented here, is available at the github.com/DarkEnergyScienceCollaboration/chroma.
+Our analysis consists of three parts:
+<ul>
+<li>Using galaxy and stellar catalogs generated from the LSST catalogs framework (need url), we make analytic estimates of the sizes of the two chromatic biases.
+<li>With the same catalogs, we also investigate techniques to predict the size of chromatic biases from LSST multi-filter photometry so that they can be removed.
+<li>From simulated images, we also demonstrate an additional “model bias” due to the unknown shape of the point spread function.
+</ul>
 </p>
+<p class="line">
+        In addition to its relevance to LSST, these analyses are applicable to other large-volume ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also qualitatively similar to the wavelength dependence of the diffraction limit, which will affect space-based cosmic shear surveys such as Euclid.
