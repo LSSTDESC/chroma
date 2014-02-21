@@ -138,7 +138,7 @@ def S_vs_redshift(gals, stars, band, cbands, alpha=-0.2, yrange=None, prefix='',
     f.savefig('output/dS_corrected_{}_{}.png'.format(band, alpha_idx), dpi=300)
 
 if __name__ == '__main__':
-    pkl_dir = '../../bias_corrections/machine_learning/output/'
+    pkl_dir = '../../analytic/machine_learning/output/'
     galfile = os.path.join(pkl_dir, 'corrected_galaxy_data.pkl')
     starfile = os.path.join(pkl_dir, 'corrected_star_data.pkl')
     gals = cPickle.load(open(galfile))
