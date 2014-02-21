@@ -18,6 +18,7 @@ import astropy.utils.console as console
 import _mypath
 import chroma
 
+# Define some useful numpy dtypes.
 # LSST filters
 ugrizy =  [('LSST_u', np.float32),
            ('LSST_g', np.float32),
