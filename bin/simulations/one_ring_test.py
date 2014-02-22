@@ -23,90 +23,113 @@ def fiducial_galaxy():
     gparam.add('phi', value=0.0)
     return gparam
 
-def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, maximum_fft_size=32768):
-    '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
-
-    pix = galsim.Pixel(pixel_scale)
-    gsparams = galsim.GSParams()
-    gsparams.maximum_fft_size = maximum_fft_size
-    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
-    # generate target image using ringed gparam and PSFs
-    def gen_target_image(gamma, beta, diag=None):
-        ring_shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
-        target_image = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear)
-        if diag is not None:
+class TargetImageGenerator(object):
+    def __init__(self, gparam, galtool, hdulist=None, oversample=4):
+        self.gparam = gparam.copy()
+        self.galtool = galtool
+        self.hdulist = hdulist
+        self.oversample = oversample
+    def __call__(self, gamma, beta):
+        shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
+        target_image = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear)
+        if self.hdulist is not None:
             hdu = fits.ImageHDU(target_image.array, name='TARGET')
             hdu.header.append(('GAMMA1', gamma.real))
             hdu.header.append(('GAMMA2', gamma.imag))
             hdu.header.append(('BETA', beta))
-            diag.append(hdu)
-            # now the high res version
-            target_hr = target_tool.get_image(gparam, ring_beta=beta, ring_shear=ring_shear,
-                                              oversample=4)
-            hdu = fits.ImageHDU(target_hr.array, name='TARGETHR')
-            diag.append(hdu)
-            # and the unconvolved version
-            target_uncvl = target_tool.get_uncvl_image(gparam, ring_beta=beta,
-                                                       ring_shear=ring_shear, oversample=4,
-                                                       center=True)
-            hdu = fits.ImageHDU(target_uncvl.array, name='TARGETUC')
-            diag.append(hdu)
-
+            for k,v in self.gparam.iteritems():
+                hdu.header.append((k, v.value))
+            self.hdulist.append(hdu)
+            target_high_res = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear,
+                                                     oversample=self.oversample)
+            self.hdulist.append(fits.ImageHDU(target_high_res.array, name='TARGETHR'))
+            target_uncvl = self.galtool.get_uncvl_image(self.gparam, ring_beta=beta, ring_shear=shear,
+                                                        oversample=self.oversample)
+            self.hdulist.append(fits.ImageHDU(target_uncvl.array, name='TARGETUC'))
         return target_image
 
-    fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
+class EllipMeasurer(object):
+    def __init__(self, galtool, hdulist=None, oversample=4):
+        self.galtool = galtool
+        self.hdulist = hdulist
+        self.oversample = oversample
+    def __call__(self):
+        raise NotImplementedError
 
-    def measure_ellip(target_image, init_param, diag=None):
-        def resid(param):
-            image = fit_tool.get_image(param)
-            return (image.array - target_image.array).flatten()
-        result = lmfit.minimize(resid, init_param)
-        if diag is not None:
-            fit = fit_tool.get_image(result.params)
-            hdu = fits.ImageHDU(fit.array, name='FIT')
-            diag.append(hdu)
-            # now the high res version
-            fit_hr = fit_tool.get_image(result.params, oversample=4)
-            hdu = fits.ImageHDU(fit_hr.array, name='FITHR')
-            diag.append(hdu)
-            # and the unconvolved version
-            fit_uncvl = fit_tool.get_uncvl_image(result.params, oversample=4, center=True)
-            hdu = fits.ImageHDU(fit_uncvl.array, name='FITUC')
-            diag.append(hdu)
-
+class LSTSQEllipMeasurer(EllipMeasurer):
+    def resid(self, param, target_image):
+        image = self.galtool.get_image(param)
+        return (image.array - target_image.array).flatten()
+    def __call__(self, target_image, init_param):
+        result = lmfit.minimize(self.resid, init_param, args=(target_image,))
+        if self.hdulist is not None:
+            fit_image = self.galtool.get_image(result.params)
+            hdu = fits.ImageHDU(fit_image.array, name='FIT')
+            for k,v in result.params.iteritems():
+                hdu.header.append((k, v.value))
+            self.hdulist.append(hdu)
+            fit_image_high_res = self.galtool.get_image(result.params, oversample=self.oversample)
+            self.hdulist.append(fits.ImageHDU(fit_image_high_res.array, name='FITHR'))
+            fit_image_uncvl = self.galtool.get_uncvl_image(result.params,
+                                                           oversample=self.oversample)
+            self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
         gmag = result.params['gmag'].value
         phi = result.params['phi'].value
         return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
 
+class HSMEllipMeasurer(EllipMeasurer):
+    def psf_image(self):
+        if not hasattr(self, '_psf_image'):
+            self._psf_image = self.galtool.get_PSF_image()
+        return self._psf_image
+
+    def __call__(self, target_image, init_param):
+        psf_image = self.psf_image()
+        results = galsim.hsm.EstimateShear(target_image, psf_image)
+        ellip = galsim.Shear(e1=results.corrected_e1, e2=results.corrected_e2)
+        return complex(ellip.g1, ellip.g2)
+
+def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
+                        ring_n, galtool, diagfile=None, use_hsm=False, maximum_fft_size=32768):
+    '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
+
+    gsparams = galsim.GSParams()
+    gsparams.maximum_fft_size = maximum_fft_size
+    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
+    fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
+
+    hdulist=None
+    if diagfile is not None:
+        hdulist=fits.HDUList()
+        hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
+        hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
+
+    gen_target_image = TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
+    if use_hsm:
+        measure_ellip = HSMEllipMeasurer(fit_tool)
+    else:
+        measure_ellip = LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
+
     def get_ring_params(gamma, beta):
         return fit_tool.get_ring_params(gparam, beta, galsim.Shear(g1=gamma.real, g2=gamma.imag))
-
-    if diagfile is not None:
-        diag = fits.HDUList()
-        diag.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
-        diag.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
-
-    else:
-        diag = None
 
     # Ring test for two values of gamma, solve for m and c.
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.ringtest(gamma0, ring_n, gen_target_image, get_ring_params, measure_ellip,
-                                 silent=True, diagnostic=diag)
+                                 silent=True)
     # c is just gamma_hat when input gamma_true is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
     gamma1_hat = chroma.ringtest(gamma1, ring_n, gen_target_image, get_ring_params, measure_ellip,
-                                 silent=True, diagnostic=diag)
+                                 silent=True)
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
 
     if diagfile is not None:
-        diag.writeto(diagfile, clobber=True)
+        hdulist.writeto(diagfile, clobber=True)
 
     return m, c
 
@@ -204,7 +227,7 @@ def one_ring_test(args):
     # Measure shear bias
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
-                               galtool, args.diagnostic)
+                               galtool, args.diagnostic, args.use_hsm)
 
     # Now do the analytic part, which can be a little tricky.
 
@@ -254,7 +277,7 @@ def runme():
     class junk(object):
         pass
     args = junk()
-    args.datadir = '../../../data/'
+    args.datadir = '../../data/'
     args.starspec = 'SEDs/ukg5v.ascii'
     args.galspec = 'SEDs/CWW_E_ext.ascii'
     args.redshift = 0.0
@@ -281,7 +304,7 @@ def runme():
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--datadir', default='../../../data/',
+    parser.add_argument('--datadir', default='../../data/',
                         help="directory to find SED and filter files.")
     parser.add_argument('-s', '--starspec', default='SEDs/ukg5v.ascii',
                         help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii')")
@@ -333,6 +356,8 @@ if __name__ == '__main__':
                         +" (Default: True)")
     parser.add_argument('--diagnostic',
                         help="Filename to which to write diagnostic images (Default: '')")
+    parser.add_argument('--use_hsm', action='store_true',
+                        help="Use HSM regaussianization to estimate ellipticity")
 
     args = parser.parse_args()
 
