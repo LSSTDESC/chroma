@@ -138,7 +138,6 @@ def construct_analytic_table():
                                                          ('S_p06', E),
                                                          ('S_p10', E)])
     for i, star_type in enumerate(star_types):
-        # star_SED = chroma.SED(spec_dir + star_type + '.ascii')
         star_SED = chroma.SampledSED(spec_dir + star_type + '.ascii')
         data = compute_mags_moments(star_SED, filters)
         star_data[i]['star_type'] = star_type
