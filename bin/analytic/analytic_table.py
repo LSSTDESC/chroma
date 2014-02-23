@@ -1,18 +1,27 @@
-""" Create tables of magnitudes and chromatic biases for a variety of spectra.
+""" Create tables of AB magnitudes and chromatic biases from a variety of spectra.
 
-For stars, we use the spectra from Pickles (1998), (the 'uk*.ascii' files in the data subdirectory).
+For stars, we use the spectra from Pickles (1998), (the 'uk*.ascii' files in the data/SEDs/ subdirectory).
 
 For galaxies, we use spectra from Coleman et al. (1980) (CWW*.ascii files), and Kinney et al. (1996)
 (KIN*.ascii files)
 
-For galaxies, the magnitudes and chromatic biases are computed over a range of redshifts too.
-"""
+The chromatic biases computed are:
+  - the shift in PSF centroid due to differential chromatic refraction
+  - the shift in PSF zenith-direction second moment due to differential chromatic refraction
+  For LSST filters:
+  - the shift in PSF second moment square radius (Ixx + Iyy) due to chromatic seeing
+  For Euclid filters:
+  - the shift in PSF second moment square radius due to a pure diffraction limited PSF
+  - the shift in PSF second moment square radius with a FWHM \propto \lambda^{0.6} dependence,
+    which is appropriate for Euclid (Cypriano et al. (2010), Voigt et al. (2012)).
 
+For stars, only redshift 0 is considered.
+For galaxies, magnitudes and biases are computed over a range of redshifts.
+"""
 
 import cPickle
 
 import numpy as np
-from numpy.lib.recfunctions import append_fields
 import astropy.utils.console as console
 
 import _mypath
@@ -48,23 +57,24 @@ ugrizyE = [('LSST_u', np.float32),
 def compute_mags_moments(sed, filters):
     """ Given an SED and some filters, compute magnitudes and chromatic biases.
     """
-    out = np.recarray((1,), dtype = [('mag', ugrizyE),
-                                     ('Rbar', ugrizy),
-                                     ('V', ugrizy),
-                                     ('S_m02', ugrizy),
-                                     ('S_p06', E),
-                                     ('S_p10', E)])
+    out = np.recarray((1,), dtype = [('mag', ugrizyE),   # AB magnitude
+                                     ('Rbar', ugrizy),   # DCR centroid shift
+                                     ('V', ugrizy),      # DCR second moment shift
+                                     ('S_m02', ugrizy),  # PSF size shift with exponent -0.2
+                                     ('S_p06', E),       # same, but exponent = +0.6
+                                     ('S_p10', E)])      # same, but exponent = +1.0
     for filter_name, bandpass in filters.iteritems():
-        # some magnitude calculations will fail because the SED doesn't cover the wavelength range of the
-        # bandpass filter.  Catch that here.
+        # some magnitude calculations will fail because the SED doesn't cover the wavelength range
+        # of the bandpass filter.  Catch these here.
         try:
             out[0]['mag'][filter_name] = sed.magnitude(bandpass)
         except ValueError:
             out[0]['mag'][filter_name] = np.nan
         if filter_name.startswith('Euclid'):
             # For Euclid filters, investigate both a FWHM \propto \lambda^1.0 chromatic PSF (pure
-            # diffraction limit), and a FWHM \propto \lambda^0.6 chromatic PSF (which is more likely given
-            # the additional contribution to the Euclid PSF from CCDs and jitter (see Cypriano et al. 2010)
+            # diffraction limit), and a FWHM \propto \lambda^0.6 chromatic PSF (which is more
+            # likely given the additional contribution to the Euclid PSF from CCDs and jitter (see
+            # Cypriano et al. 2010)
             try:
                 out[0]['S_p06'][filter_name] = sed.seeing_shift(bandpass, alpha=0.6)
                 out[0]['S_p10'][filter_name] = sed.seeing_shift(bandpass, alpha=1.0)
@@ -72,12 +82,13 @@ def compute_mags_moments(sed, filters):
                 out[0]['S_p06'][filter_name] = np.nan
                 out[0]['S_p10'][filter_name] = np.nan
         else:
-            # For LSST filters, compute shifts in the zenith-direction first and second moments of the PSF
-            # due to differential chromatic refraction.  Store results for a zenith angle of 45 degrees,
-            # which can easily be scaled later by tan(zenith_angle) and tan^2(zenith_angle) for the shift
-            # in first and second moment respectively.
+            # For LSST filters, compute shifts in the zenith-direction first and second moments of
+            # the PSF due to differential chromatic refraction.  Store results for a zenith angle of
+            # 45 degrees, which can easily be scaled later by tan(zenith_angle) and
+            # tan^2(zenith_angle) for the shift in first and second moments respectively.
             #
-            # Also compute shift in PSF second more square radius due to lambda^{-0.2} chromatic seeing.
+            # Also compute shift in PSF second moment square radius due to \lambda^{-0.2} chromatic
+            # seeing.
             try:
                 DCR_mom = sed.DCR_moment_shifts(bandpass, zenith=np.pi/4)
                 out[0]['Rbar'][filter_name] = DCR_mom[0]
