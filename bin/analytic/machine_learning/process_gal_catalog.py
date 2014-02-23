@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 
 import numpy
 import astropy.utils.console as console
-import galsim
+from scipy.interpolate import interp1d
 
 import _mypath
 import chroma
@@ -24,56 +24,45 @@ def file_len(fname):
             pass
     return i + 1
 
-def composite_spectrum(gal, norm):
+def composite_spectrum(gal, norm_bandpass):
     SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
-    wave_match = numpy.arange(300, 1201, dtype=float)
     if gal['sedPathBulge'] != 'None':
-        bulge_SED = chroma.SED(SED_dir+gal['sedPathBulge'])
-        bulge_SED = bulge_SED.set_magnitude(norm, gal['magNormBulge'])
-        ext = lambda w: chroma.extinction.reddening(w*10,
-                                                    a_v=gal['internalAVBulge'],
-                                                    r_v=gal['internalRVBulge'],
-                                                    model='f99')
-        bulge_SED = bulge_SED / ext
-        bulge_SED = bulge_SED.setRedshift(gal['redshift'])
-    else:
-        bulge_SED = chroma.SED('0') # easiest way to create a null SED
+        bulge_SED = chroma.SampledSED(SED_dir+gal['sedPathBulge'])
+        bulge_SED = bulge_SED.createWithMagnitude(norm_bandpass, gal['magNormBulge'])
+        bulge_SED = bulge_SED.createExtincted(A_v=gal['internalAVBulge'],
+                                              R_v=gal['internalRVBulge'])
+        bulge_SED = bulge_SED.createRedshifted(gal['redshift'])
+        SED = bulge_SED
     if gal['sedPathDisk'] != 'None':
-        disk_SED = chroma.SED(SED_dir+gal['sedPathDisk'])
-        disk_SED = disk_SED.set_magnitude(norm, gal['magNormDisk'])
-        ext = lambda w: chroma.extinction.reddening(w*10,
-                                                    a_v=gal['internalAVDisk'],
-                                                    r_v=gal['internalRVDisk'],
-                                                    model='f99')
-        disk_SED = disk_SED / ext
-        disk_SED = disk_SED.setRedshift(gal['redshift'])
-    else:
-        disk_SED = chroma.SED('0') # easiest way to create a null SED
+        disk_SED = chroma.SampledSED(SED_dir+gal['sedPathDisk'])
+        disk_SED = disk_SED.createWithMagnitude(norm_bandpass, gal['magNormDisk'])
+        disk_SED = disk_SED.createExtincted(A_v=gal['internalAVDisk'],
+                                              R_v=gal['internalRVDisk'])
+        disk_SED = disk_SED.createRedshifted(gal['redshift'])
+        if 'SED' in locals():
+            SED += disk_SED
+        else:
+            SED = disk_SED
     if gal['sedPathAGN'] != 'None':
-        AGN_SED = chroma.SED(SED_dir+gal['sedPathAGN'])
-        AGN_SED = AGN_SED.set_magnitude(norm, gal['magNormAGN'])
-        AGN_SED = AGN_SED.setRedshift(gal['redshift'])
-    else:
-        AGN_SED = chroma.SED('0') # easiest way to create a null SED
+        AGN_SED = chroma.SampledSED(SED_dir+gal['sedPathAGN'])
+        AGN_SED = AGN_SED.createWithMagnitude(norm_bandpass, gal['magNormAGN'])
+        AGN_SED = AGN_SED.createRedshifted(gal['redshift'])
+        if 'SED' in locals():
+            SED += AGN_SED
+        else:
+            SED = AGN_SED
 
-    # Re-evaluate all the spectra once, so this doesn't have to be repeated for every bandpass
-    # magnitude & bias correction
-    SED = bulge_SED+disk_SED+AGN_SED
-    wgood = ((wave_match / (1.0 + gal['redshift']) > 91.0) & # extinction only calculable
-             (wave_match / (1.0 + gal['redshift']) < 6000))  # in this range of wavelengths
-    SED = chroma.SED(galsim.LookupTable(wave_match[wgood], SED(wave_match[wgood])),
-                     flux_type='fphotons')
     return SED
 
 def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
-        filters['LSST_{}'.format(f)] = chroma.Bandpass(ffile).thin(10)
+        filters['LSST_{}'.format(f)] = chroma.SampledBandpass(ffile).createThinned(10)
     for width in [150,250,350,450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
-        filters['Euclid_{}'.format(width)] = chroma.Bandpass(ffile).thin(10)
-    filters['norm'] = chroma.Bandpass(galsim.LookupTable([499, 500, 501], [0, 1, 0]))
+        filters['Euclid_{}'.format(width)] = chroma.SampledBandpass(ffile).createThinned(10)
+    filters['norm'] = chroma.SampledBandpass(interp1d([499, 500, 501], [0, 1, 0]))
 
     nrows = file_len(filename)
     if nmax is None:
@@ -168,11 +157,11 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                     data[j]['mag']['LSST_'+f] = float(s[5+k])
                     bp = filters['LSST_'+f] # for brevity
                     try:
-                        data[j]['magCalc']['LSST_'+f] = spec.magnitude(bp)
-                        dcr = spec.DCR_moment_shifts(bp, numpy.pi/4)
+                        data[j]['magCalc']['LSST_'+f] = spec.getMagnitude(bp)
+                        dcr = spec.getDCRMomentShifts(bp, numpy.pi/4)
                         data[j]['R']['LSST_'+f] = dcr[0]
                         data[j]['V']['LSST_'+f] = dcr[1]
-                        data[j]['S_m02']['LSST_'+f] = spec.seeing_shift(bp, alpha=-0.2)
+                        data[j]['S_m02']['LSST_'+f] = spec.getSeeingShift(bp, alpha=-0.2)
                     except:
                         data[j]['magCalc']['LSST_'+f] = numpy.nan
                         data[j]['R']['LSST_'+f] = numpy.nan
@@ -182,9 +171,9 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
                     try:
-                        data[j]['magCalc'][fname] = spec.magnitude(bp)
-                        data[j]['S_p06'][fname] = spec.seeing_shift(bp, alpha=0.6)
-                        data[j]['S_p10'][fname] = spec.seeing_shift(bp, alpha=1.0)
+                        data[j]['magCalc'][fname] = spec.getMagnitude(bp)
+                        data[j]['S_p06'][fname] = spec.getSeeingShift(bp, alpha=0.6)
+                        data[j]['S_p10'][fname] = spec.getSeeingShift(bp, alpha=1.0)
                     except:
                         data[j]['magCalc'][fname] = numpy.nan
                         data[j]['S_p06'][fname] = numpy.nan
@@ -220,13 +209,14 @@ if __name__ == '__main__':
                         help="maximum number of galaxies to process. Default 30000")
     parser.add_argument('--start', type=int, default=0,
                         help="starting index for catalog.  Default 0")
-    parser.add_argument('--emission', dest='emission', action='store_true',
+    parser.add_argument('--emission', action='store_true',
                         help="add emission lines to spectra")
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
     cPickle.dump(process_gal_file(args.infile,
                                   nmax=args.nmax,
                                   emission=args.emission,
                                   start=args.start,
-                                  debug=False),
+                                  debug=args.debug),
                  open(args.outfile, 'wb'))

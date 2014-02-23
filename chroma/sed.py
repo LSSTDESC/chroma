@@ -2,19 +2,9 @@ import numpy as np
 
 import galsim
 
-import extinction
-import _mypath
-import chroma
+import dcr
 
 class SED(galsim.SED):
-#     def apply_extinction(self, A_v, R_v=3.1):
-#         wgood = (self.wave > 91) & (self.wave < 6000)
-#         self.wave=self.wave[wgood]
-#         self.flambda=self.flambda[wgood]
-#         ext = extinction.reddening(self.wave*10, a_v=A_v, r_v=R_v, model='f99')
-#         self.flambda /= ext
-#         self.needs_new_interp=True
-
     def set_magnitude(self, bandpass, mag_norm):
         current_mag = self.magnitude(bandpass)
         scale = 10**(-0.4 * (mag_norm - current_mag))
@@ -29,7 +19,7 @@ class SED(galsim.SED):
         """ Calculates shifts in first and second moments of surface brightness profile due to
         differential chromatic refraction (DCR)."""
         wave_list = np.array(bandpass.wave_list)
-        R = chroma.atm_refrac(wave_list, zenith, **kwargs)
+        R = dcr.atm_refrac(wave_list, zenith, **kwargs)
         photons = bandpass(wave_list) * self(wave_list)
         norm = np.trapz(photons, wave_list)
         Rbar = np.trapz(R * photons, wave_list) / norm
@@ -61,16 +51,5 @@ class Bandpass(galsim.Bandpass):
 
     def thin(self, step):
         ret = galsim.Bandpass.thin(self, step)
-        ret.__class__ = chroma.sed.Bandpass
+        ret.__class__ = Bandpass
         return ret
-
-
-if __name__ == '__main__':
-    spec = SED('../data/SEDs/CWW_E_ext.ascii')
-    band = Bandpass('../data/filters/LSST_r.dat')
-    print spec.getFlux(band)
-    print spec.DCR_moment_shifts(band, np.pi/4.0)
-    print spec.seeing_shift(band)
-    print spec.magnitude(band)
-    spec = spec.set_magnitude(band, 20.0)
-    print spec.magnitude(band)

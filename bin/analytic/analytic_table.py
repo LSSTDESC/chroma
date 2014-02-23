@@ -1,6 +1,7 @@
 """ Create tables of AB magnitudes and chromatic biases from a variety of spectra.
 
-For stars, we use the spectra from Pickles (1998), (the 'uk*.ascii' files in the data/SEDs/ subdirectory).
+For stars, we use the spectra from Pickles (1998), (the 'uk*.ascii' files in the data/SEDs/
+subdirectory).
 
 For galaxies, we use spectra from Coleman et al. (1980) (CWW*.ascii files), and Kinney et al. (1996)
 (KIN*.ascii files)
@@ -67,7 +68,7 @@ def compute_mags_moments(sed, filters):
         # some magnitude calculations will fail because the SED doesn't cover the wavelength range
         # of the bandpass filter.  Catch these here.
         try:
-            out[0]['mag'][filter_name] = sed.magnitude(bandpass)
+            out[0]['mag'][filter_name] = sed.getMagnitude(bandpass)
         except ValueError:
             out[0]['mag'][filter_name] = np.nan
         if filter_name.startswith('Euclid'):
@@ -76,8 +77,8 @@ def compute_mags_moments(sed, filters):
             # likely given the additional contribution to the Euclid PSF from CCDs and jitter (see
             # Cypriano et al. 2010)
             try:
-                out[0]['S_p06'][filter_name] = sed.seeing_shift(bandpass, alpha=0.6)
-                out[0]['S_p10'][filter_name] = sed.seeing_shift(bandpass, alpha=1.0)
+                out[0]['S_p06'][filter_name] = sed.getSeeingShift(bandpass, alpha=0.6)
+                out[0]['S_p10'][filter_name] = sed.getSeeingShift(bandpass, alpha=1.0)
             except ValueError:
                 out[0]['S_p06'][filter_name] = np.nan
                 out[0]['S_p10'][filter_name] = np.nan
@@ -90,10 +91,10 @@ def compute_mags_moments(sed, filters):
             # Also compute shift in PSF second moment square radius due to \lambda^{-0.2} chromatic
             # seeing.
             try:
-                DCR_mom = sed.DCR_moment_shifts(bandpass, zenith=np.pi/4)
+                DCR_mom = sed.getDCRMomentShifts(bandpass, zenith=np.pi/4)
                 out[0]['Rbar'][filter_name] = DCR_mom[0]
                 out[0]['V'][filter_name] = DCR_mom[1]
-                out[0]['S_m02'][filter_name] = sed.seeing_shift(bandpass, alpha=-0.2)
+                out[0]['S_m02'][filter_name] = sed.getSeeingShift(bandpass, alpha=-0.2)
             except ValueError:
                 out[0]['Rbar'][filter_name] = np.nan
                 out[0]['V'][filter_name] = np.nan
@@ -126,7 +127,7 @@ def construct_analytic_table():
                    'Euclid_150', 'Euclid_250', 'Euclid_350', 'Euclid_450']
     filters = {}
     for f in filter_names:
-        filters[f] = chroma.Bandpass(filter_dir + '{}.dat'.format(f))
+        filters[f] = chroma.SampledBandpass(filter_dir + '{}.dat'.format(f))
 
     # start with stars
     star_data = np.recarray((len(star_types),), dtype = [('star_type', 'a11'),
@@ -137,7 +138,8 @@ def construct_analytic_table():
                                                          ('S_p06', E),
                                                          ('S_p10', E)])
     for i, star_type in enumerate(star_types):
-        star_SED = chroma.SED(spec_dir + star_type + '.ascii')
+        # star_SED = chroma.SED(spec_dir + star_type + '.ascii')
+        star_SED = chroma.SampledSED(spec_dir + star_type + '.ascii')
         data = compute_mags_moments(star_SED, filters)
         star_data[i]['star_type'] = star_type
         for name in data.dtype.names:
@@ -156,10 +158,10 @@ def construct_analytic_table():
     i=0
     with console.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:
-            gal_SED = chroma.SED(spec_dir + gal_type + '.ascii')
+            gal_SED0 = chroma.SampledSED(spec_dir + gal_type + '.ascii')
             for z in np.arange(0.0, 3.0, 0.03):
                 bar.update()
-                gal_SED = gal_SED.setRedshift(z)
+                gal_SED = gal_SED0.createRedshifted(z)
                 data = compute_mags_moments(gal_SED, filters)
                 gal_data[i]['gal_type'] = gal_type
                 gal_data[i]['redshift'] = z

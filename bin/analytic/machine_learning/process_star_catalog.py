@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 
 import numpy
 import astropy.utils.console as console
-import galsim
+from scipy.interpolate import interp1d
 
 import _mypath
 import chroma
@@ -24,34 +24,22 @@ def file_len(fname):
             pass
     return i + 1
 
-def stellar_spectrum(star, norm):
+def stellar_spectrum(star, norm_bandpass):
     SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
-    wave_match = numpy.arange(300, 1201, dtype=float)
-    SED = chroma.SED(SED_dir+star['sedFilePath'])
-    SED = SED.set_magnitude(norm, star['magNorm'])
-    ext = lambda w: chroma.extinction.reddening(w*10,
-                                                a_v=star['galacticAv'],
-                                                r_v=3.1,
-                                                model='f99')
-    SED = SED / ext
-
-    # Re-evaluate all the spectra once, so this doesn't have to be repeated for every bandpass
-    # magnitude & bias correction
-    wgood = ((wave_match > 91.0) & # extinction only calculable
-             (wave_match < 6000))  # in this range of wavelengths
-    SED = chroma.SED(galsim.LookupTable(wave_match[wgood], SED(wave_match[wgood])),
-                     flux_type='fphotons')
+    SED = chroma.SampledSED(SED_dir+star['sedFilePath'])
+    SED = SED.createWithMagnitude(norm_bandpass, star['magNorm'])
+    SED = SED.createExtincted(A_v=star['galacticAv'])
     return SED
 
 def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0):
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
-        filters['LSST_{}'.format(f)] = chroma.Bandpass(ffile).thin(10)
+        filters['LSST_{}'.format(f)] = chroma.SampledBandpass(ffile).createThinned(10)
     for width in [150,250,350,450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
-        filters['Euclid_{}'.format(width)] = chroma.Bandpass(ffile).thin(10)
-    filters['norm'] = chroma.Bandpass(galsim.LookupTable([499, 500, 501], [0, 1, 0]))
+        filters['Euclid_{}'.format(width)] = chroma.SampledBandpass(ffile).createThinned(10)
+    filters['norm'] = chroma.SampledBandpass(interp1d([499, 500, 501], [0, 1, 0]))
 
     nrows = file_len(filename)
     if nmax is None:
@@ -118,11 +106,11 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                     data[i-1]['mag']['LSST_'+f] = float(s[4+k])
                     bp = filters['LSST_'+f] # for brevity
                     try:
-                        data[i-1]['magCalc']['LSST_'+f] = spec.magnitude(bp)
-                        dcr = spec.DCR_moment_shifts(bp, numpy.pi/4)
+                        data[i-1]['magCalc']['LSST_'+f] = spec.getMagnitude(bp)
+                        dcr = spec.getDCRMomentShifts(bp, numpy.pi/4)
                         data[i-1]['R']['LSST_'+f] = dcr[0]
                         data[i-1]['V']['LSST_'+f] = dcr[1]
-                        data[i-1]['S_m02']['LSST_'+f] = spec.seeing_shift(bp, alpha=-0.2)
+                        data[i-1]['S_m02']['LSST_'+f] = spec.getSeeingShift(bp, alpha=-0.2)
                     except:
                         data[i-1]['magCalc']['LSST_'+f] = numpy.nan
                         data[i-1]['R']['LSST_'+f] = numpy.nan
@@ -132,9 +120,9 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
                     try:
-                        data[i-1]['magCalc'][fname] = spec.magnitude(bp)
-                        data[i-1]['S_p06'][fname] = spec.seeing_shift(bp, alpha=0.6)
-                        data[i-1]['S_p10'][fname] = spec.seeing_shift(bp, alpha=1.0)
+                        data[i-1]['magCalc'][fname] = spec.getMagnitude(bp)
+                        data[i-1]['S_p06'][fname] = spec.getSeeingShift(bp, alpha=0.6)
+                        data[i-1]['S_p10'][fname] = spec.getSeeingShift(bp, alpha=1.0)
                     except:
                         data[i-1]['magCalc'][fname] = numpy.nan
                         data[i-1]['S_p06'][fname] = numpy.nan
@@ -161,6 +149,8 @@ if __name__ == '__main__':
                         help="output filename")
     parser.add_argument('--infile', default = 'output/star_catalog.dat',
                         help="input filename")
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
-    cPickle.dump(process_star_file(args.infile, nmax=args.nmax), open(args.outfile, 'wb'))
+    cPickle.dump(process_star_file(args.infile, nmax=args.nmax, debug=args.debug),
+                 open(args.outfile, 'wb'))

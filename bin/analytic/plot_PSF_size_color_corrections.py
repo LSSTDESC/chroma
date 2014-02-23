@@ -61,8 +61,9 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
     # Fit the galaxies.  Treat each redshift as an independent point to be fit.
     gal_all_colors = np.array(gal_colors).flatten()
     gal_all_dSbySs = np.array(gal_dSbySs).flatten()
-    A_gal = np.vstack([gal_all_colors, np.ones(len(gal_all_colors))]).T # design matrix
-    slope_gal_S, intercept_gal_S = np.linalg.lstsq(A_gal, gal_all_dSbySs)[0]
+    wgood = np.isfinite(gal_all_dSbySs)
+    A_gal = np.vstack([gal_all_colors[wgood], np.ones(wgood.sum())]).T # design matrix
+    slope_gal_S, intercept_gal_S = np.linalg.lstsq(A_gal, gal_all_dSbySs[wgood])[0]
 
     # Open figure
     f = plt.figure(figsize=(8,6))
@@ -96,4 +97,5 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
                                                 color_filters[1]))
 
 if __name__ == '__main__':
-   PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)
+   #PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)
+   PSF_size_color_correction('Euclid_350', ['LSST_r', 'LSST_i'], alpha=0.6)
