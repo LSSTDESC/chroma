@@ -8,6 +8,7 @@ As part of this feature project, we have added the capability to simulate wavele
 
 As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric PSF and observed in the r-band might look like:
 
+{% highlight python %}
     import galsim
 
     bulge_spectrum = galsim.SED('early_type_spec.dat')
@@ -25,6 +26,7 @@ As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric
 
     bandpass = galsim.Bandpass('rband.dat')
     image = final.draw(bandpass)
+{% endhighlight %}
 
 A Euclid-like PSF that scales approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\) is also convenient to implement:
 
