@@ -5,17 +5,17 @@ import galsim
 import dcr
 
 class SED(galsim.SED):
-    def set_magnitude(self, bandpass, mag_norm):
-        current_mag = self.magnitude(bandpass)
-        scale = 10**(-0.4 * (mag_norm - current_mag))
+    def createWithMagnitude(self, bandpass, target_magnitude):
+        current_mag = self.getMagnitude(bandpass)
+        scale = 10**(-0.4 * (target_magnitude - current_mag))
         return self * scale
 
-    def magnitude(self, bandpass):
+    def getMagnitude(self, bandpass):
         wave_list = np.array(bandpass.wave_list)
         flux = np.trapz(bandpass(wave_list) * self(wave_list), wave_list)
-        return -2.5 * np.log10(flux) - bandpass.AB_zeropoint()
+        return -2.5 * np.log10(flux) - bandpass.getABZeropoint()
 
-    def DCR_moment_shifts(self, bandpass, zenith, **kwargs):
+    def getDCRMomentShifts(self, bandpass, zenith, **kwargs):
         """ Calculates shifts in first and second moments of surface brightness profile due to
         differential chromatic refraction (DCR)."""
         wave_list = np.array(bandpass.wave_list)
@@ -26,7 +26,7 @@ class SED(galsim.SED):
         V = np.trapz((R-Rbar)**2 * photons, wave_list) / norm
         return Rbar, V
 
-    def seeing_shift(self, bandpass, alpha=-0.2, base_wavelength=500.0):
+    def getSeeingShift(self, bandpass, alpha=-0.2, base_wavelength=500.0):
         """ Calculates relative size of PSF that scales like a powerlaw in wavelength.
         """
         wave_list = np.array(bandpass.wave_list)
@@ -36,7 +36,7 @@ class SED(galsim.SED):
 
 
 class Bandpass(galsim.Bandpass):
-    def AB_zeropoint(self):
+    def getABZeropoint(self):
         if not (hasattr(self, 'zp')):
             AB_source = 3631e-23 # 3631 Jy -> erg/s/Hz/cm^2
             c = 29979245800.0 # speed of light in cm/s
@@ -49,7 +49,7 @@ class Bandpass(galsim.Bandpass):
             self.zp = -2.5 * np.log10(AB_flux)
         return self.zp
 
-    def thin(self, step):
-        ret = galsim.Bandpass.thin(self, step)
+    def createThinned(self, step):
+        ret = galsim.Bandpass.createThinned(self, step)
         ret.__class__ = Bandpass
         return ret

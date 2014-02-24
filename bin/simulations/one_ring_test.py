@@ -139,18 +139,18 @@ def one_ring_test(args):
 
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.thin(args.thin)
+    bandpass = bandpass.createThinned(args.thin)
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
-    gal_SED = gal_SED.setRedshift(args.redshift)
+    gal_SED = gal_SED.createRedshifted(args.redshift)
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
 
     # scale SEDs
-    gal_SED = gal_SED.setFlux(bandpass, 1.0)
-    star_SED = star_SED.setFlux(bandpass, 1.0)
+    gal_SED = gal_SED.createWithFlux(bandpass, 1.0)
+    star_SED = star_SED.createWithFlux(bandpass, 1.0)
 
     logger.info('')
     logger.info('General settings')
@@ -233,15 +233,15 @@ def one_ring_test(args):
 
     # First calculate \Delta V
     if not args.noDCR:
-        dmom_DCR1 = star_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
-        dmom_DCR2 = gal_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
+        dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
+        dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
         dV = (dmom_DCR2[1] - dmom_DCR1[1]) * (3600 * 180 / np.pi)**2
     else:
         dV = 0.0
     # Second calculate \Delta r^2 / r^2
     if args.alpha != 0.0:
-        seeing1 = star_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
-        seeing2 = gal_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
+        seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
+        seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
         dr2r2 = (seeing2 - seeing1)/seeing1
         logger.info("star seeing correction: {}".format(seeing1))
         logger.info("galaxy seeing correction: {}".format(seeing2))
