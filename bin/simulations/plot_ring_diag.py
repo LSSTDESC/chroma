@@ -6,7 +6,11 @@ import matplotlib as mpl
 import matplotlib.scale as scale
 import matplotlib.cm as cm
 from matplotlib.colors import LinearSegmentedColormap
-import astropy.io.fits as fits
+
+try:
+    import astropy.io.fits as fits
+except:
+    import pyfits as fits
 
 import _mypath
 import chroma

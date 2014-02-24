@@ -1,3 +1,13 @@
+"""Perform a ring test for a specific combination of star, galaxy, and PSF structural and spectral
+parameters.  Use `python one_ring_test.py --help` to see a list of available command line
+options.
+
+This procedure compares the analytic estimate for chromatic biases to that obtained by simulating
+images and fitting their ellipticity either by fitting model parameters with least squares, or
+using the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm.
+"""
+
+
 import os
 from argparse import ArgumentParser
 import logging
@@ -5,14 +15,17 @@ import logging
 import lmfit
 import galsim
 import numpy as np
-import astropy.io.fits as fits
+try:
+    import astropy.io.fits as fits
+except:
+    import pyfits as fits
 
 import _mypath
 import chroma
 
 def fiducial_galaxy():
-    '''Setup lmfit.Parameters to represent a Single Sersic galaxy.
-    '''
+    """Setup lmfit.Parameters to represent a Single Sersic galaxy.
+    """
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
     gparam.add('y0', value=0.3)
@@ -24,6 +37,9 @@ def fiducial_galaxy():
     return gparam
 
 class TargetImageGenerator(object):
+    """ Use a galtool to generate a target image and optionally append an ImageHDU with galaxy
+    parameters used to create it to a FITS HDUList.
+    """
     def __init__(self, gparam, galtool, hdulist=None, oversample=4):
         self.gparam = gparam.copy()
         self.galtool = galtool
@@ -43,12 +59,16 @@ class TargetImageGenerator(object):
             target_high_res = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear,
                                                      oversample=self.oversample)
             self.hdulist.append(fits.ImageHDU(target_high_res.array, name='TARGETHR'))
-            target_uncvl = self.galtool.get_uncvl_image(self.gparam, ring_beta=beta, ring_shear=shear,
+            target_uncvl = self.galtool.get_uncvl_image(self.gparam, ring_beta=beta,
+                                                        ring_shear=shear,
                                                         oversample=self.oversample)
             self.hdulist.append(fits.ImageHDU(target_uncvl.array, name='TARGETUC'))
         return target_image
 
 class EllipMeasurer(object):
+    """ Measure ellipticity and optionally append an ImageHDU with best fit galaxy parameters
+    to a FITS HDUList.
+    """
     def __init__(self, galtool, hdulist=None, oversample=4):
         self.galtool = galtool
         self.hdulist = hdulist
@@ -57,6 +77,8 @@ class EllipMeasurer(object):
         raise NotImplementedError
 
 class LSTSQEllipMeasurer(EllipMeasurer):
+    """ Measure ellipticity by performing a least-squares fit over galaxy parameters.
+    """
     def resid(self, param, target_image):
         image = self.galtool.get_image(param)
         return (image.array - target_image.array).flatten()
@@ -78,6 +100,9 @@ class LSTSQEllipMeasurer(EllipMeasurer):
         return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
 
 class HSMEllipMeasurer(EllipMeasurer):
+    """ Use the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm to estimate
+    ellipticity.
+    """
     def psf_image(self):
         if not hasattr(self, '_psf_image'):
             self._psf_image = self.galtool.get_PSF_image()
@@ -91,7 +116,7 @@ class HSMEllipMeasurer(EllipMeasurer):
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
                         ring_n, galtool, diagfile=None, use_hsm=False, maximum_fft_size=32768):
-    '''Perform two ring tests to solve for shear calibration parameters `m` and `c`.'''
+    """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
     gsparams = galsim.GSParams()
     gsparams.maximum_fft_size = maximum_fft_size
@@ -348,7 +373,7 @@ if __name__ == '__main__':
                         help="Reduce the wavelengths at which Bandpass is evaluted by factor"
                         +" (Default 10).")
     parser.add_argument('--slow', action='store_true',
-                        help="Use GalTool (somewhat more careful) instead of GalFastTool")
+                        help="Use SersicTool (somewhat more careful) instead of SersicFastTool")
     parser.add_argument('--alpha', type=float, default=0.0,
                         help="Index to use for chromatic seeing (Default: 0.0)")
     parser.add_argument('--noDCR', action='store_true',

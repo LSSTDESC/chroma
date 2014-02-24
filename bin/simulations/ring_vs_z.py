@@ -67,6 +67,10 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     return m, c
 
 def ring_vs_z(args):
+    """ Measure shear calibration parameters `m` and `c` as a function of redshift for a specific
+    combination of star, galaxy, and PSF structural and spectral parameters.  Run
+    `python ring_vs_z.py --help` for a list of available command line options.
+    """
     if not os.path.isdir(args.outdir):
         os.mkdir(args.outdir)
     logging.basicConfig(format="%(message)s", level=logging.INFO,
@@ -84,7 +88,7 @@ def ring_vs_z(args):
     bandpass = bandpass.createThinned(args.thin)
 
     # build galaxy SED
-    gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
+    gal_SED0 = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
@@ -112,11 +116,11 @@ def ring_vs_z(args):
     else:
         PSF685 = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     PSF685.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
-    if not args.noDCR:
+    if not args.noDCR: #include DCR
         PSF = galsim.ChromaticAtmosphere(PSF685, base_wavelength=685.0,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
                                          alpha=args.alpha)
-    else:
+    else: # otherwise just include a powerlaw wavelength dependent FWHM
         PSF = galsim.ChromaticObject(PSF685)
         PSF.applyDilation(lambda w:(w/685)**args.alpha)
 
@@ -167,7 +171,7 @@ def ring_vs_z(args):
         gparam['y0'].value = args.gal_y0 * args.pixel_scale
         gparam['gmag'].value = args.gal_ellip
 
-        gal_SED = gal_SED.createRedshifted(z)
+        gal_SED = gal_SED0.createRedshifted(z)
         gal_SED = gal_SED.createWithFlux(bandpass, 1.0)
 
         gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)

@@ -8,8 +8,6 @@ import numpy as np
 import lmfit
 import galsim
 
-#from pylab import *
-
 pixel_scale = 0.2
 data_dir = '../../../data/'
 
@@ -60,11 +58,6 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     def work():
         #measure ellipticity at beta along the ring
         target_image0 = gen_target_image(gamma, beta)
-        #debug
-        # import astropy.io.fits as fits
-        # fits.writeto('fig3_target.fits', target_image0)
-        # import sys; sys.exit()
-        #end debug
         init_param0 = gen_init_param(gamma, beta)
         ellip0 = measure_ellip(target_image0, init_param0)
         ellip0s.append(ellip0)
