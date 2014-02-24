@@ -1,3 +1,8 @@
+""" Sanity check for catalog SED generation.  Check that synthetic photometry on reconstructed SED
+matches the photometry in the catalog.
+"""
+
+
 import cPickle
 import matplotlib.pyplot as plt
 

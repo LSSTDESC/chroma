@@ -1,3 +1,8 @@
+""" Plot the redshift distribution of galaxies from the CatSim output.  For comparison, overplot
+the scaled distribution found in Chang+13.
+"""
+
+
 import cPickle
 
 import numpy as np
@@ -30,8 +35,8 @@ def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
         raise ValueError
 
 
-a = cPickle.load(open('output/galaxy_data.pkl'))
-#a = cPickle.load(open('corrected_galaxy_data.pkl'))
+#a = cPickle.load(open('output/galaxy_data.pkl'))
+a = cPickle.load(open('output/corrected_galaxy_data.pkl'))
 
 f = plt.figure(figsize=(5,3))
 ax = f.add_subplot(111)
@@ -40,12 +45,12 @@ ax.set_xlim(0, 4)
 ax.set_ylim(0, 1.2)
 
 zs = np.arange(0, 4, 0.1)
-n = 6.2*zs**(1.27) * np.exp(-(zs/0.5)**1.02)
+n = 5.0*zs**(1.27) * np.exp(-(zs/0.5)**1.02)
 
-ax.plot(zs, n, label='n_eff from Chang+13')
+ax.plot(zs, n, label='$n_{eff}$ from Chang+13')
 
 ax.set_xlabel('redshift')
-ax.set_ylabel('number density (a.u.)')
+ax.set_ylabel('relative number density')
 
 ax.legend(prop={'size':10})
 f.tight_layout()

@@ -34,10 +34,10 @@ bin/analytic/machine_learning/process_gal_catalog.py                            
 bin/analytic/machine_learning/gal_ML.py                                           Ready.
 bin/analytic/machine_learning/star_ML.py                                          Ready.
 bin/analytic/machine_learning/regressor.py                                        Ready.
-bin/analytic/machine_learning/photo_z_performance.py                              Clean up.
-bin/analytic/machine_learning/compare_z_dist.py                                   Clean up.
-bin/analytic/machine_learning/compare_star_mags.py                                Clean up.
-bin/analytic/machine_learning/compare_galaxy_mags.py                              Clean up.
+bin/analytic/machine_learning/photo_z_performance.py                              Ready.
+bin/analytic/machine_learning/compare_z_dist.py                                   Ready.
+bin/analytic/machine_learning/compare_star_mags.py                                Ready.
+bin/analytic/machine_learning/compare_galaxy_mags.py                              Ready.
 bin/analytic/machine_learning/plot_biases.py                                      Clean up.
 
 Simple Analytic "photo-z" Monte Carlo

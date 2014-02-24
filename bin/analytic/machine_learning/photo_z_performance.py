@@ -1,3 +1,8 @@
+""" Sanity check for machine learning performance.  Check that photometric redshifts match
+input spectroscopic redshifts.
+"""
+
+
 import cPickle
 
 import matplotlib.pyplot as plt
@@ -7,11 +12,11 @@ a = cPickle.load(open('output/corrected_galaxy_data.pkl'))
 axes1 = [0.12, 0.16, 0.5, 0.76]
 axes2 = [0.7, 0.16, 0.25, 0.76]
 
-f = plt.figure(figsize=(5,3))
+f = plt.figure(figsize=(5, 3))
 ax = f.add_axes(axes1)
 ax.scatter(a.redshift, a.photo_redshift, s=1)
-ax.set_xlim(0,5)
-ax.set_ylim(0,5)
+ax.set_xlim(0, 5)
+ax.set_ylim(0, 5)
 ax.set_xlabel('$z_\mathrm{spec}$')
 ax.set_ylabel('$z_\mathrm{phot}$')
 
