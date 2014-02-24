@@ -26,7 +26,7 @@ class SED(galsim.SED):
         """ Calculates shifts in first and second moments of surface brightness profile due to
         differential chromatic refraction (DCR)."""
         wave_list = np.array(bandpass.wave_list)
-        R = dcr.atm_refrac(wave_list, zenith, **kwargs)
+        R = dcr.get_refraction(wave_list, zenith, **kwargs)
         photons = bandpass(wave_list) * self(wave_list)
         norm = np.trapz(photons, wave_list)
         Rbar = np.trapz(R * photons, wave_list) / norm

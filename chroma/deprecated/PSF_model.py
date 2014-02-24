@@ -50,7 +50,7 @@ def GSAtmPSF(wave, photons,
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence, normalize to whatever the
     # refraction is at 685 nm
-    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R685 = chroma.get_refraction(685.0, **kwargs)
     pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale # radians -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
@@ -77,8 +77,8 @@ def GSAtmPSF2(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
               moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
     ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
     convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
-    R = chroma.atm_refrac(wave, **kwargs)
-    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R = chroma.get_refraction(wave, **kwargs)
+    R685 = chroma.get_refraction(685.0, **kwargs)
     R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
@@ -99,8 +99,8 @@ def GSAtmPSF3(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM=3.5,
               moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
     ''' Returns a Galsim SBProfile object PB12-type differential chromatic refraction PSF by
     convolving a Moffat PSF with a DCR kernel in the zenith (y) direction.'''
-    R = chroma.atm_refrac(wave, **kwargs)
-    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R = chroma.get_refraction(wave, **kwargs)
+    R685 = chroma.get_refraction(685.0, **kwargs)
     R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
@@ -122,7 +122,7 @@ def GSGaussAtmPSF(wave, photons,
     R, angle_dens = chroma.wave_dens_to_angle_dens(wave, photons, **kwargs)
     # need to take out the huge zenith angle dependence:
     # normalize to whatever the refraction is at 685 nm
-    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R685 = chroma.get_refraction(685.0, **kwargs)
     pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale # degrees -> pixels
     sort = numpy.argsort(pixels)
     pixels = pixels[sort]
@@ -149,8 +149,8 @@ def GSAtmSeeingPSF(wave, photons, pixel_scale=0.2, moffat_beta=2.5, moffat_FWHM_
                    moffat_ellip=0.0, moffat_phi=0.0, **kwargs):
     ''' Returns a Galsim SBProfile object representing an atmospheric chromatic PSF characterized by
     both DCR and seeing chromatic effects.'''
-    R = chroma.atm_refrac(wave, **kwargs)
-    R685 = chroma.atm_refrac(685.0, **kwargs)
+    R = chroma.get_refraction(wave, **kwargs)
+    R685 = chroma.get_refraction(685.0, **kwargs)
     R_pixels = (R - R685) * 3600 * 180 / numpy.pi / pixel_scale
     mpsfs = []
     photons /= scipy.integrate.simps(photons, wave)
@@ -314,7 +314,7 @@ class AtmDispPSF(object):
             y1 = y
             x1 = x
         R, angle_dens = chroma.wave_dens_to_angle_dens(self.wave, self.photons, **self.kwargs)
-        R685 = chroma.atm_refrac(685.0, **self.kwargs)
+        R685 = chroma.get_refraction(685.0, **self.kwargs)
         pixels = (R - R685) * 3600 * 180 / numpy.pi / self.pixel_scale
         sort = numpy.argsort(pixels)
         pixels = pixels[sort]

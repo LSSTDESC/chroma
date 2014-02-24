@@ -29,7 +29,7 @@ ax.set_ylim(-1, 1.)
 
 for zenith in zeniths:
     # chroma expects angles in radians, so need to convert deg to radians
-    refrac_angle = chroma.atm_refrac(waves, zenith * numpy.pi/180)
+    refrac_angle = chroma.get_refraction(waves, zenith * numpy.pi/180)
     refrac_ref = refrac_angle[numpy.argmin(abs(waves - 500))]
     # chroma output is also in radians, so convert to arcsec here
     ax.plot(waves, (refrac_angle - refrac_ref) * 206265, label=str(zenith)+' deg')

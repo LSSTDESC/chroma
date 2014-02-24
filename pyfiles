@@ -1,71 +1,70 @@
 Library files
 -------------
-chroma/__init__.py
-chroma/sampled.py
-chroma/sed.py
-chroma/dcr.py
-chroma/galtool.py
-chroma/utils.py
-chroma/extinction.py
-chroma/chroma_fill_plot.py
-chroma/bipolar.py
+chroma/__init__.py                                                                Ready
+chroma/sampled.py                                                                 Ready
+chroma/sed.py                                                                     Ready
+chroma/dcr.py                                                                     Ready
+chroma/galtool.py                                                                 DoubleSersicTool
+chroma/utils.py                                                                   wrap Console with util that detects astropy
+chroma/extinction.py                                                              Ready
+chroma/chroma_fill_plot.py                                                        Make chroma_fillbetween
+chroma/bipolar.py                                                                 Ready
 
 Plots for gaining intuition
 ---------------------------
 bin/didactic/_mypath.py
-bin/didactic/refraction.py
-bin/didactic/photon_landings.py
-bin/didactic/DCR_PSF.py
+bin/didactic/refraction.py                                                        Ready
+bin/didactic/photon_landings.py                                                   Ready
 
 Analytic results
 ----------------
 bin/analytic/_mypath.py
-bin/analytic/analytic_table.py
-bin/analytic/plot_DCR_moment_shifts.py
-bin/analytic/plot_PSF_size_shift.py
-bin/analytic/plot_DCR_color_corrections.py
-bin/analytic/plot_PSF_size_color_corrections.py
+bin/analytic/analytic_table.py                                                    Ready
+bin/analytic/plot_DCR_moment_shifts.py                                            Ready
+bin/analytic/plot_PSF_size_shift.py                                               Ready
+bin/analytic/plot_DCR_color_corrections.py                                        Ready
+bin/analytic/plot_PSF_size_color_corrections.py                                   Ready
 
 Analytic results from LSST catalogs
 -----------------------------------
 bin/analytic/machine_learning/_mypath.py
-bin/analytic/machine_learning/make_catalogs.py
-bin/analytic/machine_learning/process_star_catalog.py
-bin/analytic/machine_learning/process_gal_catalog.py
-bin/analytic/machine_learning/gal_ML.py
-bin/analytic/machine_learning/star_ML.py
-bin/analytic/machine_learning/regressor.py
-bin/analytic/machine_learning/photo_z_performance.py
-bin/analytic/machine_learning/compare_z_dist.py
-bin/analytic/machine_learning/compare_star_mags.py
-bin/analytic/machine_learning/compare_galaxy_mags.py
-bin/analytic/machine_learning/plot_biases.py
+bin/analytic/machine_learning/make_catalogs.py                                    Double check, could be ready.
+bin/analytic/machine_learning/process_star_catalog.py                             Ready.
+bin/analytic/machine_learning/process_gal_catalog.py                              Ready.
+bin/analytic/machine_learning/gal_ML.py                                           Double check, could be ready.
+bin/analytic/machine_learning/star_ML.py                                          Double check, could be ready.
+bin/analytic/machine_learning/regressor.py                                        Could be ready.
+bin/analytic/machine_learning/photo_z_performance.py                              Clean up.
+bin/analytic/machine_learning/compare_z_dist.py                                   Clean up.
+bin/analytic/machine_learning/compare_star_mags.py                                Clean up.
+bin/analytic/machine_learning/compare_galaxy_mags.py                              Clean up.
+bin/analytic/machine_learning/plot_biases.py                                      Clean up.
 
 Simple Analytic "photo-z" Monte Carlo
 -------------------------------------
 bin/analytic/photoz_MC/_mypath.py
-bin/analytic/photoz_MC/photoz_mc.py
+bin/analytic/photoz_MC/photoz_mc.py                                               Does this work?
 
 Test analytic predictions with simulated images
 -----------------------------------------------
 bin/simulations/_mypath.py
-bin/simulations/one_ring_test.py
-bin/simulations/ring_vs_z.py
-bin/simulations/plot_ring_diag.py
-bin/simulations/plot_DCR_ring_vs_z.py
-bin/simulations/plot_ChromaticSeeing_ring_vs_z.py
+bin/simulations/one_ring_test.py                                                  Comment.
+bin/simulations/ring_vs_z.py                                                      Comment.
+bin/simulations/plot_ring_diag.py                                                 Finish and comment.
+bin/simulations/plot_DCR_ring_vs_z.py                                             Comment.
+bin/simulations/plot_ChromaticSeeing_ring_vs_z.py                                 Comment.
 
 These two need updated / deprecation
 ------------------------------------
-bin/simulations/corrected_one_ring_test.py
-bin/simulations/calibration_linearity.py
+bin/simulations/corrected_one_ring_test.py                                        Integrate into one_ring_test?
+bin/simulations/calibration_linearity.py                                          Could be useful, update.
 
 Some published or soon-to-be published figures
 ----------------------------------------------
 bin/publish/chroma_paper/_mypath.py
-bin/publish/chroma_paper/DCRfilters.py
-bin/publish/BNL_proceedings/_mypath.py
-bin/publish/BNL_proceedings/plot_deltar2r2.py
-bin/publish/highlight_key_figure/_mypath.py
-bin/publish/highlight_key_figure/plot_corrected_biases_key_figure.py
-bin/publish/highlight_key_figure/plot_uncorrected_biases_key_figure.py
+bin/publish/chroma_paper/DCRfilters.py                                            Could be ready.
+bin/publish/BNL_proceedings/_mypath.py                                            Could be ready.
+bin/publish/BNL_proceedings/plot_deltar2r2.py                                     Could be ready.
+bin/publish/highlight_key_figure/_mypath.py                                       Could be ready.
+bin/publish/highlight_key_figure/plot_corrected_biases_key_figure.py              Could be ready.
+bin/publish/highlight_key_figure/plot_uncorrected_biases_key_figure.py            Could be ready.

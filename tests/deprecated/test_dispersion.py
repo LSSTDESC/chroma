@@ -28,7 +28,7 @@ def test_AtmDispPSF():
     norm = simps(psfim, yflat)
     Rrel = simps(psfim * yflat, yflat)/norm
     V = simps(psfim * (yflat-Rrel)**2, yflat)/norm * plate_scale**2
-    R = Rrel * plate_scale + atmdisp.atm_refrac(685, zenith=zenith)*206265
+    R = Rrel * plate_scale + atmdisp.get_refraction(685, zenith=zenith)*206265
     m = atmdisp.disp_moments(wave, photons, zenith=zenith)
     print '{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment')
     print '{:15s} {:15.7f} {:15.7f}'.format('simulated', R, V)
@@ -77,7 +77,7 @@ def test_ConvolvePSF():
 
 
     m = atmdisp.disp_moments(wave, photons, zenith=zenith)
-    m = m[0] - atmdisp.atm_refrac(685.0, zenith=zenith), m[1]
+    m = m[0] - atmdisp.get_refraction(685.0, zenith=zenith), m[1]
     print 'change in moments when dispersion is added'
     print '{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment')
     print '{:15s} {:15.7f} {:15.7f}'.format('simulated',

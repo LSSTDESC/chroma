@@ -182,7 +182,7 @@ class SampledSED(object):
         """ Calculates shifts in first and second moments of surface brightness profile due to
         differential chromatic refraction (DCR)."""
         wave_list = bandpass.interp.x
-        R = dcr.atm_refrac(wave_list, zenith, **kwargs)
+        R = dcr.get_refraction(wave_list, zenith, **kwargs)
         photons = bandpass(wave_list) * self(wave_list)
         norm = np.trapz(photons, wave_list)
         Rbar = np.trapz(R * photons, wave_list) / norm
@@ -213,6 +213,20 @@ class SampledSED(object):
         ret.red_limit = wave[-1]
         return ret
 
+    def getDCRAngleDensity(self, bandpass, zenith, **kwargs):
+        """Return photon density per unit refraction angle through a given filter.
+        """
+        wave = bandpass.interp.x
+        photons = bandpass.interp.y * self(wave)
+        R = dcr.get_refraction(wave, zenith, **kwargs)
+        dR = np.diff(R)
+        dwave = np.diff(wave)
+        dwave_dR = dwave / dR # Jacobian
+        dwave_dR = np.append(dwave_dR, dwave_dR[-1]) # fudge the last array element
+        angle_dens = photons * np.abs(dwave_dR)
+        return R, angle_dens
+
+
 class SampledBandpass(object):
     """Simple bandpass object.
 
@@ -242,11 +256,11 @@ class SampledBandpass(object):
                 raise ValueError("Could not create interp1d from file: {}".format(spec))
             self.blue_limit = w[0] / wave_factor
             self.red_limit = w[-1] / wave_factor
-            self.interp = interp1d(w / wave_factor, tp)
+            self.interp = interp1d(w / wave_factor, tp, bounds_error=False, fill_value=0.0)
         else:
             self.blue_limit = throughput.x[0]
             self.red_limit = throughput.x[1]
-            self.interp = interp1d(throughput.x, throughput.y, fill_value=0.0)
+            self.interp = interp1d(throughput.x, throughput.y, bounds_error=False, fill_value=0.0)
 
     def __call__(self, wave):
         """ Return dimensionless throughput as function of wavelength in nm.
@@ -254,7 +268,14 @@ class SampledBandpass(object):
         try:
             return self.interp(wave)
         except ValueError:
-            raise ValueError("Wavelength out of range for SED")
+            raise ValueError("Wavelength out of range for SampledBandpass")
+
+    def copy(self):
+        cls = self.__class__
+        ret = cls.__new__(cls)
+        for k, v in self.__dict__.iteritems():
+            ret.__dict__[k] = copy.deepcopy(v)
+        return ret
 
     def createTruncated(self, relative_throughput=None, blue_limit=None, red_limit=None):
         """ Return a new SampledBandpass with its wavelength range truncated.
@@ -281,7 +302,7 @@ class SampledBandpass(object):
         ret = self.copy()
         ret.blue_limit = blue_limit
         ret.red_limit = red_limit
-        ret.interp = interp1d(wave[w], tp[w])
+        ret.interp = interp1d(wave[w], tp[w], bounds_error=False, fill_value=0.0)
         return ret
 
     def getABZeropoint(self):
@@ -306,4 +327,4 @@ class SampledBandpass(object):
         if wave[-1] != self.interp.x[-1]:
             wave = np.concatenate([wave, [self.interp.x[-1]]])
         tp = self(wave)
-        return SampledBandpass(interp1d(wave, tp))
+        return SampledBandpass(interp1d(wave, tp, bounds_error=False, fill_value=0.0))
