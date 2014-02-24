@@ -10,7 +10,7 @@ def Sersic_r2_over_hlr(n):
     0.2 < n < 8.0.
 
     @param n Sersic index
-    @returns ratio r^2  / hlr
+    @returns ratio sqrt(r^2)  / hlr
     """
     return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
                      n * (-0.000154064 + n * 0.0000219636)))))
@@ -20,13 +20,13 @@ def component_Sersic_r2(ns, weights, hlrs):
 
     @param  ns       List of Sersic indices in model.
     @param  weights  Relative flux of each component
-    @param  hrls     List of half-light-radii of each component
-    @returns         Second moment radius.
+    @param  hlrs     List of half-light-radii of each component
+    @returns         Second moment radius = sqrt(r^2)
     """
     t = np.array(weights).sum()
     ws = [w / t for w in weights]
     r2s = [Sersic_r2_over_hlr(n) * r_e for n, r_e in zip(ns, r_es)]
-    return np.sqrt(reduce(lambda x,y:x*y, [r2**2 * w for r2, w in zip(r2s, ws)]))
+    return np.sqrt(reduce(lambda x,y:x+y, [r2**2 * w for r2, w in zip(r2s, ws)]))
 
 def apply_shear(c_ellip, c_gamma):
     """Compute complex ellipticity after shearing by complex shear `c_gamma`."""
