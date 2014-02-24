@@ -38,7 +38,7 @@ bin/analytic/machine_learning/photo_z_performance.py                            
 bin/analytic/machine_learning/compare_z_dist.py                                   Ready.
 bin/analytic/machine_learning/compare_star_mags.py                                Ready.
 bin/analytic/machine_learning/compare_galaxy_mags.py                              Ready.
-bin/analytic/machine_learning/plot_biases.py                                      Clean up.
+bin/analytic/machine_learning/plot_biases.py                                      Ready.
 
 Simple Analytic "photo-z" Monte Carlo
 -------------------------------------
