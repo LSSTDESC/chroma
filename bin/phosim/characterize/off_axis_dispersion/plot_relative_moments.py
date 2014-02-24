@@ -2,7 +2,6 @@ import os
 import pickle
 
 import numpy
-import astropy.utils.console
 import matplotlib.pyplot as plt
 import scipy.stats
 

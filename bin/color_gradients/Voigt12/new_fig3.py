@@ -6,7 +6,6 @@ import copy
 import scipy.optimize
 import numpy as np
 import lmfit
-import astropy.utils.console
 import galsim
 
 #from pylab import *
@@ -77,7 +76,7 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
         ellip180s.append(ellip180)
 
     if not silent:
-        with astropy.utils.console.ProgressBar(n_ring) as bar:
+        with chroma.ProgressBar(n_ring) as bar:
             for beta in betas:
                 work()
                 bar.update()

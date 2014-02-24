@@ -7,7 +7,6 @@ import random
 import os
 
 import numpy
-import astropy.utils.console
 
 import _mypath
 import chroma
@@ -46,7 +45,7 @@ def photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     V_plot = numpy.empty(0)
     S_plot = numpy.empty(0)
 
-    with astropy.utils.console.ProgressBar(niter) as bar:
+    with chroma.ProgressBar(niter) as bar:
         for i in range(niter):
             iSED = random.randint(0,7)
             SED = gal_SEDs[iSED]

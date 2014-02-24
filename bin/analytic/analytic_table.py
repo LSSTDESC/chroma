@@ -23,7 +23,6 @@ For galaxies, magnitudes and biases are computed over a range of redshifts.
 import cPickle
 
 import numpy as np
-import astropy.utils.console as console
 
 import _mypath
 import chroma
@@ -155,7 +154,7 @@ def construct_analytic_table():
                                                            ('S_p06', E),
                                                            ('S_p10', E)])
     i=0
-    with console.ProgressBar(100 * len(gal_types)) as bar:
+    with chroma.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:
             gal_SED0 = chroma.SampledSED(spec_dir + gal_type + '.ascii')
             for z in np.arange(0.0, 3.0, 0.03):

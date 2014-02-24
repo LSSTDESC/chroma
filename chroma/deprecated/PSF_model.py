@@ -3,7 +3,6 @@ import hashlib
 import galsim
 import scipy
 import numpy
-import astropy.utils.console
 
 import chroma
 
@@ -229,7 +228,7 @@ class VoigtEuclidPSF(object):
         # create all the monochromatic Gaussians (as Sersics) at initialization and store for later
         print "Loading PSF"
         self._monochromatic_PSFs = []
-        with astropy.utils.console.ProgressBar(len(self.wave)) as bar:
+        with chroma.ProgressBar(len(self.wave)) as bar:
             for wav, phot in zip(self.wave, self.photons):
                 self._monochromatic_PSFs.append(
                     self._monochromatic_PSF(self.y0, self.x0, wav, self.ellipticity, self.phi, phot))
@@ -269,7 +268,7 @@ class VoigtEuclidPSF(object):
         shape.append(len(self._monochromatic_PSFs))
         psfcube = numpy.empty(shape, dtype=numpy.float64)
         print "Evaluating PSF"
-        with astropy.utils.console.ProgressBar(len(self._monochromatic_PSFs)) as bar:
+        with chroma.ProgressBar(len(self._monochromatic_PSFs)) as bar:
             for i, mpsf in enumerate(self._monochromatic_PSFs):
                 psfcube[..., i] = mpsf(y1,x1)
                 bar.update()

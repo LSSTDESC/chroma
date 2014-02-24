@@ -2,7 +2,6 @@ import os
 import pickle
 
 import numpy
-import astropy.utils.console
 import matplotlib.pyplot as plt
 import scipy.stats
 
@@ -65,7 +64,7 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
                 'KIN_SB6_ext']
 
     gal_diffs = {}
-    with astropy.utils.console.ProgressBar(100 * len(gal_types)) as bar:
+    with chroma.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:
             gal_diffs[gal_type] = {'M1':[], 'M2':[], 'wM2':[]}
             SED_data = numpy.genfromtxt(spec_dir + gal_type + '.ascii')

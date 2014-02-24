@@ -1,14 +1,51 @@
+import sys
+
 import numpy as np
 
-class SimpleProgressBar(object):
-    def __init__(self):
-        pass
-    def __enter(self):
-        return
-    def __exit__(self):
-        return
-    def bar(self):
-        print '.',
+try:
+    from astropy.utils.console import ProgressBar
+except:
+    def isiterable(obj):
+        """Returns `True` if the given object is iterable."""
+
+        try:
+            iter(obj)
+            return True
+        except TypeError:
+            return False
+
+    class ProgressBar(object):
+        """ A somewhat simple console progress bar in case user doesn't have astropy.
+        """
+        def __init__(self, total_or_items, file=sys.stdout):
+            if isiterable(total_or_items):
+                self._items = iter(total_or_items)
+                self._total = len(total_or_items)
+            else:
+                self._total = total_or_items
+            self.file_ = file
+            self._i = 1
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return True
+        def __iter__(self):
+            return self
+        def next(self):
+            try:
+                ret = next(self._items)
+            except StopIteration:
+                self.__exit__(None, None, None)
+                raise
+            else:
+                self.update()
+                return ret
+        def update(self):
+            self.file_.write('.')
+            self.file_.flush()
+            if self._i % 100 == 0:
+                print '{} of {}'.format(self._i, self._total)
+            self._i += 1
 
 def Sersic_r2_over_hlr(n):
     """ Factor to convert the half light radius `hlr` to the 2nd moment radius `r^2` defined as
@@ -75,15 +112,10 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
 
     # Use fancy console updating if astropy is installed and not silenced
     if not silent:
-        try:
-            import astropy.utils.console
-            with astropy.utils.console.ProgressBar(n_ring) as bar:
-                for beta in betas:
-                    work()
-                    bar.update()
-        except:
+        with ProgressBar(n_ring) as bar:
             for beta in betas:
                 work()
+                bar.update()
     else:
         for beta in betas:
             work()

@@ -5,7 +5,6 @@ import logging
 import lmfit
 import galsim
 import numpy as np
-import astropy.utils.console
 
 import _mypath
 import chroma

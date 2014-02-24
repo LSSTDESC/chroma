@@ -2,7 +2,6 @@ import pickle
 
 import numpy
 import matplotlib.pyplot as plt
-import astropy.utils.console
 
 import _mypath
 import chroma
@@ -54,7 +53,7 @@ def compute_second_moment_radii(filter_name):
                 'KIN_SB6_ext']
 
     gal_diffs = {}
-    with astropy.utils.console.ProgressBar(100 * len(gal_types)) as bar:
+    with chroma.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:
             gal_diffs[gal_type] = {'dlogr2':[]}
             SED_data = numpy.genfromtxt(spec_dir + gal_type + '.ascii')

@@ -6,7 +6,9 @@ import pickle
 
 import numpy
 import pyfits
-import astropy.utils.console
+
+import _mypath
+import chroma
 
 def encode_obshistid(SED_type, filter_name, zenith, seed, redshift):
     SED_types = {'G5v':'1', 'star':'2', 'gal':'3'}
@@ -93,7 +95,7 @@ def relative_moments(filter_name, zenith, seed):
         for col in output_columns:
             gal_diffs[gal_type][col] = []
 
-    with astropy.utils.console.ProgressBar(100) as bar:
+    with chroma.ProgressBar(100) as bar:
         for z in numpy.arange(0.0, 3.0, 0.03):
             bar.update()
             gal_obshistid = encode_obshistid('gal', filter_name, zenith, seed, z)

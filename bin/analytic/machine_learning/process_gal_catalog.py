@@ -8,7 +8,6 @@ import cPickle
 from argparse import ArgumentParser
 
 import numpy
-import astropy.utils.console as console
 from scipy.interpolate import interp1d
 
 import _mypath
@@ -127,7 +126,7 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
             outdev = sys.stdout
         else:
             outdev = open(os.devnull, 'w')
-        with console.ProgressBar(nmax, file=outdev) as bar:
+        with chroma.ProgressBar(nmax, file=outdev) as bar:
             j = 0
             for i, line in enumerate(f):
                 if i == 0 : continue #ignore column labels row
