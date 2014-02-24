@@ -1,3 +1,9 @@
+""" Script authored principally by Simon Krughoff to use LSST catalogs framework to create
+text file star and galaxy catalogs from LSST CatSim.  These can be used to determine a
+realistic distribution of chromatic biases.  This script requires that the LSST catalog
+framework is accessible.
+"""
+
 import os
 from argparse import ArgumentParser
 import warnings

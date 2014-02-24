@@ -1,5 +1,16 @@
-"""Process galaxy catalog produced by make_catalogs.py to add columns for
-DCR biases, chromatic seeing biases, and chromatic diffraction limit biases.
+"""Process galaxy catalog produced by make_catalogs.py to add columns for DCR biases, chromatic
+seeing biases, and chromatic diffraction limit biases.  This script requires that the LSST CatSim
+SED files are downloaded and that the environment variable $CAT_SHARE_DATA points to them.
+
+Chromatic biases include:
+  Rbar - centroid shift due to differential chromatic refraction.
+  V - zenith-direction second moment shift due to differential chromatic refraction
+  S - shift in "size" of the PSF due to a power-law dependence of the FWHM with wavelength:
+      FWHM \propto \lambda^{\alpha}.  S = the second moment square radius r^2 = Ixx + Iyy.
+      Three cases are tabulated:
+        \alpha = -0.2 : appropriate for atmospheric chromatic seeing.  denoted 'S_m02'
+        \alpha = 1.0 : appropriate for a pure diffraction limited PSF.  denoted 'S_p10'
+        \alpha = 0.6 : appropriate for Euclid (see Voigt+12 or Cypriano+10).  denoted 'S_p06'
 """
 
 import os
@@ -7,7 +18,7 @@ import sys
 import cPickle
 from argparse import ArgumentParser
 
-import numpy
+import numpy as np
 from scipy.interpolate import interp1d
 
 import _mypath
@@ -68,51 +79,51 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
         nmax = nrows
     if nmax > (nrows-1):
         nmax = nrows-1
-    ugrizy = [('LSST_u', numpy.float32),
-              ('LSST_g', numpy.float32),
-              ('LSST_r', numpy.float32),
-              ('LSST_i', numpy.float32),
-              ('LSST_z', numpy.float32),
-              ('LSST_y', numpy.float32)]
-    ugrizyE = [('LSST_u', numpy.float32),
-               ('LSST_g', numpy.float32),
-               ('LSST_r', numpy.float32),
-               ('LSST_i', numpy.float32),
-               ('LSST_z', numpy.float32),
-               ('LSST_y', numpy.float32),
-               ('Euclid_150', numpy.float32),
-               ('Euclid_250', numpy.float32),
-               ('Euclid_350', numpy.float32),
-               ('Euclid_450', numpy.float32)]
-    E = [('Euclid_150', numpy.float32),
-         ('Euclid_250', numpy.float32),
-         ('Euclid_350', numpy.float32),
-         ('Euclid_450', numpy.float32)]
+    ugrizy = [('LSST_u', np.float32),
+              ('LSST_g', np.float32),
+              ('LSST_r', np.float32),
+              ('LSST_i', np.float32),
+              ('LSST_z', np.float32),
+              ('LSST_y', np.float32)]
+    ugrizyE = [('LSST_u', np.float32),
+               ('LSST_g', np.float32),
+               ('LSST_r', np.float32),
+               ('LSST_i', np.float32),
+               ('LSST_z', np.float32),
+               ('LSST_y', np.float32),
+               ('Euclid_150', np.float32),
+               ('Euclid_250', np.float32),
+               ('Euclid_350', np.float32),
+               ('Euclid_450', np.float32)]
+    E = [('Euclid_150', np.float32),
+         ('Euclid_250', np.float32),
+         ('Euclid_350', np.float32),
+         ('Euclid_450', np.float32)]
 
-    data = numpy.recarray((nmax,),
-                          dtype = [('galTileID', numpy.uint64),
-                                   ('objectID', numpy.uint64),
-                                   ('raJ2000', numpy.float64),
-                                   ('decJ2000', numpy.float64),
-                                   ('redshift', numpy.float32),
-                                   ('sedPathBulge', numpy.str_, 64),
-                                   ('sedPathDisk', numpy.str_, 64),
-                                   ('sedPathAGN', numpy.str_, 64),
-                                   ('magNormBulge', numpy.float32),
-                                   ('magNormDisk', numpy.float32),
-                                   ('magNormAGN', numpy.float32),
-                                   ('internalAVBulge', numpy.float32),
-                                   ('internalRVBulge', numpy.float32),
-                                   ('internalAVDisk', numpy.float32),
-                                   ('internalRVDisk', numpy.float32),
-                                   ('mag', ugrizy),
-                                   ('magCalc', ugrizyE),
-                                   ('R', ugrizy),
-                                   ('V', ugrizy),
-                                   ('dVcg', ugrizy),
-                                   ('S_m02', ugrizy),
-                                   ('S_p06', E),
-                                   ('S_p10', E)])
+    data = np.recarray((nmax,),
+                       dtype = [('galTileID', np.uint64),
+                                ('objectID', np.uint64),
+                                ('raJ2000', np.float64),
+                                ('decJ2000', np.float64),
+                                ('redshift', np.float32),
+                                ('sedPathBulge', np.str_, 64),
+                                ('sedPathDisk', np.str_, 64),
+                                ('sedPathAGN', np.str_, 64),
+                                ('magNormBulge', np.float32),
+                                ('magNormDisk', np.float32),
+                                ('magNormAGN', np.float32),
+                                ('internalAVBulge', np.float32),
+                                ('internalRVBulge', np.float32),
+                                ('internalAVDisk', np.float32),
+                                ('internalRVDisk', np.float32),
+                                ('mag', ugrizy),
+                                ('magCalc', ugrizyE),
+                                ('Rbar', ugrizy),
+                                ('V', ugrizy),
+                                ('dVcg', ugrizy),
+                                ('S_m02', ugrizy),
+                                ('S_p06', E),
+                                ('S_p10', E)])
 
     order = [d+1 for d in xrange(nrows)]
     if randomize:
@@ -157,15 +168,15 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                     bp = filters['LSST_'+f] # for brevity
                     try:
                         data[j]['magCalc']['LSST_'+f] = spec.getMagnitude(bp)
-                        dcr = spec.getDCRMomentShifts(bp, numpy.pi/4)
-                        data[j]['R']['LSST_'+f] = dcr[0]
+                        dcr = spec.getDCRMomentShifts(bp, np.pi/4)
+                        data[j]['Rbar']['LSST_'+f] = dcr[0]
                         data[j]['V']['LSST_'+f] = dcr[1]
                         data[j]['S_m02']['LSST_'+f] = spec.getSeeingShift(bp, alpha=-0.2)
                     except:
-                        data[j]['magCalc']['LSST_'+f] = numpy.nan
-                        data[j]['R']['LSST_'+f] = numpy.nan
-                        data[j]['V']['LSST_'+f] = numpy.nan
-                        data[j]['S_m02']['LSST_'+f] = numpy.nan
+                        data[j]['magCalc']['LSST_'+f] = np.nan
+                        data[j]['Rbar']['LSST_'+f] = np.nan
+                        data[j]['V']['LSST_'+f] = np.nan
+                        data[j]['S_m02']['LSST_'+f] = np.nan
                 for fw in [150, 250, 350, 450]:
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
@@ -174,9 +185,9 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                         data[j]['S_p06'][fname] = spec.getSeeingShift(bp, alpha=0.6)
                         data[j]['S_p10'][fname] = spec.getSeeingShift(bp, alpha=1.0)
                     except:
-                        data[j]['magCalc'][fname] = numpy.nan
-                        data[j]['S_p06'][fname] = numpy.nan
-                        data[j]['S_p10'][fname] = numpy.nan
+                        data[j]['magCalc'][fname] = np.nan
+                        data[j]['S_p06'][fname] = np.nan
+                        data[j]['S_p10'][fname] = np.nan
 
                 # if emission:
                 #     spec = phot.make_composite_spec_with_emission_lines(data[j], filters,

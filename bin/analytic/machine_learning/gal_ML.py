@@ -1,7 +1,24 @@
+""" Use a machine learning algorithm, currently hard-coded as Support Vector Regression -- though
+this is easily changeable, to learn chromatic biases as function of either colors, magnitudes, or
+a combination of both.
+
+Chromatic biases include:
+  Rbar - centroid shift due to differential chromatic refraction.
+  V - zenith-direction second moment shift due to differential chromatic refraction
+  S - shift in "size" of the PSF due to a power-law dependence of the FWHM with wavelength:
+      FWHM \propto \lambda^{\alpha}.  S = the second moment square radius r^2 = Ixx + Iyy.
+      Three cases are tabulated:
+        \alpha = -0.2 : appropriate for atmospheric chromatic seeing.  denoted 'S_m02'
+        \alpha = 1.0 : appropriate for a pure diffraction limited PSF.  denoted 'S_p10'
+        \alpha = 0.6 : appropriate for Euclid (see Voigt+12 or Cypriano+10).  denoted 'S_p06'
+"""
+
+
 import cPickle
 from argparse import ArgumentParser
 
-import numpy
+import numpy as np
+
 import regressor
 
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
@@ -11,8 +28,8 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         raise ValueError
     ntrain = len(train_objs)
     ntest = len(test_objs)
-    train_Y = numpy.empty(ntrain, dtype=numpy.float)
-    test_Y = numpy.empty(ntest, dtype=numpy.float)
+    train_Y = np.empty(ntrain, dtype=np.float)
+    test_Y = np.empty(ntest, dtype=np.float)
     if predict_band is None:
         train_Y[:] = train_objs[predict_var]
         test_Y[:] = test_objs[predict_var]
@@ -21,7 +38,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_Y[:] = test_objs[predict_var][predict_band]
 
     if use_color: # use only five colors to train
-        train_X = numpy.empty([ntrain, 5], dtype=numpy.float)
+        train_X = np.empty([ntrain, 5], dtype=np.float)
 
         # training data
         train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
@@ -31,14 +48,14 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
 
         # test data
-        test_X = numpy.empty([ntest, 5], dtype=numpy.float)
+        test_X = np.empty([ntest, 5], dtype=np.float)
         test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
         test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
         test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
         test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
         test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
     elif use_mag: # use only six magnitudes to train
-        train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
+        train_X = np.empty([ntrain, 6], dtype=np.float)
 
         # training data
         train_X[:,0] = train_objs['magCalc']['LSST_u']
@@ -49,7 +66,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         train_X[:,5] = train_objs['magCalc']['LSST_y']
 
         # test data
-        test_X = numpy.empty([ntest, 6], dtype=numpy.float)
+        test_X = np.empty([ntest, 6], dtype=np.float)
         test_X[:,0] = test_objs['magCalc']['LSST_u']
         test_X[:,1] = test_objs['magCalc']['LSST_g']
         test_X[:,2] = test_objs['magCalc']['LSST_r']
@@ -57,7 +74,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,4] = test_objs['magCalc']['LSST_z']
         test_X[:,5] = test_objs['magCalc']['LSST_y']
     else: # default: use i-band magnitude, and five colors to train
-        train_X = numpy.empty([ntrain, 6], dtype=numpy.float)
+        train_X = np.empty([ntrain, 6], dtype=np.float)
 
         # training data
         train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
@@ -68,7 +85,7 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         train_X[:,5] = train_objs['magCalc']['LSST_i']
 
         # test data
-        test_X = numpy.empty([ntest, 6], dtype=numpy.float)
+        test_X = np.empty([ntest, 6], dtype=np.float)
         test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
         test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
         test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
@@ -86,140 +103,133 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
 
     return predict_Y
 
-def ML_all(train_objs, test_objs, **kwargs):
+def gal_ML(train_objs, test_objs, **kwargs):
 
-    # do some pruning of troublesome objects
-    good = numpy.ones(train_objs.shape, dtype=numpy.bool)
+    # do some pruning of troublesome objects.  These generally fail when the SED
+    # isn't blue enough to cover the wavelength range of the filter.
+    good = np.ones(train_objs.shape, dtype=np.bool)
     for f in 'ugrizy':
-        good = good & numpy.isfinite(train_objs['magCalc']['LSST_{}'.format(f)])
-        good = good & numpy.isfinite(train_objs['magCalc']['LSST_{}'.format(f)])
-    #     if predict_band is not None:
-    #         good = good & numpy.isfinite(train_objs[predict_var]['LSST_{}'.format(f)])
-    # if predict_band is None:
-    #     good = good & numpy.isfinite(train_objs[predict_var])
+        good = good & np.isfinite(train_objs['magCalc']['LSST_{}'.format(f)])
+        good = good & np.isfinite(train_objs['magCalc']['LSST_{}'.format(f)])
     # kill everything with an AGN for now since mags don't match well.
-    good = good & numpy.isnan(train_objs.magNormAGN)
+    good = good & np.isnan(train_objs.magNormAGN)
     train_objs = train_objs[good]
 
-    good = numpy.ones(test_objs.shape, dtype=numpy.bool)
+    good = np.ones(test_objs.shape, dtype=np.bool)
     for f in 'ugrizy':
-        good = good & numpy.isfinite(test_objs['magCalc']['LSST_{}'.format(f)])
-        good = good & numpy.isfinite(test_objs['magCalc']['LSST_{}'.format(f)])
-    #     if predict_band is not None:
-    #         good = good & numpy.isfinite(test_objs[predict_var]['LSST_{}'.format(f)])
-    # if predict_band is None:
-    #     good = good & numpy.isfinite(test_objs[predict_var])
+        good = good & np.isfinite(test_objs['magCalc']['LSST_{}'.format(f)])
+        good = good & np.isfinite(test_objs['magCalc']['LSST_{}'.format(f)])
     # kill everything with an AGN for now since mags don't match well.
-    good = good & numpy.isnan(test_objs.magNormAGN)
+    good = good & np.isnan(test_objs.magNormAGN)
     test_objs = test_objs[good]
 
-    ugrizy = [('LSST_u', numpy.float32),
-              ('LSST_g', numpy.float32),
-              ('LSST_r', numpy.float32),
-              ('LSST_i', numpy.float32),
-              ('LSST_z', numpy.float32),
-              ('LSST_y', numpy.float32)]
-    ugrizyE = [('LSST_u', numpy.float32),
-               ('LSST_g', numpy.float32),
-               ('LSST_r', numpy.float32),
-               ('LSST_i', numpy.float32),
-               ('LSST_z', numpy.float32),
-               ('LSST_y', numpy.float32),
-               ('Euclid_150', numpy.float32),
-               ('Euclid_250', numpy.float32),
-               ('Euclid_350', numpy.float32),
-               ('Euclid_450', numpy.float32)]
-    E = [('Euclid_150', numpy.float32),
-         ('Euclid_250', numpy.float32),
-         ('Euclid_350', numpy.float32),
-         ('Euclid_450', numpy.float32)]
+    ugrizy = [('LSST_u', np.float32),
+              ('LSST_g', np.float32),
+              ('LSST_r', np.float32),
+              ('LSST_i', np.float32),
+              ('LSST_z', np.float32),
+              ('LSST_y', np.float32)]
+    ugrizyE = [('LSST_u', np.float32),
+               ('LSST_g', np.float32),
+               ('LSST_r', np.float32),
+               ('LSST_i', np.float32),
+               ('LSST_z', np.float32),
+               ('LSST_y', np.float32),
+               ('Euclid_150', np.float32),
+               ('Euclid_250', np.float32),
+               ('Euclid_350', np.float32),
+               ('Euclid_450', np.float32)]
+    E = [('Euclid_150', np.float32),
+         ('Euclid_250', np.float32),
+         ('Euclid_350', np.float32),
+         ('Euclid_450', np.float32)]
 
-    data = numpy.recarray((len(test_objs),),
-                          dtype = [('galTileID', numpy.uint64),
-                                   ('objectID', numpy.uint64),
-                                   ('raJ2000', numpy.float64),
-                                   ('decJ2000', numpy.float64),
-                                   ('redshift', numpy.float32),
-                                   ('sedPathBulge', numpy.str_, 64),
-                                   ('sedPathDisk', numpy.str_, 64),
-                                   ('sedPathAGN', numpy.str_, 64),
-                                   ('magNormBulge', numpy.float32),
-                                   ('magNormDisk', numpy.float32),
-                                   ('magNormAGN', numpy.float32),
-                                   ('internalAVBulge', numpy.float32),
-                                   ('internalRVBulge', numpy.float32),
-                                   ('internalAVDisk', numpy.float32),
-                                   ('internalRVDisk', numpy.float32),
+    data = np.recarray((len(test_objs),),
+                          dtype = [('galTileID', np.uint64),
+                                   ('objectID', np.uint64),
+                                   ('raJ2000', np.float64),
+                                   ('decJ2000', np.float64),
+                                   ('redshift', np.float32),
+                                   ('sedPathBulge', np.str_, 64),
+                                   ('sedPathDisk', np.str_, 64),
+                                   ('sedPathAGN', np.str_, 64),
+                                   ('magNormBulge', np.float32),
+                                   ('magNormDisk', np.float32),
+                                   ('magNormAGN', np.float32),
+                                   ('internalAVBulge', np.float32),
+                                   ('internalRVBulge', np.float32),
+                                   ('internalAVDisk', np.float32),
+                                   ('internalRVDisk', np.float32),
                                    ('mag', ugrizy),
                                    ('magCalc', ugrizyE),
-                                   ('R', ugrizy),
+                                   ('Rbar', ugrizy),
                                    ('V', ugrizy),
                                    ('S_m02', ugrizy),
                                    ('S_p06', E),
                                    ('S_p10', E),
-                                   ('photo_R', ugrizy),
-                                   ('photo_V', ugrizy),
+                                   ('photo_Rbar', ugrizy),   # `photo` indicates the photometrically
+                                   ('photo_V', ugrizy),      # trained estimate.
                                    ('photo_S_m02', ugrizy),
                                    ('photo_S_p06', E),
                                    ('photo_S_p10', E),
-                                   ('photo_redshift', numpy.float32)])
+                                   ('photo_redshift', np.float32)])
     copy_fields = ['galTileID', 'objectID', 'raJ2000', 'decJ2000', 'redshift',
                    'sedPathBulge', 'sedPathDisk', 'sedPathAGN', 'magNormBulge',
                    'magNormDisk', 'magNormAGN', 'internalAVBulge', 'internalAVDisk',
                    'internalRVBulge', 'internalRVDisk', 'mag', 'magCalc',
-                   'R', 'V', 'S_m02', 'S_p06', 'S_p10']
+                   'Rbar', 'V', 'S_m02', 'S_p06', 'S_p10']
 
-    # poor man's rec_array extension
+    # copy input columns into output recarray
     for field in copy_fields:
         data[field] = test_objs[field]
 
-    # so don't actually do all, just do WL relevant corrections...
+    # just do weak-lensing relevant corrections...
 
     print 'training r-band centroid shifts'
-    data['photo_R']['LSST_r'] = ML(train_objs, test_objs,
-                                   predict_var='R', predict_band='LSST_r', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['R']['LSST_r'] - data['photo_R']['LSST_r']))
+    data['photo_Rbar']['LSST_r'] = ML(train_objs, test_objs,
+                                      predict_var='Rbar', predict_band='LSST_r', **kwargs)
+    print 'resid std: {}'.format(np.std(data['Rbar']['LSST_r'] - data['photo_Rbar']['LSST_r']))
 
     print 'training r-band zenith second-moment shifts'
     data['photo_V']['LSST_r'] = ML(train_objs, test_objs,
                                    predict_var='V', predict_band='LSST_r', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['V']['LSST_r'] - data['photo_V']['LSST_r']))
+    print 'resid std: {}'.format(np.std(data['V']['LSST_r'] - data['photo_V']['LSST_r']))
 
     print 'training r-band seeing shifts'
     data['photo_S_m02']['LSST_r'] = ML(train_objs, test_objs,
                                        predict_var='S_m02', predict_band='LSST_r', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['S_m02']['LSST_r'] - data['photo_S_m02']['LSST_r']))
+    print 'resid std: {}'.format(np.std(data['S_m02']['LSST_r'] - data['photo_S_m02']['LSST_r']))
 
 
     print 'training i-band centroid shifts'
-    data['photo_R']['LSST_i'] = ML(train_objs, test_objs,
-                                   predict_var='R', predict_band='LSST_i', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['R']['LSST_i'] - data['photo_R']['LSST_i']))
+    data['photo_Rbar']['LSST_i'] = ML(train_objs, test_objs,
+                                      predict_var='Rbar', predict_band='LSST_i', **kwargs)
+    print 'resid std: {}'.format(np.std(data['Rbar']['LSST_i'] - data['photo_Rbar']['LSST_i']))
 
     print 'training i-band zenith second-moment shifts'
     data['photo_V']['LSST_i'] = ML(train_objs, test_objs,
                                    predict_var='V', predict_band='LSST_i', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['V']['LSST_i'] - data['photo_V']['LSST_i']))
+    print 'resid std: {}'.format(np.std(data['V']['LSST_i'] - data['photo_V']['LSST_i']))
 
     print 'training i-band seeing shifts'
     data['photo_S_m02']['LSST_i'] = ML(train_objs, test_objs,
                                        predict_var='S_m02', predict_band='LSST_i', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['S_m02']['LSST_i'] - data['photo_S_m02']['LSST_i']))
+    print 'resid std: {}'.format(np.std(data['S_m02']['LSST_i'] - data['photo_S_m02']['LSST_i']))
 
 
     print 'training Euclid_350 diffraction limit shifts'
     data['photo_S_p06']['Euclid_350'] = ML(train_objs, test_objs,
                                            predict_var='S_p06',
                                            predict_band='Euclid_350', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['S_p06']['Euclid_350']
+    print 'resid std: {}'.format(np.std(data['S_p06']['Euclid_350']
                                            - data['photo_S_p06']['Euclid_350']))
 
     print 'training photometric redshifts'
     data['photo_redshift'] = ML(train_objs, test_objs,
                                 predict_var='redshift', **kwargs)
-    print 'resid std: {}'.format(numpy.std(data['redshift'] - data['photo_redshift']))
+    print 'resid std: {}'.format(np.std(data['redshift'] - data['photo_redshift']))
     print 'std((zphot - zspec)/(1+zspec)): {}'.format(
-        numpy.std((data['photo_redshift'] - data['redshift'])/(1+data['redshift'])))
+        np.std((data['photo_redshift'] - data['redshift'])/(1+data['redshift'])))
 
     return data
 
@@ -248,7 +258,7 @@ if __name__ == '__main__':
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))
 
-    out = ML_all(train_objs[args.trainstart:args.trainstart+args.ntrain],
+    out = gal_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                  test_objs[args.teststart:args.teststart+args.ntest],
                  use_color=args.use_color,
                  use_mag=args.use_mag)

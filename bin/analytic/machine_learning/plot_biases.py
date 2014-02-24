@@ -54,9 +54,9 @@ def R_vs_redshift(gals, stars, band, cband1, cband2, corrected=False, yrange=Non
     ax = f.add_axes(scatter_axes_range)
     x = gals.redshift
     if corrected:
-        y = (gals['R'][band] - gals['photo_R'][band]) * 180/np.pi * 3600
+        y = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
     else:
-        y = (gals['R'][band] - R0) * 180/np.pi * 3600
+        y = (gals['Rbar'][band] - R0) * 180/np.pi * 3600
     c = gals['magCalc'][cband1] - gals['magCalc'][cband2]
     clim = set_range(c)
     clim[1] += 0.1 * (clim[1]-clim[0])
@@ -81,9 +81,9 @@ def R_vs_redshift(gals, stars, band, cband1, cband2, corrected=False, yrange=Non
     # star histogram
     hist_ax = f.add_axes(hist_axes_range)
     if corrected:
-        y = (stars['R'][band] - stars['photo_R'][band]) * 180/np.pi * 3600
+        y = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
     else:
-        y = (stars['R'][band] - R0) * 180/np.pi * 3600
+        y = (stars['Rbar'][band] - R0) * 180/np.pi * 3600
     hist_with_peak(y, bins=200, range=ylim, orientation='horizontal',
                    histtype='stepfilled', color='blue')
     hist_ax.xaxis.set_ticklabels([])
@@ -94,9 +94,9 @@ def R_vs_redshift(gals, stars, band, cband1, cband2, corrected=False, yrange=Non
     hist_ax.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)', fontsize=12)
     # gal histogram
     if corrected:
-        y = (gals['R'][band] - gals['photo_R'][band]) * 180/np.pi * 3600
+        y = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
     else:
-        y = (gals['R'][band] - R0) * 180/np.pi * 3600
+        y = (gals['Rbar'][band] - R0) * 180/np.pi * 3600
     hist_with_peak(y, bins=200, range=ylim, orientation='horizontal',
                    histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
