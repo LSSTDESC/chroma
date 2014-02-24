@@ -1,6 +1,14 @@
 import numpy as np
 
-import astropy.utils.console
+class SimpleProgressBar(object):
+    def __init__(self):
+        pass
+    def __enter(self):
+        return
+    def __exit__(self):
+        return
+    def bar(self):
+        print '.',
 
 def Sersic_r2_over_hlr(n):
     """ Factor to convert the half light radius `hlr` to the 2nd moment radius `r^2` defined as

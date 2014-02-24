@@ -4,7 +4,7 @@ chroma/__init__.py                                                              
 chroma/sampled.py                                                                 Ready
 chroma/sed.py                                                                     Ready
 chroma/dcr.py                                                                     Ready
-chroma/galtool.py                                                                 DoubleSersicTool
+chroma/galtool.py                                                                 Ready
 chroma/utils.py                                                                   wrap Console with util that detects astropy
 chroma/extinction.py                                                              Ready
 chroma/chroma_fill_plot.py                                                        Make chroma_fillbetween

@@ -501,7 +501,7 @@ class DoubleSersicFastTool(DoubleSersicTool):
         final1 = galsim.Convolve(gal1, self.PSF1, pix)
         final2 = galsim.Convolve(gal2, self.PSF2, pix)
         final1.draw(image=im)
-        final2.draw(image=im, add_to_image=True
+        final2.draw(image=im, add_to_image=True)
         return im
 
     def get_PSF_image(self, oversample=1):
