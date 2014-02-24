@@ -82,14 +82,14 @@ def ring_vs_z(args):
 
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.thin(args.thin)
+    bandpass = bandpass.createThinned(args.thin)
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
-    star_SED = star_SED.setFlux(bandpass, 1.0)
+    star_SED = star_SED.createWithFlux(bandpass, 1.0)
 
     logger.info('# ')
     logger.info('# General settings')
@@ -168,8 +168,8 @@ def ring_vs_z(args):
         gparam['y0'].value = args.gal_y0 * args.pixel_scale
         gparam['gmag'].value = args.gal_ellip
 
-        gal_SED = gal_SED.setRedshift(z)
-        gal_SED = gal_SED.setFlux(bandpass, 1.0)
+        gal_SED = gal_SED.createRedshifted(z)
+        gal_SED = gal_SED.createWithFlux(bandpass, 1.0)
 
         gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
         gparam = gtool.set_uncvl_r2(gparam, (args.gal_r2)**2)
@@ -183,15 +183,15 @@ def ring_vs_z(args):
 
         # First calculate \Delta V
         if not args.noDCR:
-            dmom_DCR1 = star_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
-            dmom_DCR2 = gal_SED.DCR_moment_shifts(bandpass, args.zenith_angle * np.pi / 180)
+            dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
+            dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
             dV = (dmom_DCR2[1] - dmom_DCR1[1]) * (3600 * 180 / np.pi)**2
         else:
             dV = 0.0
         # Second calculate \Delta r^2 / r^2
         if args.alpha != 0.0:
-            seeing1 = star_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
-            seeing2 = gal_SED.seeing_shift(bandpass, alpha=args.alpha, base_wavelength=685.0)
+            seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
+            seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
             dr2r2 = (seeing2 - seeing1)/seeing1
         else:
             dr2r2 = 0.0
@@ -217,7 +217,7 @@ def ring_vs_z(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--datadir', default='../../../data/',
+    parser.add_argument('--datadir', default='../../data/',
                         help="directory to find SED and filter files.")
     parser.add_argument('-s', '--starspec', default='SEDs/ukg5v.ascii',
                         help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii')")
