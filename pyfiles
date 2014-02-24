@@ -5,9 +5,9 @@ chroma/sampled.py                                                               
 chroma/sed.py                                                                     Ready
 chroma/dcr.py                                                                     Ready
 chroma/galtool.py                                                                 Ready
-chroma/utils.py                                                                   wrap Console with util that detects astropy
+chroma/utils.py                                                                   Ready
 chroma/extinction.py                                                              Ready
-chroma/chroma_fill_plot.py                                                        Make chroma_fillbetween
+chroma/plot.py                                                                    Ready
 chroma/bipolar.py                                                                 Ready
 
 Plots for gaining intuition

@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 
-def chroma_fill_plot(x, y, c, cm=cm.gist_rainbow, axes=None):
+def chroma_fill_between(x, y1, y2=None, c=None, cm=cm.gist_rainbow, axes=None):
     """Plot y vs. x but fill in between y and 0 with a colormap.
 
     Arguments
     ---------
-    x, y -- arrays to plot
+    x, y1, y2 -- curves to plot between
     c -- array congruent to x and y indicating which color in the
          color map to fill in at that point.  The range should be from
          0.0 to 1.0
@@ -23,6 +23,11 @@ def chroma_fill_plot(x, y, c, cm=cm.gist_rainbow, axes=None):
     """
 
     if axes is None: axes = plt.gca()
+
+    if y2 is None:
+        y2 = np.zeros(len(y1), dtype=float)
+    elif isinstance(y2, (int, float)):
+        y2 *= np.ones(len(y1), dtype=float)
 
     cc = c.copy()
     cc[cc > 1.0] = 1.0
@@ -43,7 +48,7 @@ def chroma_fill_plot(x, y, c, cm=cm.gist_rainbow, axes=None):
             ends = np.append(ends, 0)
 
         for start, end in zip(starts, ends):
-            axes.fill_between(x[start:end+1], y[start:end+1], 0, color=cm(i))
+            axes.fill_between(x[start:end+1], y1[start:end+1], y2[start:end+1], color=cm(i))
 
 def test():
     x = np.linspace(0.0, 2.0*np.pi, 1000)
@@ -53,7 +58,7 @@ def test():
     c = np.concatenate([np.linspace(0.0, 1.0, 500), np.linspace(0.0, 1.0, 500)])
 
     plt.plot(x, y, color="black")
-    chromaFillPlot(x, y, c)
+    chroma_fill_between(x, y, c=c)
     plt.show()
 
 if __name__ == "__main__":

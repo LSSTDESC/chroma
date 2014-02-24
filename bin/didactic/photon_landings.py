@@ -56,11 +56,11 @@ for i, s in enumerate(spectra):
         # first axis is normal spectrum
         ax[i,0].plot(wave, 1.3 * photons_filtered/scale, color='black')
         ax[i,0].xaxis.set_ticks([500, 600, 700, 800, 900])
-        chroma.chroma_fill_plot(wave, 1.3 * photons_filtered/scale, color, axes=ax[i,0])
+        chroma.chroma_fill_between(wave, 1.3 * photons_filtered/scale, 0, c=color, axes=ax[i,0])
 
         # second axis is photons binned by refraction
         ax[i,1].plot(R, angle_dens/angle_dens.max() / 1.2, color='black')
-        chroma.chroma_fill_plot(R, angle_dens/angle_dens.max() / 1.2, color, axes=ax[i,1])
+        chroma.chroma_fill_between(R, angle_dens/angle_dens.max() / 1.2, 0, c=color, axes=ax[i,1])
 
         for label in ax[i,1].get_xticklabels():
             label.set_fontsize(10)
