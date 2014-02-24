@@ -12,9 +12,9 @@ chroma/bipolar.py                                                               
 
 Plots for gaining intuition
 ---------------------------
-bin/didactic/_mypath.py
-bin/didactic/refraction.py                                                        Ready
-bin/didactic/photon_landings.py                                                   Ready
+bin/intuition/_mypath.py
+bin/intuition/refraction.py                                                       Ready
+bin/intuition/where_the_photons_land.py                                           Ready
 
 Analytic results
 ----------------
