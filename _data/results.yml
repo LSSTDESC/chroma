@@ -1,5 +1,7 @@
 - title: Analytic Results
   url: analytic
+- title: Color Corrections
+  url: ColorCorrect
 - title: Catalog Results
   url: catalog
 - title: Machine Learning

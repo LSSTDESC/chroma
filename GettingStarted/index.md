@@ -55,21 +55,23 @@ The primary directory structure of chroma is the following:
      - data/filters/
 {% endhighlight %}
 
-(There are additional directories lurking, but these are the ones that are currently most
-meaningful).
+(There are additional directories lurking, but the above are the ones that are most interesting and
+up-to-date).
 
 The data/ directory contains files representing a small number of SEDs, and the LSST filter
 bandpasses.
 
 The chroma/ directory contains a few useful library modules:
 
-- dcr.py: Code to convert wavelength and zenith angle into a refraction angle.
-- galtool.py: Code to use GalSim and lmfit jointly, i.e. translate lmfit Parameters describing a
-              galaxy into an actual image.
-- utils.py: A few utility functions.
-- plot.py: Plotting routines.
-- sed.py: Code that extends the galsim.SED class to analytically compute magnitudes and chromatic biases
-- sampled.py: Code that implements simple SED and Bandpass classes defined by samples in wavelength.
+- dcr.py -  Code to convert wavelength and zenith angle into a refraction angle.
+- galtool.py - Code to use GalSim and lmfit jointly, i.e. translate lmfit Parameters describing a
+               galaxy into an actual image.
+- utils.py - A few utility functions.
+- plot.py - Plotting routines.
+- sed.py - Code that extends the galsim.SED class to analytically compute magnitudes and chromatic
+           biases.
+- sampled.py - Code that implements simple SED and Bandpass classes defined by samples in
+               wavelength.
 
 Scripts that produce output reside in the bin/ directory.  We will go through the various bin/
 scripts under the results tab above.
