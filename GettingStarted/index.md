@@ -7,17 +7,17 @@ permalink: /GettingStarted/home/
 Dependencies
 ------------
 
-Chroma is written entirely in Python.  Once downloaded, there is nothing to install, all python
+Chroma is written entirely in Python.  Once downloaded, there is nothing to install; all python
 scripts are intended to run from the directory in which they are unpacked.
 
 Chroma requires several python libraries to run, although not all libraries are required for all
-analyses.  The basic set of dependencies includes
+analyses.  The basic set of dependencies, required everywhere, are
 
 - numpy
 - scipy
 - matplotlib
 
-which will enable one to evaluate chromatic biases and make plots.
+which are sufficient to enable one to evaluate chromatic biases and make plots.
 
 With the added dependency
 
@@ -26,7 +26,8 @@ With the added dependency
 one can also use machine learning algorithms to predict the size of chromatic biases given
 photometric data, which can then lead to a correction mitigating the bias.  This step requires
 a catalog on which to run, which can either be built using the LSST catalogs framework with
-the script supplied, or alternatively can simply be downloaded from XXXXX.
+the script supplied, or alternatively can simply be downloaded
+[here](http://slac.stanford.edu/~jmeyers3/).
 
 Finally, to test analytic results in simulated images, the following packages are required:
 
@@ -34,8 +35,8 @@ Finally, to test analytic results in simulated images, the following packages ar
 - lmfit
 - either astropy or pyfits
 
-Actually, astropy is a nice tool to have around for earlier analyses too, since we use it's
-console module to create a nice looking progress bar for steps that take a while when available.
+Actually, astropy is a nice tool to have around for the earlier analyses too, since, when available,
+we use its console module to create a nice looking progress bar for steps that take a while.
 
 Directory Structure
 -------------------
@@ -54,6 +55,9 @@ The primary directory structure of chroma is the following:
      - data/filters/
 {% endhighlight %}
 
+(There are additional directories lurking, but these are the ones that are currently most
+meaningful).
+
 The data/ directory contains files representing a small number of SEDs, and the LSST filter
 bandpasses.
 
@@ -64,6 +68,8 @@ The chroma/ directory contains a few useful library modules:
               galaxy into an actual image.
 - utils.py: A few utility functions.
 - plot.py: Plotting routines.
+- sed.py: Code that extends the galsim.SED class to analytically compute magnitudes and chromatic biases
+- sampled.py: Code that implements simple SED and Bandpass classes defined by samples in wavelength.
 
-Scripts that produce output all reside in the bin/ directory.  We will go through the various
+Scripts that produce output reside in the bin/ directory.  We will go through the various bin/
 scripts under the results tab above.

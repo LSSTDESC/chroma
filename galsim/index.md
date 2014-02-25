@@ -4,7 +4,7 @@ title: GalSim
 permalink: /GalSim/home/
 ---
 
-As part of this analysis, we have added the capability to simulate wavelength-dependent surface brightness profiles to the open source galaxy simulation package [GalSim](https://github.com/GalSim-developers/GalSim), which is being used to in the [GREAT3](http://www.great3challenge.info) shape measurement data challenge.  The new chromatic API makes it convenient to simulate both the effects of chromatic PSFs and chromatic galaxies (which are also referred to as galaxies with color gradients).
+As part of this analysis, we have added the capability to simulate wavelength-dependent surface brightness profiles to the open source galaxy simulation package [GalSim](https://github.com/GalSim-developers/GalSim), which is being used in the [GREAT3](http://www.great3challenge.info) shape measurement data challenge.  The new chromatic API makes it convenient to simulate both the effects of chromatic PSFs and chromatic galaxies (also referred to as galaxies with color gradients).
 
 As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric PSF and observed in the _r_-band might look like:
 

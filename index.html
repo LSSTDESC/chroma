@@ -5,7 +5,7 @@ overview: true
 ---
 
 <p class="line">
-  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deep understanding of potential systematic biases in will be required.  In this LSST DESC feature project, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of galaxies with different spectral energy distributions (SEDs) than the stars.
+  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deep understanding of potential systematic biases will be required.  In this LSST DESC repository, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of galaxies with different spectral energy distributions (SEDs) than the stars.
 </p>
 <figure>
   <img src="{{ site.url }}/img/chromatic_biases.png" height=400/>
@@ -15,27 +15,32 @@ overview: true
 <h3> Differential Chromatic Refraction </h3>
 <p>
 DCR is the effect that bluer photons are bent slightly more toward the zenith when entering the
-atmosphere than are redder photons (Figure 1).  This leads to both an SED-dependent shift in
-zenith-direction PSF centroid and a contraction of the PSF in the zenith direction.  These effects
-can be quantified in terms of the shifts in the PSF zenith-direction first and second moments,
-denoted \(\bar{R}\) and \(V\), respectively.
+atmosphere than are redder photons (Figure 1).  For example, at a zenith angle of 35 degrees, which
+will be approximately the median for LSST, a photon at the blue end of the r filter will land about
+0.15 arcseconds closer to the zenith than a photon at the red end of the r filter, or about 25% of
+the PSF FWHM.  This leads to both an SED-dependent shift in PSF centroid and SED-dependent
+contraction of the PSF in the zenith direction.  These effects can be quantified in terms of the
+shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\) and \(V\),
+respectively.
 </p>
 
 <h3> Chromatic Seeing </h3>
 <p>
-The atmosphere smears out blue photons somewhat more than red photons, in the sense that there is
-a relationship \(FWHM \propto \lambda^{-1/5}\).  This effect can be characterized as an
-SED-dependent shift in the second moment square radius \(r^2\), which is equal to the sum of the
-second moments measured in perpendicular directions, and scales like \(\lambda^{-2/5}\) (see
-Figure 1).
+Atmospheric turbulence smears out blue photons somewhat more than red photons, in the sense that
+the relationship between FWHM and wavelength goes like \(FWHM \propto \lambda^{-1/5}\).  This effect
+can be characterized as an SED-dependent shift in the second moment square radius \(r^2\), which is
+equal to the sum of the two second moments measured in perpendicular directions, and scales like
+\(\lambda^{-2/5}\) (see Figure 1).  As a consequence, the PSF at the blue end of the r filter is
+about 4.5% wider, or 9% larger in area, than the PSF at the red end of the r filter.
 </p>
 
 <h3>Induced shape calibration biases</h3>
 <p>
-It is common to characterize systematic uncertainties in shape measurement in terms of the additive
-and multiplicative calibration parameters \(m\) and \(c\), define by
+These misestimations of the PSF moments lead to systematic errors in galaxy shape measurement.
+It is common to characterize such biases in terms of the additive and multiplicative shear
+calibration parameters \(m\) and \(c\), defined by
 \[\hat{\gamma_i} = (1+m_i)\gamma_i + c_i.\]
-where \(\hat{\gamma_i}\) is the shear estimate for the true shear \(\gamma_i\).
+where \(\hat{\gamma_i}\) is the shear estimator and the true shear is \(\gamma_i\).
 In these terms, the bias from differential chromatic refraction can be written
 \[m_1^{DCR} = m_2^{DCR} = \frac{- \Delta V}{r^2_{gal}} \]
 \[c_1^{DCR} = \frac{- \Delta V}{2r^2_{gal}} \]
@@ -48,17 +53,28 @@ Similarly, the bias for chromatic seeing becomes
 where \(\Delta r^2_{psf} = r^2_{PSF, star} - r^2_{PSF, gal}\) and \(\epsilon_i^{psf}\) is the
 (usually small) ellipticity of the PSF.
 
-For LSST, the requirements are approximately to keep \(|m|\) and \(|c|\) below 0.003 and 0.0006, respectively.
+For LSST, the requirements are approximately to keep \(|m|\) and \(|c|\) below 0.003 and 0.0015,
+respectively.
+
 </p>
-<h3> Analysis</h3>
+<h3>Analysis</h3>
 <p>
-Our analysis consists of three parts:
+In this repository we aim to quantify the chromatic biases expected for LSST and to investigate
+strategies to mitigate these biases.  Our analysis consists of three parts:
 <ul>
-<li>Using galaxy and stellar catalogs generated from the <a href="https://dev.lsstcorp.org/trac/wiki/Installation">LSST catalogs framework</a>, we make analytic estimates of the sizes of the two chromatic biases.
-<li>With the same catalogs, we also investigate techniques to predict the size of chromatic biases from LSST multi-filter photometry so that they can be removed.
-<li>From simulated images, we also demonstrate an additional “model bias” arising from the unknown shape of the point spread function.
+<li>Using galaxy and stellar catalogs generated from the
+<a href="https://dev.lsstcorp.org/trac/wiki/Installation">LSST catalogs framework</a>,
+we make analytic estimates of the sizes of the two chromatic biases.
+<li>With the same catalogs, we also investigate techniques to predict the size of chromatic biases
+from LSST multi-filter photometry so that they can be removed.
+<li>From simulated images, we also demonstrate an additional “model bias” arising from the unknown
+shape of the point spread function.
 </ul>
 </p>
 <p>
-In addition to its relevance to LSST, these analyses are applicable to other large-volume ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also qualitatively similar to the wavelength dependence of the diffraction limit, which will affect space-based cosmic shear surveys such as Euclid.
+In addition to its relevance to LSST, these analyses are applicable to other large-volume
+ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will
+manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also
+qualitatively similar to the wavelength dependence of the diffraction limit, which will affect
+space-based cosmic shear surveys such as Euclid.
 </p>
