@@ -6,14 +6,15 @@ next_section: catalog
 permalink: /results/ColorCorrect/
 ---
 
-Chromatic biases depend on the slope of the SED through the filter being imaged through.  As such
-we might expect the biases to be correlated with the photometric color of nearby bands.  The
+Chromatic biases depend on the slope of the SED through the filter being imaged through.  As such,
+we might expect the biases to be correlated with the photometric colors of nearby bands.  The
 remaining Python scripts in the `bin/analytic/` directory investigate this possibility:
 
 {% highlight bash %}
-~ $ python plot_DCR_color_corrections.py
-~ $ python plot_PSF_size_color_corrections.py
-~ $ ls output/*vs*png
+$ cd CHROMA_DIR/bin/analytic/
+$ python plot_DCR_color_corrections.py
+$ python plot_PSF_size_color_corrections.py
+$ ls output/*vs*png
 output/Rbar_LSST_r_vs_LSST_r-LSST_i.png
 output/V_LSST_r_vs_LSST_r-LSST_i.png
 output/S_p06_Euclid_350_vs_LSST_r-LSST_i.png
