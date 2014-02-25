@@ -5,12 +5,32 @@ overview: true
 ---
 
 <p class="line">
-  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deeper understanding of potential systematic biases in galaxy shape measurement than has been achieved to date will be required.  In this LSST DESC feature project, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of a galaxies with a different spectral energy distributions (SEDs) than the stars.
+  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deep understanding of potential systematic biases in will be required.  In this LSST DESC feature project, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of galaxies with different spectral energy distributions (SEDs) than the stars.
 </p>
+<figure>
+  <img src="{{ site.url }}/img/chromatic_biases.png" height=400/>
+  <figcaption>Figure 1. Chromatic refraction and chromatic seeing.</figcaption>
+</figure>
+<p>
+<h4> Differential Chromatic Refraction </h4>
+<p>
+DCR is the effect that bluer photons are bent slightly more toward the zenith when entering the
+atmosphere than are redder photons.  This leads to both an SED-dependent shift in zenith-direction
+PSF centroid and a contraction of the PSF in the zenith direction.  These effects can be quantified
+in terms of the shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\)
+and \(V\), respectively.
+
+</p>
+<h4> Chromatic Seeing </h4>
+<p>
+The atmosphere smears out blue photons somewhat more than red photons, in the sense that there is
+a relationship between PSF FWHM and wavelength \(\lambda\).
+</p>
+
 <p class="line">
 Our analysis consists of three parts:
 <ul>
-<li>Using galaxy and stellar catalogs generated from the LSST catalogs framework (need url), we make analytic estimates of the sizes of the two chromatic biases.
+<li>Using galaxy and stellar catalogs generated from the <a href="https://dev.lsstcorp.org/trac/wiki/Installation">LSST catalogs framework</a>, we make analytic estimates of the sizes of the two chromatic biases.
 <li>With the same catalogs, we also investigate techniques to predict the size of chromatic biases from LSST multi-filter photometry so that they can be removed.
 <li>From simulated images, we also demonstrate an additional “model bias” due to the unknown shape of the point spread function.
 </ul>

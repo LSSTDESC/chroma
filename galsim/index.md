@@ -4,31 +4,45 @@ title: GalSim
 permalink: /GalSim/home/
 ---
 
-As part of this feature project, we have added the capability to simulate wavelength-dependent surface brightness profiles to the open source galaxy simulation package [GalSim](https://github.com/GalSim-developers/GalSim), which is being used to in the [GREAT3](http://www.great3challenge.info) shape measurement data challenge.  The new chromatic API make it convenient to simulate both the effects of chromatic PSFs and galaxies with color gradients.
+As part of this feature project, we have added the capability to simulate wavelength-dependent surface brightness profiles to the open source galaxy simulation package [GalSim](https://github.com/GalSim-developers/GalSim), which is being used to in the [GREAT3](http://www.great3challenge.info) shape measurement data challenge.  The new chromatic API makes it convenient to simulate both the effects of chromatic PSFs and chromatic galaxies (which are also referred to as galaxies with color gradients).
 
-As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric PSF and observed in the r-band might look like:
+As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric PSF and observed in the _r_-band might look like:
 
 {% highlight python %}
     import galsim
 
+    # load bulge, disk spectra into galsim.SED objects
     bulge_spectrum = galsim.SED('early_type_spec.dat')
     disk_spectrum = galsim.SED('late_type_spec.dat')
+    # define the bulge and the disk as separable products of a spatial profile
+    # and an SED.
     bulge = galsim.deVaucouleurs(flux=0.1, half_light_radius=0.4) * bulge_spectrum
     disk = galsim.Exponential(flux=0.2, half_light_radius=0.7) * disk_spectrum
+    # Add them together!
     galaxy = bulge + disk
 
-    psf_500 = galsim.Kolmogorov(fwhm=0.67)
+    # Make a chromatic PSF by transforming a fiducial monochromatic PSF at 500 nm
+    psf_500 = galsim.Kolmogorov(fwhm=0.67) # fiducial PSF
+    # galsim.ChromaticAtmosphere adds differential chromatic refraction and
+    # chromatic seeing to the fiducial PSF.
     psf = galsim.ChromaticAtmosphere(psf_500, 500, zenith_angle=30*galsim.degrees)
 
-    pix = galsim.Pixel(0.2)
+    # Convolve everything together, don't forget to convolve in a pixel!
+    final = galsim.Convolve(galaxy, psf, galsim.Pixel(0.2))
 
-    final = galsim.Convolve(galaxy, psf, pix)
-
+    # Need a filter bandpass to draw through.
     bandpass = galsim.Bandpass('rband.dat')
+    # Draw the image!
     image = final.draw(bandpass)
 {% endhighlight %}
 
 A Euclid-like PSF that scales approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\) is also convenient to implement:
 
+{% highlight python %}
+    # Again, we'll apply a wavelength dependent transformation to a
+    # monochromatic fiducial PSF.
     psf_750 = galsim.Gaussian(fwhm=0.2)
+    # galsim.ChromaticObject chromaticizes the fiducial PSF so that
+    # .createDilated() can accept a function of wavelength as its argument.
     psf_Euclid = galsim.ChromaticObject(psf_750).createDilated(lambda w: (w/750)**0.6)
+{% endhighlight %}
