@@ -22,7 +22,7 @@ output/S_m02_LSST_r_vs_LSST_r-LSST_i.png
 
 Let's look at the DCR centroid shift plot:
 
-<img src="{{site.url}}/img/Rbar_LSST_r_vs_LSST_R-LSST_i.png" width="650">
+<img src="{{site.url}}/img/Rbar_LSST_r_vs_LSST_r-LSST_i.png" width="650">
 
 In the top panel, the same chromatic biases as on the previous page are being plotted on the
 y-axis, but the x-axis has been replaced with the LSST _r_ - _i_ color.  Clearly there is a
@@ -30,7 +30,7 @@ correlation.
 
 Let's look at the DCR second moment shifts now:
 
-<img src="{{site.url}}/img/V_LSST_r_vs_LSST_R-LSST_i.png" width="650">
+<img src="{{site.url}}/img/V_LSST_r_vs_LSST_r-LSST_i.png" width="650">
 
 The correlation here is much weaker, and the residuals are not small enough to meet LSST
 requirements.  Presumably, if we used the information in all six photometric bands we could do
