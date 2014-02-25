@@ -34,7 +34,7 @@ def refraction_vs_zenith():
 
 def chromatic_biases():
     zeniths = [10, 20, 30, 40, 50]
-    waves = np.arange(300, 1101, 200, dtype=np.float64)
+    waves = np.arange(300, 1101, 1, dtype=np.float64)
 
     fig = plt.figure(figsize=(8,5))
     #ax = fig.add_subplot(111)
