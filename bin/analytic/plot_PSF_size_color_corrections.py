@@ -92,10 +92,19 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
     ax1.plot(color_range, intercept_gal_S + color_range * slope_gal_S)
     ax1.plot(color_range, intercept_star_S + color_range * slope_star_S)
     f.tight_layout()
-    f.savefig('output/S_{}_vs_{}-{}.png'.format(shape_filter,
-                                                color_filters[0],
-                                                color_filters[1]))
+
+    if alpha == -0.2:
+        alpha_str = 'S_m02'
+    elif alpha == 0.6:
+        alpha_str = 'S_p06'
+    elif alpha == 1.0:
+        alpha_str = 'S_p10'
+
+    f.savefig('output/{}_{}_vs_{}-{}.png'.format(alpha_str,
+                                                 shape_filter,
+                                                 color_filters[0],
+                                                 color_filters[1]))
 
 if __name__ == '__main__':
-   #PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)
+   PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)
    PSF_size_color_correction('Euclid_350', ['LSST_r', 'LSST_i'], alpha=0.6)

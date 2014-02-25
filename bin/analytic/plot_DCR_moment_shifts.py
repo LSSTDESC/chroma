@@ -17,7 +17,7 @@ def plot_DCR_moment_shifts(filter_name):
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 1.3)
+    ax1.set_xlim(-0.1, 3.0)
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)')
     ax1.set_xlabel('redshift')
     ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
@@ -52,6 +52,7 @@ def plot_DCR_moment_shifts(filter_name):
         ax1.plot(zs, dRbar, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
+    f.tight_layout()
     f.savefig('output/Rbar.{}.png'.format(filter_name))
 
     #-------------------------------#
@@ -60,7 +61,7 @@ def plot_DCR_moment_shifts(filter_name):
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 1.3)
+    ax1.set_xlim(-0.1, 3.0)
     ax1.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)')
     ax1.set_xlabel('redshift')
     ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
@@ -83,6 +84,7 @@ def plot_DCR_moment_shifts(filter_name):
         ax1.plot(zs, dV, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
+    f.tight_layout()
     f.savefig('output/V.{}.png'.format(filter_name))
 
 if __name__ == '__main__':

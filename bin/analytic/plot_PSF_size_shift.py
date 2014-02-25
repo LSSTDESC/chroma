@@ -60,7 +60,14 @@ def plot_PSF_size_shifts(filter_name, alpha):
         ax1.plot(zs, dSbyS, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
-    f.savefig('output/S.{}.png'.format(filter_name))
+    if alpha == -0.2:
+        alpha_str = 'S_m02'
+    elif alpha == 0.6:
+        alpha_str = 'S_p06'
+    elif alpha == 1.0:
+        alpha_str = 'S_p10'
+    f.tight_layout()
+    f.savefig('output/{}.{}.png'.format(alpha_str, filter_name))
 
 if __name__ == "__main__":
     plot_PSF_size_shifts('LSST_r', -0.2)
