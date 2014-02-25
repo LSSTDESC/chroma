@@ -135,7 +135,7 @@ def S_vs_redshift(gals, stars, band, cbands, alpha=-0.2, yrange=None, prefix='',
 
     if not os.path.isdir('output/'):
         os.mkdir('output')
-    f.savefig('output/dS_corrected_{}_{}.png'.format(band, alpha_idx), dpi=300)
+    f.savefig('output/dS_corrected_{}_{}.png'.format(band, alpha_idx), dpi=220)
 
 if __name__ == '__main__':
     pkl_dir = '../../analytic/machine_learning/output/'

@@ -113,7 +113,7 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
         os.mkdir('output/')
     plt.savefig('output/photoz_mc.{}.z{}.png'.format(filtername,
                                                      int(round(zenith * 180 / numpy.pi))),
-                dpi=200)
+                dpi=220)
 
     f = plt.figure(figsize=(8,3.5))
     ax1 = plt.subplot2grid((1, 4), (0, 0), colspan=3)
@@ -141,7 +141,7 @@ def plot_photoz_mc(niter, filtername, zenith, sigma_z=0.02):
     plt.tight_layout()
     plt.subplots_adjust(wspace=0)
     plt.savefig('output/photoz_mc.S.{}.png'.format(filtername),
-                dpi=200)
+                dpi=220)
 
 if __name__ == '__main__':
     plot_photoz_mc(2000, 'r', 30.0 * numpy.pi / 180)

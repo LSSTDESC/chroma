@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def fig4plot():
     #setup plots
-    fig = plt.figure(figsize=(10.0, 7.5), dpi=60)
+    fig = plt.figure(figsize=(10.0, 7.5))
     fig.subplots_adjust(left=0.1, right=0.9, wspace=0.3)
     ax1 = fig.add_subplot(221)
     ax1.set_yscale('log')
@@ -157,7 +157,7 @@ def fig4plot():
     ax4.plot(calib['y0'], abs(numpy.array(calib['m2'])), 'x', mfc='None', mec='red', mew=1.3)
     ax4.plot(calib['y0'], abs(numpy.array(calib['m2'])), color='red', ls='--')
 
-    plt.savefig('output/fig4.pdf')
+    plt.savefig('output/fig4.pdf', dpi=220)
 
 if __name__ == '__main__':
     fig4plot()

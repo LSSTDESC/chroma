@@ -255,7 +255,7 @@ def plot_ring_diag(args):
         #                     ticks=ticks)
 
         plt.savefig(args.outprefix+'-g1-{}-g2-{}-beta{}.png'.format(g1, g2, beta),
-                    dpi=300)
+                    dpi=220)
 
 
 if __name__ == '__main__':

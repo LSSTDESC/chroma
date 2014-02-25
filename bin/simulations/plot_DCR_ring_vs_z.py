@@ -45,4 +45,4 @@ if __name__ == '__main__':
                     color[i], str(n))
         i += 1
     fig.tight_layout()
-    fig.savefig('output/DCR_ring_vs_z.png', dpi=300)
+    fig.savefig('output/DCR_ring_vs_z.png', dpi=220)

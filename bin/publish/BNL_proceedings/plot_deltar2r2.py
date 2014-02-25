@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     ax1.legend(prop={"size":9})
     f.tight_layout()
-    f.savefig('output/dlogR2_{}.png'.format('LSST_r'), dpi=300)
+    f.savefig('output/dlogR2_{}.png'.format('LSST_r'), dpi=220)
 
 
     # LSST i-band filter
@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     ax1.legend(prop={"size":9})
     f.tight_layout()
-    f.savefig('output/dlogR2_{}.png'.format('LSST_i'), dpi=300)
+    f.savefig('output/dlogR2_{}.png'.format('LSST_i'), dpi=220)
 
     # Euclid 350-nm wide filter
     f = plt.figure(figsize=(6,4))
@@ -113,4 +113,4 @@ if __name__ == '__main__':
                  arrowprops={'arrowstyle':'->', 'color':'black'})
     ax1.legend(prop={"size":9})
     f.tight_layout()
-    f.savefig('output/dlogR2_{}.png'.format('Euclid_350'), dpi=300)
+    f.savefig('output/dlogR2_{}.png'.format('Euclid_350'), dpi=220)

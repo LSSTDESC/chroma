@@ -127,7 +127,7 @@ def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/18
     markers = 's*oD+^x'
 
     # g1 plot:
-    f1 = plt.figure(figsize=(8,6), dpi=100)
+    f1 = plt.figure(figsize=(8,6))
     f1.subplots_adjust(hspace=0)
     ax1 = plt.subplot2grid((3,1), (0,0), rowspan=2)
     ax1.get_xaxis().set_visible(False)
@@ -183,7 +183,7 @@ def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/18
     yspan = yrange[1] - yrange[0]
     yrange = [yrange[0]-yspan*0.1, yrange[1] + yspan*0.1]
     ax2.set_ylim(yrange)
-    plt.savefig('output/cal.g1.n{}.e{}.pdf'.format(n, e))
+    plt.savefig('output/cal.g1.n{}.e{}.pdf'.format(n, e), dpi=220)
 
 
     # g2 plot:
@@ -234,7 +234,7 @@ def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/18
     yspan = yrange[1] - yrange[0]
     yrange = [yrange[0]-yspan*0.1, yrange[1] + yspan*0.1]
     ax4.set_ylim(yrange)
-    plt.savefig('output/cal.g2.n{}.e{}.pdf'.format(n, e))
+    plt.savefig('output/cal.g2.n{}.e{}.pdf'.format(n, e), dpi=220)
 
 if __name__ == '__main__':
     import sys

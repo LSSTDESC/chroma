@@ -55,4 +55,4 @@ ax.set_ylabel('relative number density')
 ax.legend(prop={'size':10})
 f.tight_layout()
 
-plt.savefig('output/compare_z_dist.png', dpi=300)
+plt.savefig('output/compare_z_dist.png', dpi=220)

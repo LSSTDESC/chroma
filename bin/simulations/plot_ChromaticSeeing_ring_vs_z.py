@@ -35,4 +35,4 @@ if __name__ == '__main__':
         add_to_plot('output/ChromaticSeeing_ring_vs_z_n{}.dat'.format(n), ax, color[i], str(n))
         i += 1
     fig.tight_layout()
-    fig.savefig('output/ChromaticSeeing_ring_vs_z.png', dpi=300)
+    fig.savefig('output/ChromaticSeeing_ring_vs_z.png', dpi=220)

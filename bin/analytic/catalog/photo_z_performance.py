@@ -27,4 +27,4 @@ ax2.xaxis.set_ticks([-0.2, 0.0, 0.2])
 ax2.set_xlim(-0.2, 0.2)
 ax2.set_xlabel('$z_\mathrm{phot} - z_\mathrm{spec}$')
 
-plt.savefig('output/photo_z_performance.png', dpi=300)
+plt.savefig('output/photo_z_performance.png', dpi=220)

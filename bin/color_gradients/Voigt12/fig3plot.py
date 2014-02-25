@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def fig3plot():
     #setup plots
-    fig = plt.figure(figsize=(5.5,7), dpi=100)
+    fig = plt.figure(figsize=(5.5,7))
     fig.subplots_adjust(left=0.18)
     ax1 = fig.add_subplot(211)
     ax1.set_yscale('log')
@@ -145,7 +145,7 @@ def fig3plot():
     ax2.plot(calib['width'], abs(numpy.array(calib['c2'])), color='black', linestyle=':')
 
 
-    plt.savefig('output/fig3.pdf')
+    plt.savefig('output/fig3.pdf', dpi=220)
 
 if __name__ == '__main__':
     fig3plot()

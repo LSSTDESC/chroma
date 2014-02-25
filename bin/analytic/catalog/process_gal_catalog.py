@@ -47,7 +47,7 @@ def composite_spectrum(gal, norm_bandpass):
         disk_SED = chroma.SampledSED(SED_dir+gal['sedPathDisk'])
         disk_SED = disk_SED.createWithMagnitude(norm_bandpass, gal['magNormDisk'])
         disk_SED = disk_SED.createExtincted(A_v=gal['internalAVDisk'],
-                                              R_v=gal['internalRVDisk'])
+                                            R_v=gal['internalRVDisk'])
         disk_SED = disk_SED.createRedshifted(gal['redshift'])
         if 'SED' in locals():
             SED += disk_SED
