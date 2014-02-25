@@ -76,9 +76,9 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
 
     # Scatter plot stars and residuals
     for dSbyS, color, pcolor in zip(star_dSbySs, star_colors, star_pcolors):
-        ax1.scatter(color, dSbyS, c=pcolor, marker='*', s=160)
+        ax1.scatter(color, dSbyS, c=pcolor, marker='*', s=160, zorder=3)
         ax2.scatter(color, dSbyS - (intercept_star_S + slope_star_S * color),
-                    c=pcolor, marker='*', s=160)
+                    c=pcolor, marker='*', s=160, zorder=3)
 
     # Line plot galaxies and residuals
     for dSbyS, color, pcolor in zip(gal_dSbySs, gal_colors, gal_pcolors):
@@ -93,17 +93,26 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
     ax1.plot(color_range, intercept_star_S + color_range * slope_star_S)
     f.tight_layout()
 
+    xlim = ax2.get_xlim()
+    ax2.set_xlim(xlim)
+    ax1.set_xlim(xlim)
     if alpha == -0.2:
         alpha_str = 'S_m02'
+        ax1.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#DDDDDD', zorder=2)
+        ax1.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#AAAAAA', zorder=2)
+        ax2.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#DDDDDD', zorder=2)
+        ax2.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#AAAAAA', zorder=2)
     elif alpha == 0.6:
         alpha_str = 'S_p06'
+        ax1.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#AAAAAA', zorder=2)
+        ax2.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#AAAAAA', zorder=2)
     elif alpha == 1.0:
         alpha_str = 'S_p10'
 
     f.savefig('output/{}_{}_vs_{}-{}.png'.format(alpha_str,
                                                  shape_filter,
                                                  color_filters[0],
-                                                 color_filters[1]))
+                                                 color_filters[1]), dpi=220)
 
 if __name__ == '__main__':
    PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)

@@ -17,7 +17,8 @@ def plot_DCR_moment_shifts(filter_name):
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 3.0)
+    xlim = (-0.1, 3.0)
+    ax1.set_xlim(xlim)
     ax1.set_ylabel('$\Delta \overline{\mathrm{R}}$ (arcsec)')
     ax1.set_xlabel('redshift')
     ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
@@ -31,19 +32,19 @@ def plot_DCR_moment_shifts(filter_name):
     # Normalize all chromatic shifts to the shift for a G5v star.
     G_idx = stars['star_type'] == 'ukg5v'
 
-    #plot stars
+    # plot stars
     for star_name, star_type, star_color in zip(star_names, star_types, star_colors):
         star_idx = stars['star_type'] == star_type
         Rbar = stars[star_idx]['Rbar'][filter_name]
         dRbar = (Rbar - stars[G_idx]['Rbar'][filter_name]) * 180.0 / np.pi * 3600.0
-        ax1.scatter(0.0, dRbar, c=star_color, marker='*', s=160, label=star_name)
+        ax1.scatter(0.0, dRbar, c=star_color, marker='*', s=160, label=star_name, zorder=3)
 
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
     gal_types = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
                  'CWW_Im_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
     gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'Gray']
 
-    #plot gals
+    # plot gals
     for gal_name, gal_type, gal_color in zip(gal_names, gal_types, gal_colors):
         gal_idx = gals['gal_type'] == gal_type
         Rbar = gals[gal_idx]['Rbar'][filter_name]
@@ -52,8 +53,12 @@ def plot_DCR_moment_shifts(filter_name):
         ax1.plot(zs, dRbar, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
+    # plot bars showing LSST/DES requirements
+    ax1.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
+
     f.tight_layout()
-    f.savefig('output/Rbar.{}.png'.format(filter_name))
+    f.savefig('output/Rbar.{}.png'.format(filter_name), dpi=220)
 
     #-------------------------------#
     # Differences in second moments #
@@ -61,7 +66,7 @@ def plot_DCR_moment_shifts(filter_name):
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 3.0)
+    ax1.set_xlim(xlim)
     ax1.set_ylabel('$\Delta \mathrm{V}$ (arcsec$^2$)')
     ax1.set_xlabel('redshift')
     ax1.set_title('zenith angle = 45 degrees, filter = {}'.format(filter_name))
@@ -73,7 +78,7 @@ def plot_DCR_moment_shifts(filter_name):
         star_idx = stars['star_type'] == star_type
         V = stars[star_idx]['V'][filter_name]
         dV = (V - stars[G_idx]['V'][filter_name]) * (180.0 / np.pi * 3600.0)**2
-        ax1.scatter(0.0, dV, c=star_color, marker='*', s=160, label=star_name)
+        ax1.scatter(0.0, dV, c=star_color, marker='*', s=160, label=star_name, zorder=3)
 
     #plot gals
     for gal_name, gal_type, gal_color in zip(gal_names, gal_types, gal_colors):
@@ -84,8 +89,11 @@ def plot_DCR_moment_shifts(filter_name):
         ax1.plot(zs, dV, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
+    ax1.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
+
     f.tight_layout()
-    f.savefig('output/V.{}.png'.format(filter_name))
+    f.savefig('output/V.{}.png'.format(filter_name), dpi=220)
 
 if __name__ == '__main__':
     plot_DCR_moment_shifts('LSST_g')

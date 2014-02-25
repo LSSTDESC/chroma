@@ -75,9 +75,9 @@ def DCR_color_correction(shape_filter, color_filters):
 
     # Scatter plot stars and residuals
     for dRbar, color, pcolor in zip(star_dRbars, star_colors, star_pcolors):
-        ax1.scatter(color, dRbar, c=pcolor, marker='*', s=160)
+        ax1.scatter(color, dRbar, c=pcolor, marker='*', s=160, zorder=3)
         ax2.scatter(color, dRbar - (intercept_star_Rbar + slope_star_Rbar * color),
-                    c=pcolor, marker='*', s=160)
+                    c=pcolor, marker='*', s=160, zorder=3)
 
     # Line plot galaxies and residuals
     for dRbar, color, pcolor in zip(gal_dRbars, gal_colors, gal_pcolors):
@@ -91,9 +91,19 @@ def DCR_color_correction(shape_filter, color_filters):
     ax1.plot(color_range, intercept_gal_Rbar + color_range * slope_gal_Rbar)
     ax1.plot(color_range, intercept_star_Rbar + color_range * slope_star_Rbar)
     f.tight_layout()
+
+    xlim = ax2.get_xlim()
+    ax1.set_xlim(xlim)
+    ax2.set_xlim(xlim)
+    ax1.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
+    ax2.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
+    ax2.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
+
+
     f.savefig('output/Rbar_{}_vs_{}-{}.png'.format(shape_filter,
                                                    color_filters[0],
-                                                   color_filters[1]))
+                                                   color_filters[1]), dpi=220)
 
     # Open V figure
     f = plt.figure(figsize=(8,6))
@@ -106,9 +116,9 @@ def DCR_color_correction(shape_filter, color_filters):
 
     # Scatter plot stars and residuals
     for dV, color, pcolor in zip(star_dVs, star_colors, star_pcolors):
-        ax1.scatter(color, dV, c=pcolor, marker='*', s=160)
+        ax1.scatter(color, dV, c=pcolor, marker='*', s=160, zorder=3)
         ax2.scatter(color, dV - (intercept_star_V + slope_star_V * color),
-                    c=pcolor, marker='*', s=160)
+                    c=pcolor, marker='*', s=160, zorder=3)
 
     # Line plot galaxies and residuals
     for dV, color, pcolor in zip(gal_dVs, gal_colors, gal_pcolors):
@@ -119,9 +129,18 @@ def DCR_color_correction(shape_filter, color_filters):
     ax1.plot(color_range, intercept_gal_V + color_range * slope_gal_V)
     ax1.plot(color_range, intercept_star_V + color_range * slope_star_V)
     f.tight_layout()
+
+    xlim = ax2.get_xlim()
+    ax1.set_xlim(xlim)
+    ax2.set_xlim(xlim)
+    ax1.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
+    ax2.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
+    ax2.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
+
     f.savefig('output/V_{}_vs_{}-{}.png'.format(shape_filter,
                                                 color_filters[0],
-                                                color_filters[1]))
+                                                color_filters[1]), dpi=220)
 
 if __name__ == '__main__':
    DCR_color_correction('LSST_r', ['LSST_r', 'LSST_i'])

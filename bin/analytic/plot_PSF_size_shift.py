@@ -26,7 +26,8 @@ def plot_PSF_size_shifts(filter_name, alpha):
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
-    ax1.set_xlim(-0.1, 3.0)
+    xlim = (-0.1, 3.0)
+    ax1.set_xlim(xlim)
     ax1.set_ylabel('$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$')
     ax1.set_xlabel('redshift')
     ax1.set_title('filter = {}'.format(filter_name))
@@ -44,7 +45,7 @@ def plot_PSF_size_shifts(filter_name, alpha):
         star_idx = stars['star_type'] == star_type
         S = stars[star_idx][alpha_idx][filter_name]
         dSbyS = (S - stars[G_idx][alpha_idx][filter_name]) / S
-        ax1.scatter(0.0, dSbyS, c=star_color, marker='*', s=160, label=star_name)
+        ax1.scatter(0.0, dSbyS, c=star_color, marker='*', s=160, label=star_name, zorder=3)
 
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
     gal_types = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
@@ -62,12 +63,15 @@ def plot_PSF_size_shifts(filter_name, alpha):
 
     if alpha == -0.2:
         alpha_str = 'S_m02'
+        ax1.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#DDDDDD', zorder=2)
+        ax1.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#AAAAAA', zorder=2)
     elif alpha == 0.6:
         alpha_str = 'S_p06'
+        ax1.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#AAAAAA', zorder=2)
     elif alpha == 1.0:
         alpha_str = 'S_p10'
     f.tight_layout()
-    f.savefig('output/{}.{}.png'.format(alpha_str, filter_name))
+    f.savefig('output/{}.{}.png'.format(alpha_str, filter_name), dpi=220)
 
 if __name__ == "__main__":
     plot_PSF_size_shifts('LSST_r', -0.2)
