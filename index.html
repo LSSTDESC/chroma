@@ -12,28 +12,53 @@ overview: true
   <figcaption>Figure 1. Chromatic refraction and chromatic seeing.</figcaption>
 </figure>
 <p>
-<h4> Differential Chromatic Refraction </h4>
+<h3> Differential Chromatic Refraction </h3>
 <p>
 DCR is the effect that bluer photons are bent slightly more toward the zenith when entering the
-atmosphere than are redder photons.  This leads to both an SED-dependent shift in zenith-direction
-PSF centroid and a contraction of the PSF in the zenith direction.  These effects can be quantified
-in terms of the shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\)
-and \(V\), respectively.
-
+atmosphere than are redder photons (Figure 1).  This leads to both an SED-dependent shift in
+zenith-direction PSF centroid and a contraction of the PSF in the zenith direction.  These effects
+can be quantified in terms of the shifts in the PSF zenith-direction first and second moments,
+denoted \(\bar{R}\) and \(V\), respectively.
 </p>
-<h4> Chromatic Seeing </h4>
+
+<h3> Chromatic Seeing </h3>
 <p>
 The atmosphere smears out blue photons somewhat more than red photons, in the sense that there is
-a relationship between PSF FWHM and wavelength \(\lambda\).
+a relationship \(FWHM \propto \lambda^{-1/5}\).  This effect can be characterized as an
+SED-dependent shift in the second moment square radius \(r^2\), which is equal to the sum of the
+second moments measured in perpendicular directions, and scales like \(\lambda^{-2/5}\) (see
+Figure 1).
 </p>
 
-<p class="line">
+<h3>Induced shape calibration biases</h3>
+<p>
+It is common to characterize systematic uncertainties in shape measurement in terms of the additive
+and multiplicative calibration parameters \(m\) and \(c\), define by
+\[\hat{\gamma_i} = (1+m_i)\gamma_i + c_i.\]
+where \(\hat{\gamma_i}\) is the shear estimate for the true shear \(\gamma_i\).
+In these terms, the bias from differential chromatic refraction can be written
+\[m_1^{DCR} = m_2^{DCR} = \frac{- \Delta V}{r^2_{gal}} \]
+\[c_1^{DCR} = \frac{- \Delta V}{2r^2_{gal}} \]
+\[c_2^{DCR} = 0.\]
+where \(\Delta V = V_{PSF, star} - V_{PSF, gal}\), and \(r^2_{gal}\) is the second moment square
+radius of the galaxy under consideration.
+Similarly, the bias for chromatic seeing becomes
+\[m_1^{seeing} = m_2^{seeing} = \frac{-r^2_{psf}}{r^2_{gal}}\frac{\Delta r^2_{psf}}{r^2_{psf}}\]
+\[c_i^{seeing} = -\epsilon_i^{psf}\frac{r^2_{psf}}{r^2_{gal}}\frac{\Delta r^2_{psf}}{r^2_{psf}}.\]
+where \(\Delta r^2_{psf} = r^2_{PSF, star} - r^2_{PSF, gal}\) and \(\epsilon_i^{psf}\) is the
+(usually small) ellipticity of the PSF.
+
+For LSST, the requirements are approximately to keep \(|m|\) and \(|c|\) below 0.003 and 0.0006, respectively.
+</p>
+<h3> Analysis</h3>
+<p>
 Our analysis consists of three parts:
 <ul>
 <li>Using galaxy and stellar catalogs generated from the <a href="https://dev.lsstcorp.org/trac/wiki/Installation">LSST catalogs framework</a>, we make analytic estimates of the sizes of the two chromatic biases.
 <li>With the same catalogs, we also investigate techniques to predict the size of chromatic biases from LSST multi-filter photometry so that they can be removed.
-<li>From simulated images, we also demonstrate an additional “model bias” due to the unknown shape of the point spread function.
+<li>From simulated images, we also demonstrate an additional “model bias” arising from the unknown shape of the point spread function.
 </ul>
 </p>
-<p class="line">
-        In addition to its relevance to LSST, these analyses are applicable to other large-volume ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also qualitatively similar to the wavelength dependence of the diffraction limit, which will affect space-based cosmic shear surveys such as Euclid.
+<p>
+In addition to its relevance to LSST, these analyses are applicable to other large-volume ground-based surveys such as DES, Hyper Suprime-Cam and KIDS, where the same atmospheric biases will manifest.  The wavelength dependence of seeing present for atmospheric turbulence is also qualitatively similar to the wavelength dependence of the diffraction limit, which will affect space-based cosmic shear surveys such as Euclid.
+</p>
