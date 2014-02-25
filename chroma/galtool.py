@@ -79,15 +79,15 @@ class GalTool(object):
         return im
 
     def get_r2(self, gparam, oversample=1):
-        """ Compute object second moment radius directly from image.  This may be biased if the
-        object wings are significant or the postage stamp size is too small.
+        """ Compute object second moment radius sqrt(r^2) directly from image.  This may be biased
+        if the object wings are significant or the postage stamp size is too small.
 
         @param gparam   An lmfit.Parameters object that will be used to initialize a GalSim object.
         @returns        Second moment radius (in arcsec)
         """
         im = self.get_image(gparam, oversample=oversample)
         mx, my, mxx, myy, mxy = chroma.moments(im)
-        return mxx + myy
+        return np.sqrt(mxx + myy)
 
     def get_uncvl_image(self, gparam, ring_beta=None, ring_shear=None, oversample=1, center=False):
         """ Draw a galaxy image, not convolved with a PSF, using GalSim.  Potentially rotate and
@@ -130,7 +130,7 @@ class GalTool(object):
         """
         im = self.get_uncvl_image(gparam, oversample=oversample)
         mx, my, mxx, myy, mxy = chroma.moments(im)
-        return mxx + myy
+        return np.sqrt(mxx + myy)
 
 
 class SersicTool(GalTool):
@@ -167,8 +167,8 @@ class SersicTool(GalTool):
         """ Set the second moment square radius.
 
         @param gparam      lmfit.Parameters object describing galaxy.
-        @param r2          Target second moment square radius
-        @param oversample  Factor by which to oversample drawn image for r2 computation.
+        @param r2          Target second moment radius sqrt(r^2)
+        @param oversample  Factor by which to oversample drawn image for computation.
         @returns           New lmfit.Parameters object.
         """
         def r2_resid(scale):
@@ -181,15 +181,15 @@ class SersicTool(GalTool):
         return gparam
 
     def get_uncvl_r2(self, gparam):
-        """ Get second moment radius of pre-PSF-convolved profile using polynomial approximation.
+        """ Get second moment radius sqrt(r^2) of pre-PSF-convolved profile using polynomial
+        approximation.
         @gparam   lmfit.Parameters
         """
-        return (gparam['hlr'].value *
-                chroma.Sersic_r2_over_hlr(gparam['n'].value))**2
+        return gparam['hlr'].value * chroma.Sersic_r2_over_hlr(gparam['n'].value)
 
     def set_uncvl_r2(self, gparam, r2):
-        """ Set the second moment square radius of the pre-PSF-convolved profile using polynomial
-        approximation.
+        """ Set the second moment radius sqrt(r^2) of the pre-PSF-convolved profile using
+        polynomial approximation.
 
         @param gparam      lmfit.Parameters object describing galaxy.
         @param r2          Target second moment square radius
@@ -198,7 +198,7 @@ class SersicTool(GalTool):
         """
         gparam1 = copy.deepcopy(gparam)
         r2_now = self.get_uncvl_r2(gparam)
-        scale = np.sqrt(r2 / r2_now)
+        scale = r2 / r2_now
         gparam1['hlr'].value = gparam['hlr'].value * scale
         return gparam1
 
@@ -361,8 +361,8 @@ class DoubleSersicTool(GalTool):
         approximation.
 
         @param gparam      lmfit.Parameters object describing galaxy.
-        @param r2          Target second moment square radius
-        @param oversample  Factor by which to oversample drawn image for r2 computation.
+        @param r2          Target second moment radius sqrt(r^2)
+        @param oversample  Factor by which to oversample drawn image for computation.
         @returns           New lmfit.Parameters object.
         """
         gparam1 = copy.deepcopy(gparam)

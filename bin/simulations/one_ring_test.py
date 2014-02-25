@@ -244,10 +244,10 @@ def one_ring_test(args):
     logger.info('Galaxy ellipticity: {}'.format(args.gal_ellip))
     logger.info('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
     logger.info('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
-    logger.info('Galaxy sqrt(r2): {} arcsec'.format(args.gal_r2))
+    logger.info('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
 
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
-    gparam = gtool.set_uncvl_r2(gparam, (args.gal_r2)**2)
+    gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
 
     # Measure shear bias
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
@@ -265,8 +265,8 @@ def one_ring_test(args):
         dV = 0.0
     # Second calculate \Delta r^2 / r^2
     if args.alpha != 0.0:
-        seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
-        seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha, base_wavelength=685.0)
+        seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
+        seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha)
         dr2r2 = (seeing2 - seeing1)/seeing1
         logger.info("star seeing correction: {}".format(seeing1))
         logger.info("galaxy seeing correction: {}".format(seeing2))
@@ -276,13 +276,15 @@ def one_ring_test(args):
     # Third, need the second moment square radius of the PSF:
     # Ignoring corrections due to ellipticity for now.
     if args.gaussian:
-        r2_psf = 2.0 * (args.PSF_FWHM/(2.0*np.sqrt(2.0*np.log(2.0))))**2
+        r2_psf = np.sqrt(2.0*(args.PSF_FWHM /
+                              (2.0*np.sqrt(2.0*np.log(2.0))))**2)
     else:
-        r2_psf = args.PSF_FWHM**2 / (8.0 * (2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0))
+        r2_psf = np.sqrt(2.0*args.PSF_FWHM**2 /
+                         (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
 
-    dIxx = (r2_psf/2.0) * dr2r2
+    dIxx = (r2_psf**2/2.0) * dr2r2
     dIxy = 0.0
-    dIyy = (r2_psf/2.0) * dr2r2
+    dIyy = (r2_psf**2/2.0) * dr2r2
     dIyy += dV
 
     m1 = m2 = -(dIxx + dIyy) / args.gal_r2**2

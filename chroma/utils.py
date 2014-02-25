@@ -55,13 +55,13 @@ def Sersic_r2_over_hlr(n):
     0.2 < n < 8.0.
 
     @param n Sersic index
-    @returns ratio sqrt(r^2)  / hlr
+    @returns ratio sqrt(r^2) / hlr
     """
-    return 0.98544 + n * (0.391015 + n * (0.0739614 + n * (0.00698666 + n * (0.00212443 + \
-                     n * (-0.000154064 + n * 0.0000219636)))))
+    return 0.985444 + n * (0.391016 + n * (0.0739602 + n * (0.00698719 + n * (0.00212432 + \
+                     n * (-0.000154052 + n * 0.0000219632)))))
 
 def component_Sersic_r2(ns, weights, hlrs):
-    """ Calculate second moments of concentric multi-Sersic galaxy.
+    """ Calculate second moment radius of concentric multi-Sersic galaxy.
 
     @param  ns       List of Sersic indices in model.
     @param  weights  Relative flux of each component

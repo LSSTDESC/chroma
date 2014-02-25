@@ -41,7 +41,6 @@ class SED(galsim.SED):
         return (np.trapz(photons * (wave_list/500.0)**(2*alpha), wave_list) /
                 np.trapz(photons, wave_list))
 
-
 class Bandpass(galsim.Bandpass):
     """ Subclass galsim.Bandpass to add zeropoints
     """
