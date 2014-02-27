@@ -131,7 +131,9 @@ files, just add them as command line arguments.  For instance, to make a plot of
 shift bias in the _r_ band due to DCR, use:
 
 {% highlight bash %}
-$ python plot_bias.py Rbar --galfile output/galaxy_data.pkl --starfile output/star_data.pkl --outfile output/dRbar.LSST_r.png
+$ python plot_bias.py Rbar --galfile output/galaxy_data.pkl \
+                           --starfile output/star_data.pkl  \
+                           --outfile output/dRbar.LSST_r.png
 {% endhighlight %}
 
 <img src="{{site.url}}/img/dRbar.LSST_r.png" width="650">
@@ -145,7 +147,9 @@ DES and LSST.
 To quickly plot a number of interesting plots, we can use `plot_bias.py` with the option
  `--nominal_plots`.
 {% highlight bash %}
-$ python plot_bias.py --galfile output/galaxy_data.pkl --starfile output/star_data.pkl --nominal_plots
+$ python plot_bias.py --galfile output/galaxy_data.pkl \
+                      --starfile output/star_data.pkl \
+                      --nominal_plots
 {% endhighlight %}
 
 Here are a few of the more interesting cases.
@@ -154,4 +158,11 @@ Here are a few of the more interesting cases.
 <img src="{{site.url}}/img/dS_m02.LSST_r.png" width="650">
 <img src="{{site.url}}/img/dS_p06.Euclid_350.png" width="650">
 
-Next we'll look into making corrections to these biases.
+The last plot here, for the Euclid telescope, is slightly misleading since we generated a catalog
+appropriate for LSST, and Euclid will be a much shallower experiment.  However, the peak of the
+Euclid chromatic PSF bias is around redshift 1.0, where Euclid will still be quite sensitive.  Also
+notice that the symbol colors for this plot are represent LSST _r_ - _i_ color.
+
+Notice also that while chromatic biases are clearly correlated with _r_ - _i_, they aren't perfectly
+correlated.  That is, for a given chromatic bias, or horizontal cut across the above scatter plots,
+more than one _r_ - _i_ color, or symbol color, occurs.

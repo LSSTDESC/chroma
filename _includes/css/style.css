@@ -8,7 +8,7 @@
 
 body {
   font-family: Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 300;
   color: #ddd;
   background: #333;
@@ -606,7 +606,7 @@ pre, code {
 
 @media (min-width: 768px){
   pre, code {
-    font-size: 16px;
+    font-size: 14px;
   }
 }
 
