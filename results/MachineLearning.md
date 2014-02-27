@@ -99,3 +99,10 @@ same galaxies as the corrected versions, i.e. they are the galaxies from the tes
 <img src="{{site.url}}/img/dS_p06.corrected.Euclid_350.png" width="650"
  onmouseover="this.src='{{site.url}}/img/dS_p06.few.Euclid_350.png'"
  onmouseout="this.src='{{site.url}}/img/dS_p06.corrected.Euclid_350.png'">
+
+In this last figure, we're using LSST photometry to help correct the Euclid chromatic bias.  This
+correction does a particularly good job since the Euclid 350nm visible filter is approximately the
+union of the LSST _r_, _i_, and _z_ filters.  These three LSST filters provide quite of bit of
+information, therefore, as to what the SED of a star or galaxy looks like across the Euclid filter.
+Note that the LSST sky overlaps the proposed Euclid sky by about 5000 square degrees, or about a
+third of either survey.
