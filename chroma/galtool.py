@@ -71,7 +71,7 @@ class GalTool(object):
             star = galsim.Gaussian(fwhm=1.e-8) * self.SED
             final = galsim.Convolve(star, self.PSF, pix)
             final.draw(self.bandpass, image=im)
-        elif isinstance(final, galsim.GSObject):
+        elif isinstance(self.PSF, galsim.GSObject):
             final = galsim.Convolve(self.PSF, pix)
             final.draw(image=im)
         else:

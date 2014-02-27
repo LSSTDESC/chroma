@@ -81,7 +81,7 @@ def symlogTicksAndLabels(vmin, vmax, linthresh, linscale):
     return ticks, labels
 
 
-def plot_ring_diag(args):
+def plot_ring_diagnostic(args):
     cmap_resid = chroma.bipolar.bipolar(n=1./3)
     cmap_flux = cm.Blues_r
 
@@ -261,7 +261,7 @@ def plot_ring_diag(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('infile', help="Input diagnostic fits filename.")
-    parser.add_argument('outprefix', nargs='?', default="output/ring_diag",
-                        help="Output PNG filename prefix. (Default: output/ring_diag)")
+    parser.add_argument('outprefix', nargs='?', default="output/ring_diagnostic",
+                        help="Output PNG filename prefix. (Default: output/ring_diagnostic)")
     args = parser.parse_args()
-    plot_ring_diag(args)
+    plot_ring_diagnostic(args)

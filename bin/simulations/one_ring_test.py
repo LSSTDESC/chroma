@@ -61,7 +61,8 @@ class TargetImageGenerator(object):
             self.hdulist.append(fits.ImageHDU(target_high_res.array, name='TARGETHR'))
             target_uncvl = self.galtool.get_uncvl_image(self.gparam, ring_beta=beta,
                                                         ring_shear=shear,
-                                                        oversample=self.oversample)
+                                                        oversample=self.oversample,
+                                                        center=True)
             self.hdulist.append(fits.ImageHDU(target_uncvl.array, name='TARGETUC'))
         return target_image
 
@@ -165,6 +166,7 @@ def one_ring_test(args):
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
     bandpass = bandpass.createThinned(args.thin)
+    PSF_wave = bandpass.effective_wavelength
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
@@ -189,27 +191,28 @@ def one_ring_test(args):
     logger.info('----------------')
     logger.info('Data directory: {}'.format(args.datadir))
     logger.info('Filter: {}'.format(args.filter))
+    logger.info('Filter effective wavelength: {}'.format(PSF_wave))
     logger.info('Thinning filter by factor: {}'.format(args.thin))
     logger.info('Galaxy SED: {}'.format(args.galspec))
     logger.info('Galaxy redshift: {}'.format(args.redshift))
     logger.info('Star SED: {}'.format(args.starspec))
 
     # Define the PSF
-    if args.gaussian:
-        PSF685 = galsim.Gaussian(fwhm=args.PSF_FWHM)
+    if args.moffat:
+        monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     else:
-        PSF685 = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
-    PSF685.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
-    if not args.noDCR:
-        PSF = galsim.ChromaticAtmosphere(PSF685, base_wavelength=685.0,
+        monoPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
+    monoPSF.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
+    if not args.noDCR: #include DCR
+        PSF = galsim.ChromaticAtmosphere(monoPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
                                          alpha=args.alpha)
-    else:
-        PSF = galsim.ChromaticObject(PSF685)
-        PSF.applyDilation(lambda w:(w/685)**args.alpha)
+    else: #otherwise just include a powerlaw wavelength dependent FWHM
+        PSF = galsim.ChromaticObject(monoPSF)
+        PSF.applyDilation(lambda w:(w/PSF_wave)**args.alpha)
 
     logger.info('')
-    if not args.gaussian:
+    if args.moffat:
         logger.info('Moffat PSF settings')
         logger.info('-------------------')
         logger.info('PSF beta: {}'.format(args.PSF_beta))
@@ -220,6 +223,16 @@ def one_ring_test(args):
     logger.info('PSF ellip: {}'.format(args.PSF_ellip))
     logger.info('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
     logger.info('PSF alpha: {}'.format(args.alpha))
+
+    # Go ahead and calculate sqrt(r^2) for PSF here...
+    # Ignoring corrections due to ellipticity for now.
+    if args.moffat:
+        r2_psf = args.PSF_FWHM * np.sqrt(2.0 /
+                                         (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+    else:
+        r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
+
+    logger.info('PSF sqrt(r^2): {}'.format(r2_psf))
 
     if not args.noDCR:
         logger.info('')
@@ -273,15 +286,6 @@ def one_ring_test(args):
     else:
         dr2r2 = 0.0
 
-    # Third, need the second moment square radius of the PSF:
-    # Ignoring corrections due to ellipticity for now.
-    if args.gaussian:
-        r2_psf = np.sqrt(2.0*(args.PSF_FWHM /
-                              (2.0*np.sqrt(2.0*np.log(2.0))))**2)
-    else:
-        r2_psf = np.sqrt(2.0*args.PSF_FWHM**2 /
-                         (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-
     dIxx = (r2_psf**2/2.0) * dr2r2
     dIxy = 0.0
     dIyy = (r2_psf**2/2.0) * dr2r2
@@ -325,7 +329,7 @@ def runme():
     args.stamp_size = 31
     args.thin = 10
     args.slow = False
-    args.alpha = 0.0
+    args.alpha = -0.2
     args.noDCR = False
     one_ring_test(args)
 
@@ -345,10 +349,10 @@ if __name__ == '__main__':
     parser.add_argument('--zenith_angle', default=45.0, type=float,
                         help="zenith angle in degrees for differential chromatic refraction " +
                              "computation (Default 45.0)")
-    parser.add_argument('--gaussian', action='store_true',
-                        help="Use Gaussian PSF (Default Moffat)")
+    parser.add_argument('--moffat', action='store_true',
+                        help="Use Moffat PSF (Default Gaussian)")
     parser.add_argument('--PSF_beta', type=float, default=2.5,
-                        help="Set beta parameter of PSF Moffat profile. (Default 2.5)")
+                        help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
     parser.add_argument('--PSF_FWHM', type=float, default=0.7,
                         help="Set FWHM of PSF in arcsec (Default 0.7).")
     parser.add_argument('--PSF_phi', type=float, default=0.0,
@@ -376,11 +380,11 @@ if __name__ == '__main__':
                         +" (Default 10).")
     parser.add_argument('--slow', action='store_true',
                         help="Use SersicTool (somewhat more careful) instead of SersicFastTool")
-    parser.add_argument('--alpha', type=float, default=0.0,
-                        help="Index to use for chromatic seeing (Default: 0.0)")
+    parser.add_argument('--alpha', type=float, default=-0.2,
+                        help="Power law index for chromatic seeing (Default: -0.2)")
     parser.add_argument('--noDCR', action='store_true',
-                        help="Implement differential chromatic refraction (DCR) in PSF? "
-                        +" (Default: True)")
+                        help="Exclude differential chromatic refraction (DCR) in PSF."
+                        +" (Default: include DCR)")
     parser.add_argument('--diagnostic',
                         help="Filename to which to write diagnostic images (Default: '')")
     parser.add_argument('--use_hsm', action='store_true',
