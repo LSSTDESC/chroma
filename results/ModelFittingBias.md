@@ -178,7 +178,7 @@ ring       0.01448052   0.01467364   0.00381801  -0.00000083
 That's interesting.  Changing the Sersic index of the simulated galaxy had no affect on the analytic
 results.  That makes sense since the analytic formulae only care about the galaxy's second moment
 radius \\(r^2_\mathrm{gal} = Ixx + Iyy \\), not on the details of its surface brightness profile.
-The `one_ring_test.py` script is specifically designed to keep \\(r^_\mathrm{gal}\\) fixed as the
+The `one_ring_test.py` script is specifically designed to keep \\( r^2_\mathrm{gal} \\) fixed as the
 Sersic index is varied.  The results for the ring test changed by quite a bit, however.  What's
 going on?  We can investigate using the command line option `--diagnostic` and the script
 `plot_ring_diagnostic.py`:
@@ -249,6 +249,6 @@ Let's see what the \\(n=4.0\\) case looks like:
 
 <img src="{{site.url}}/img/n4.0-g1-0.0-g2-0.0-beta0.0.png" width="650">
 
-The residuals are clearly larger in this case.  That is the bias due to our choice of model is larger
-when \\(n = 4.0\\) than when \\(n = 0.5\\).  This explains why the ring test results are further from
-the analytic results for \\(n = 4.0\\).
+The residuals are clearly larger in this case.  That is, the bias due to our choice of model is
+larger when \\(n = 4.0\\) than when \\(n = 0.5\\).  This explains why the ring test results are
+further from the analytic results for \\(n = 4.0\\).
