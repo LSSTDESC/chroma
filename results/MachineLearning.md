@@ -12,7 +12,10 @@ photometric data points.
 
 The scripts `star_ML.py` and `gal_ML.py` in the bin/analytic/catalogs/ directory are used for this
 purpose.  These scripts will apply a machine learning algorithm -- Support Vector Regression -- to
-learn the relationship in a catalog between LSST six-band photometry and chromatic biases.
+learn the relationship in a catalog between LSST six-band photometry and chromatic biases.  (Other
+algorithms can easily be swapped in by modifying the scripts: the scikit-learn API is quite
+flexible.)
+
 
 Let's look at the options for the `star_ML.py` script.
 
@@ -49,18 +52,18 @@ optional arguments:
 By default, the `output/star_data.pkl` file which we either created or downloaded on the previous
 pages is used for both training the algorithm and testing it.  In principle, however, you can train
 on one set of data and test on another set, which can be useful for estimating the robustness of the
-algorithm to uncertainties in the training set.  Several more options control which and how many
-stars are used for testing and training.
+algorithm to uncertainties in the distribution of training objects.  Several more options control
+which and how many stars are used for testing and training.
 
 The objects in the testing set are written to an output file which contains both the true
-spectroscopically-derived chromatic biases, and the chromatic bias estimates derived from photometry
-alone.
+spectroscopically-derived chromatic biases, and the chromatic biases predicted from photometry by
+the machine learning algorithm.
 
 Finally, there are two options that control how the photometric data is used.  The `--use_color`
-option means that the SVR algorithm will only know about the 5 independent LSST colors for training.
-The `use_mag` options will let the SVR algorithm operate on the 6 LSST magnitudes instead.  We have
-found the best results, however, by letting the algorithm use 5 independent colors + 1
-independent magnitude (arbitrarily chosen to be _i_ band), which is the default option.
+option trains the SVR algorithm to predict chromatic biases from just the 5 independent LSST colors.
+In contrast, the `use_mag` option trains from the 6 LSST magnitudes directly.  We have found the
+best results in practice occur, however, when train the algorithm using the 5 independent colors + 1
+independent magnitude (arbitrarily chosen to be _i_ band); this is the default.
 
 For now, let's just proceed with the default options.
 {% highlight bash %}
@@ -74,7 +77,7 @@ We can use the same script as on the previous page to plot the results: `plot_bi
 we don't even need to specify `--starfile` and `--galfile`, since the defaults will work just fine.
 Additionally, we can now go ahead and use the `--corrected` flag to plot not the relative chromatic
 biases between different stars and galaxies, but the residual chromatic biases from the photometric
-estimates.  Let's use the `--nominal_plots` flag too to quickly make the most interesting plots.
+estimates.  Let's use the `--nominal_plots` flag again to quickly make the most interesting plots.
 
 {% highlight bash %}
 $ python plot_bias.py --corrected --nominal_plots
@@ -82,7 +85,7 @@ $ python plot_bias.py --corrected --nominal_plots
 
 You can mouseover the following plots to see the uncorrected versions.  (Note that these plots are
 slightly different the ones on the previous page.  They've been regenerated to use precisely the
-same galaxies as the corrected versions, i.e. they are the galaxies from the test set.)
+same galaxies as the corrected versions, i.e. they use only the galaxies from the test set.)
 
 <img src="{{site.url}}/img/dRbar.corrected.LSST_r.png" width="650"
  onmouseover="this.src='{{site.url}}/img/dRbar.few.LSST_r.png'"
@@ -105,4 +108,4 @@ correction does a particularly good job since the Euclid 350nm visible filter is
 union of the LSST _r_, _i_, and _z_ filters.  These three LSST filters provide quite of bit of
 information, therefore, as to what the SED of a star or galaxy looks like across the Euclid filter.
 Note that the LSST sky overlaps the proposed Euclid sky by about 5000 square degrees, or about a
-third of either survey.
+third of either survey's footprint.

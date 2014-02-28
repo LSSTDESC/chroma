@@ -7,8 +7,8 @@ permalink: /results/catalog/
 ---
 
 The previous pages looked at chromatic biases that arise for a set of standard template stellar and
-galactic SEDs.  In the real Universe, the distribution of SEDs is much more complicated, of course.
-Here we take a look at the distribution of chromatic biases for a more realistic set of SEDs obtained
+galactic SEDs.  In the real Universe, the distribution of SEDs is much more complicated. Here we
+take a look at the distribution of chromatic biases for a more realistic set of SEDs obtained
 from the LSST catalog framework.
 
 We provide two methods for users to obtain a realistic catalog of stellar and galactic magnitudes
@@ -62,7 +62,7 @@ component.
 Our goal is to take these parameters, construct the observed frame SED (including bulge, disk, and
 AGN components, dust, and redshift), and calculate the relative chromatic biases for each star and
 galaxy.  This is precisely what the scripts `process_gal_catalog.py` and `process_star_catalog.py`
-do.  Users may in particular which to look at the functions
+do.  Users may in particular wish to look at the functions
 `process_gal_catalog.py:composite_spectrum()` and `process_star_catalog.py:stellar_spectrum()` to see
 exactly how the observed frame SEDs are generated.  The output of the processing scripts are pickle
 files containing catalog and synthetic photometry, and calculated chromatic biases.
@@ -126,9 +126,9 @@ optional arguments:
 
 Notice that the default input files: `output/corrected_galaxy_data.pkl` and
 `output/corrected_star_data.pkl` don't exist yet.  This is because these are the files that will
-be created under the machine learning corrections step on the next page.  To use the uncorrected
-files, just add them as command line arguments.  For instance, to make a plot of the the centroid
-shift bias in the _r_ band due to DCR, use:
+be created under the machine learning corrections step on the next page.  For now we can use the
+uncorrected catalog files by adding them manually as command line arguments.  For instance, to make
+a plot of the centroid shift bias in the _r_ band due to DCR, use:
 
 {% highlight bash %}
 $ python plot_bias.py Rbar --galfile output/galaxy_data.pkl \
@@ -159,9 +159,10 @@ Here are a few of the more interesting cases.
 <img src="{{site.url}}/img/dS_p06.Euclid_350.png" width="650">
 
 The last plot here, for the Euclid telescope, is slightly misleading since we generated a catalog
-appropriate for LSST, and Euclid will be a much shallower experiment.  However, the peak of the
+appropriate for LSST, and Euclid will be a much shallower survey.  However, the peak of the
 Euclid chromatic PSF bias is around redshift 1.0, where Euclid will still be quite sensitive.  Also
-notice that the symbol colors for this plot are represent LSST _r_ - _i_ color.
+notice that the symbol colors for this plot represent *LSST* _r_ - _i_ color.  The proposed Euclid
+footprint will overlap the LSST footprint by about 5000 square degrees.
 
 Notice also that while chromatic biases are clearly correlated with _r_ - _i_, they aren't perfectly
 correlated.  That is, for a given chromatic bias, or horizontal cut across the above scatter plots,

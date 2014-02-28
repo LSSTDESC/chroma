@@ -6,7 +6,7 @@ next_section: catalog
 permalink: /results/ColorCorrect/
 ---
 
-Chromatic biases depend on the slope of the SED through the filter being imaged through.  As such,
+Chromatic biases depend on the slope of the SED across the filter being imaged through.  As such,
 we might expect the biases to be correlated with the photometric colors of nearby bands.  The
 remaining Python scripts in the `bin/analytic/` directory investigate this possibility:
 

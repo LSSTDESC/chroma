@@ -41,7 +41,10 @@ A Euclid-like PSF that scales approximately like \\({\scriptsize \mathrm{FWHM} \
 {% highlight python %}
     # Again, we'll apply a wavelength dependent transformation to a
     # monochromatic fiducial PSF.
-    psf_750 = galsim.Gaussian(fwhm=0.2)
+    aperture_diameter = 1.2 # meters
+    central_wavelength = 750e-9 # meters
+    lam_over_diam = central_wavelength / aperture_diam * (3600 * 180/3.1415) # rad -> arcsec
+    psf_750 = galsim.Airy(lam_over_diam=lam_over_diam)
     # galsim.ChromaticObject chromaticizes the fiducial PSF so that
     # .createDilated() can accept a function of wavelength as its argument.
     psf_Euclid = galsim.ChromaticObject(psf_750).createDilated(lambda w: (w/750)**0.6)

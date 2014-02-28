@@ -15,7 +15,7 @@ of galaxies affected by chromatic PSFs.
 #### Ring test
 
 The alternative way to estimate shear bias induced by chromatic effects is to simulate sheared galaxy
-images using the true -- galactic -- SED, and then attempt to recover the simulated galactic
+images using the true (galactic) SED, and then attempt to recover the simulated galactic
 ellipticities while pretending that the galaxy instead had a stellar SED.  A ring test
 (Nakajima & Bernstein 2007) is a specific prescription for such a suite of simulations designed to
 rapidly converge to the correct (though biased) shear calibration parameters.  The test gets its
