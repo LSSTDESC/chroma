@@ -165,19 +165,19 @@ def one_ring_test(args):
 
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.createThinned(args.thin)
+    bandpass = bandpass.thin(args.thin)
     PSF_wave = bandpass.effective_wavelength
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
-    gal_SED = gal_SED.createRedshifted(args.redshift)
+    gal_SED = gal_SED.atRedshift(args.redshift)
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
 
     # scale SEDs
-    gal_SED = gal_SED.createWithFlux(bandpass, 1.0)
-    star_SED = star_SED.createWithFlux(bandpass, 1.0)
+    gal_SED = gal_SED.withFlux(1.0, bandpass)
+    star_SED = star_SED.withFlux(1.0, bandpass)
 
     logger.info('')
     logger.info('General settings')
@@ -327,7 +327,7 @@ def runme():
     args.ring_n = 3
     args.pixel_scale = 0.2
     args.stamp_size = 31
-    args.thin = 10
+    args.thin = 1.e-5
     args.slow = False
     args.alpha = -0.2
     args.noDCR = False
@@ -375,9 +375,9 @@ if __name__ == '__main__':
                         help="Set pixel scale in arcseconds (Default 0.2)")
     parser.add_argument('--stamp_size', type=int, default=31,
                         help="Set postage stamp size in pixels (Default 31)")
-    parser.add_argument('--thin', type=int, default=10,
-                        help="Reduce the wavelengths at which Bandpass is evaluted by factor"
-                        +" (Default 10).")
+    parser.add_argument('--thin', type=int, default=1.e-5,
+                        help="Thin but retain bandpass integral accuracy to this relative amount."
+                        +" (Default 1e-5).")
     parser.add_argument('--slow', action='store_true',
                         help="Use SersicTool (somewhat more careful) instead of SersicFastTool")
     parser.add_argument('--alpha', type=float, default=-0.2,

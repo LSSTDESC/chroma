@@ -57,12 +57,12 @@ class Bandpass(galsim.Bandpass):
             self.zp = -2.5 * np.log10(AB_flux)
         return self.zp
 
-    def createTruncated(self, relative_throughput=None, blue_limit=None, red_limit=None):
-        ret = galsim.Bandpass.createTruncated(self, relative_throughput, blue_limit, red_limit)
+    def truncate(self, relative_throughput=None, blue_limit=None, red_limit=None):
+        ret = galsim.Bandpass.truncate(self, relative_throughput, blue_limit, red_limit)
         ret.__class__ = Bandpass
         return ret
 
-    def createThinned(self, step):
-        ret = galsim.Bandpass.createThinned(self, step)
+    def thin(self, rel_err=1.e-5):
+        ret = galsim.Bandpass.thin(self, rel_err)
         ret.__class__ = Bandpass
         return ret

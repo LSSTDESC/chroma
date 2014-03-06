@@ -86,7 +86,7 @@ def ring_vs_z(args):
 
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.createThinned(args.thin)
+    bandpass = bandpass.thin(args.thin)
     PSF_wave = bandpass.effective_wavelength
 
     # build galaxy SED
@@ -94,7 +94,7 @@ def ring_vs_z(args):
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
-    star_SED = star_SED.createWithFlux(bandpass, 1.0)
+    star_SED = star_SED.withFlux(1.0, bandpass)
 
     logger.info('# ')
     logger.info('# General settings')
@@ -184,8 +184,8 @@ def ring_vs_z(args):
         gparam['y0'].value = args.gal_y0 * args.pixel_scale
         gparam['gmag'].value = args.gal_ellip
 
-        gal_SED = gal_SED0.createRedshifted(z)
-        gal_SED = gal_SED.createWithFlux(bandpass, 1.0)
+        gal_SED = gal_SED0.atRedshift(z)
+        gal_SED = gal_SED.withFlux(1.0, bandpass)
 
         gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
         gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
@@ -264,9 +264,9 @@ if __name__ == '__main__':
                         help="Set pixel scale in arcseconds (Default: 0.2)")
     parser.add_argument('--stamp_size', type=int, default=31,
                         help="Set postage stamp size in pixels (Default: 31)")
-    parser.add_argument('--thin', type=int, default=10,
-                        help="Reduce the wavelengths at which Bandpass is evaluted by factor"
-                        +" (Default: 10).")
+    parser.add_argument('--thin', type=int, default=1.e-5,
+                        help="Thin but retain bandpass integral accuracy to this relative amount."
+                        +" (Default 1e-5).")
     parser.add_argument('--slow', action='store_true',
                         help="Use GalTool (somewhat more careful) instead of GalFastTool")
     parser.add_argument('--alpha', type=float, default=-0.2,
