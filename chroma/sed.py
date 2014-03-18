@@ -40,6 +40,10 @@ class SED(galsim.SED):
         photons = bandpass(wave_list) * self(wave_list)
         return (np.trapz(photons * (wave_list/500.0)**(2*alpha), wave_list) /
                 np.trapz(photons, wave_list))
+    def thin(self, rel_err=1.e-5):
+        ret = galsim.SED.thin(self, rel_err)
+        ret.__class__ = SED
+        return ret
 
 class Bandpass(galsim.Bandpass):
     """ Subclass galsim.Bandpass to add zeropoints

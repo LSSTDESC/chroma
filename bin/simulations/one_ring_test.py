@@ -171,9 +171,13 @@ def one_ring_test(args):
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
     gal_SED = gal_SED.atRedshift(args.redshift)
+    # not totally sure I want to also thin galaxy SED...
+    gal_SED = gal_SED.thin(args.thin)
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
+    # not totally sure I want to also thin star SED...
+    star_SED = star_SED.thin(args.thin)
 
     # scale SEDs
     gal_SED = gal_SED.withFlux(1.0, bandpass)
@@ -241,9 +245,9 @@ def one_ring_test(args):
         logger.info('zenith angle: {} degrees'.format(args.zenith_angle))
 
     if args.slow:
-        galtool = chroma.SersicTool
+        galtool = chroma.ChromaticSersicTool
     else:
-        galtool = chroma.SersicFastTool
+        galtool = chroma.FastChromaticSersicTool
 
     gparam = fiducial_galaxy()
     gparam['n'].value = args.sersic_n
@@ -375,11 +379,12 @@ if __name__ == '__main__':
                         help="Set pixel scale in arcseconds (Default 0.2)")
     parser.add_argument('--stamp_size', type=int, default=31,
                         help="Set postage stamp size in pixels (Default 31)")
-    parser.add_argument('--thin', type=int, default=1.e-5,
+    parser.add_argument('--thin', type=float, default=1.e-5,
                         help="Thin but retain bandpass integral accuracy to this relative amount."
                         +" (Default 1e-5).")
     parser.add_argument('--slow', action='store_true',
-                        help="Use SersicTool (somewhat more careful) instead of SersicFastTool")
+                        help="Use ChromaticSersicTool (somewhat more careful) instead of "
+                            +"FastChromaticSersicTool.")
     parser.add_argument('--alpha', type=float, default=-0.2,
                         help="Power law index for chromatic seeing (Default: -0.2)")
     parser.add_argument('--noDCR', action='store_true',

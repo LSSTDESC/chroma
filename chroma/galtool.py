@@ -134,33 +134,19 @@ class GalTool(object):
 
 
 class SersicTool(GalTool):
-    """ A GalTool to represent single Sersic profile chromatic galaxies.
+    """ABC to handle both chromatic and monochromatic single Sersic galaxies.
     """
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
-        """ Initialize a single Sersic profile chromatic galaxy.
-
-        @param SED          galsim.SED galaxy spectrum
-        @param bandpass     galsim.Bandpass to represent filter being imaged through.
-        @param PSF          galsim.ChromaticObject representing chromatic PSF
-        @param stamp_size   Draw images this many pixels square
-        @param pixel_scale  Pixels are this wide in arcsec.
-        """
-        self.SED = SED
-        self.bandpass = bandpass
-        self.PSF = PSF
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
-        self.gsparams = gsparams
+    def __init__(self):
+        raise NotImplementedError("Cannot instantiate ABC SersicTool.")
 
     def _gparam_to_galsim(self, gparam):
-        # Turn lmfit.gparam into a galsim.ChromaticObject
-        mono_gal = galsim.Sersic(n=gparam['n'].value,
-                                 half_light_radius=gparam['hlr'].value,
-                                 gsparams=self.gsparams)
-        mono_gal.applyShift(gparam['x0'].value, gparam['y0'].value)
-        mono_gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
-        mono_gal.setFlux(gparam['flux'].value)
-        gal = galsim.Chromatic(mono_gal, self.SED)
+        # Turn lmfit.Parameters into a galsim.ChromaticObject
+        gal = galsim.Sersic(n=gparam['n'].value,
+                            half_light_radius=gparam['hlr'].value,
+                            gsparams=self.gsparams)
+        gal.applyShift(gparam['x0'].value, gparam['y0'].value)
+        gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
+        gal.setFlux(gparam['flux'].value)
         return gal
 
     def set_r2(self, gparam, r2, oversample=16):
@@ -233,7 +219,49 @@ class SersicTool(GalTool):
         return gparam1
 
 
-class SersicFastTool(SersicTool):
+class MonoSersicTool(SersicTool):
+    """A GalTool to represent single Sersic profile with a monochromatic PSF.
+    """
+    def __init__(self, PSF, stamp_size, pixel_scale, gsparams=None):
+        """ Initialize a single Sersic profile achromatic galaxy/PSF.
+
+        @param PSF     galsim.GSObject for the PSF
+        @param stamp_size   Draw images this many pixels square
+        @param pixel_scale  Pixels are this wide in arcsec.
+        """
+        self.PSF = PSF
+        self.stamp_size = stamp_size
+        self.pixel_scale = pixel_scale
+        self.gsparams = gsparams
+
+
+class ChromaticSersicTool(SersicTool):
+    """ A GalTool to represent single Sersic profile chromatic galaxies.
+    """
+    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
+        """ Initialize a single Sersic profile chromatic galaxy.
+
+        @param SED          galsim.SED galaxy spectrum
+        @param bandpass     galsim.Bandpass to represent filter being imaged through.
+        @param PSF          galsim.ChromaticObject representing chromatic PSF
+        @param stamp_size   Draw images this many pixels square
+        @param pixel_scale  Pixels are this wide in arcsec.
+        """
+        self.SED = SED
+        self.bandpass = bandpass
+        self.PSF = PSF
+        self.stamp_size = stamp_size
+        self.pixel_scale = pixel_scale
+        self.gsparams = gsparams
+
+    def _gparam_to_galsim(self, gparam):
+        # Turn lmfit.Parameters into a galsim.ChromaticObject
+        mono_gal = SersicTool._gparam_to_galsim(self, gparam)
+        chromatic_gal = mono_gal * self.SED
+        return chromatic_gal
+
+
+class FastChromaticSersicTool(SersicTool):
     def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
         """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
         speed up image drawing by cacheing an effective PSF.
@@ -257,16 +285,9 @@ class SersicFastTool(SersicTool):
         self.PSF = galsim.InterpolatedImage(im) # remember the effective PSF
         self.gsparams = gsparams
 
-    def _gparam_to_galsim(self, gparam):
-        # Turn lmfit.gparam into a galsim.ChromaticObject
-        mono_gal = galsim.Sersic(n=gparam['n'].value,
-                                 half_light_radius=gparam['hlr'].value,
-                                 gsparams=self.gsparams)
-        mono_gal.applyShift(gparam['x0'].value, gparam['y0'].value)
-        mono_gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
-        mono_gal.setFlux(gparam['flux'].value)
-        return mono_gal
 
+
+# Note that DoubleSersicTool and FastDoubleSersicTool are both currently untested.
 
 class DoubleSersicTool(GalTool):
     """ A GalTool to represent a sum of two chroma Sersic profiles.
@@ -424,7 +445,7 @@ class DoubleSersicTool(GalTool):
         return gparam1
 
 
-class DoubleSersicFastTool(DoubleSersicTool):
+class FastDoubleSersicTool(DoubleSersicTool):
     def __init__(self, SED1, SED2, bandpass, PSF, stamp_size, pixel_scale, gsparams=None):
         """ Initialize a 2 component chromatic Sersic profile.  Internally use some trickery to
         speed up image drawing by cacheing two effective PSFs.
