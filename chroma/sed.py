@@ -18,14 +18,14 @@ class SED(galsim.SED):
     def getMagnitude(self, bandpass):
         """ Return AB magnitude of SED measured through `bandpass`.
         """
-        wave_list = np.array(bandpass.wave_list)
+        wave_list = np.union1d(bandpass.wave_list, self.wave_list)
         flux = np.trapz(bandpass(wave_list) * self(wave_list), wave_list)
         return -2.5 * np.log10(flux) - bandpass.getABZeropoint()
 
     def getDCRMomentShifts(self, bandpass, zenith, **kwargs):
         """ Calculates shifts in first and second moments of surface brightness profile due to
         differential chromatic refraction (DCR)."""
-        wave_list = np.array(bandpass.wave_list)
+        wave_list = np.union1d(bandpass.wave_list, self.wave_list)
         R = dcr.get_refraction(wave_list, zenith, **kwargs)
         photons = bandpass(wave_list) * self(wave_list)
         norm = np.trapz(photons, wave_list)
@@ -36,10 +36,11 @@ class SED(galsim.SED):
     def getSeeingShift(self, bandpass, alpha=-0.2):
         """ Calculates relative size of PSF compared to PSF size at 500 nm.
         """
-        wave_list = np.array(bandpass.wave_list)
+        wave_list = np.union1d(bandpass.wave_list, self.wave_list)
         photons = bandpass(wave_list) * self(wave_list)
         return (np.trapz(photons * (wave_list/500.0)**(2*alpha), wave_list) /
                 np.trapz(photons, wave_list))
+
     def thin(self, rel_err=1.e-5):
         ret = galsim.SED.thin(self, rel_err)
         ret.__class__ = SED
