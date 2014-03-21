@@ -94,7 +94,8 @@ class LSTSQEllipMeasurer(EllipMeasurer):
             fit_image_high_res = self.galtool.get_image(result.params, oversample=self.oversample)
             self.hdulist.append(fits.ImageHDU(fit_image_high_res.array, name='FITHR'))
             fit_image_uncvl = self.galtool.get_uncvl_image(result.params,
-                                                           oversample=self.oversample)
+                                                           oversample=self.oversample,
+                                                           center=True)
             self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
         gmag = result.params['gmag'].value
         phi = result.params['phi'].value
@@ -116,13 +117,21 @@ class HSMEllipMeasurer(EllipMeasurer):
         return complex(ellip.g1, ellip.g2)
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, use_hsm=False, maximum_fft_size=32768):
+                        ring_n, galtool, diagfile=None, use_hsm=False, maximum_fft_size=32768,
+                        deltaRbar=None, deltaV=None, r2byr2=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
     gsparams = galsim.GSParams()
     gsparams.maximum_fft_size = maximum_fft_size
-    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
-    fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale, gsparams)
+    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale,
+                          offset=offset, gsparams=gsparams)
+    if galtool == chroma.PerturbFastChromaticSersicTool:
+        fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
+                           deltaRbar, deltaV, r2byr2,
+                           offset=offset, gsparams=gsparams)
+    else:
+        fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
+                           offset=offset, gsparams=gsparams)
 
     hdulist=None
     if diagfile is not None:
@@ -160,46 +169,53 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     return m, c
 
 def one_ring_test(args):
-    logging.basicConfig(format="%(message)s", level=logging.INFO)
+    logging.basicConfig(format="%(message)s")
     logger = logging.getLogger("one_ring_test")
+    if args.quiet:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.DEBUG)
 
     # build filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.thin(args.thin)
-    PSF_wave = bandpass.effective_wavelength
 
     # build galaxy SED
     gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
     gal_SED = gal_SED.atRedshift(args.redshift)
-    # not totally sure I want to also thin galaxy SED...
-    gal_SED = gal_SED.thin(args.thin)
 
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
-    # not totally sure I want to also thin star SED...
-    star_SED = star_SED.thin(args.thin)
+
+    # Thin if requested
+    if args.thin is not None:
+        gal_SED = gal_SED.thin(args.thin)
+        star_SED = star_SED.thin(args.thin)
+        bandpass = bandpass.thin(args.thin)
+
+    # Use effective wavelength to set FWHM
+    PSF_wave = bandpass.effective_wavelength
 
     # scale SEDs
     gal_SED = gal_SED.withFlux(1.0, bandpass)
     star_SED = star_SED.withFlux(1.0, bandpass)
 
-    logger.info('')
-    logger.info('General settings')
-    logger.info('----------------')
-    logger.info('stamp size: {}'.format(args.stamp_size))
-    logger.info('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
-    logger.info('ring test angles: {}'.format(args.ring_n))
+    logger.debug('')
+    logger.debug('General settings')
+    logger.debug('----------------')
+    logger.debug('stamp size: {}'.format(args.stamp_size))
+    logger.debug('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
+    logger.debug('ring test angles: {}'.format(args.ring_n))
 
-    logger.info('')
-    logger.info('Spectra settings')
-    logger.info('----------------')
-    logger.info('Data directory: {}'.format(args.datadir))
-    logger.info('Filter: {}'.format(args.filter))
-    logger.info('Filter effective wavelength: {}'.format(PSF_wave))
-    logger.info('Thinning filter by factor: {}'.format(args.thin))
-    logger.info('Galaxy SED: {}'.format(args.galspec))
-    logger.info('Galaxy redshift: {}'.format(args.redshift))
-    logger.info('Star SED: {}'.format(args.starspec))
+    logger.debug('')
+    logger.debug('Spectra settings')
+    logger.debug('----------------')
+    logger.debug('Data directory: {}'.format(args.datadir))
+    logger.debug('Filter: {}'.format(args.filter))
+    logger.debug('Filter effective wavelength: {}'.format(PSF_wave))
+    logger.debug('Thinning with relative error: {}'.format(args.thin))
+    logger.debug('Galaxy SED: {}'.format(args.galspec))
+    logger.debug('Galaxy redshift: {}'.format(args.redshift))
+    logger.debug('Star SED: {}'.format(args.starspec))
 
     # Define the PSF
     if args.moffat:
@@ -215,18 +231,18 @@ def one_ring_test(args):
         PSF = galsim.ChromaticObject(monoPSF)
         PSF.applyDilation(lambda w:(w/PSF_wave)**args.alpha)
 
-    logger.info('')
+    logger.debug('')
     if args.moffat:
-        logger.info('Moffat PSF settings')
-        logger.info('-------------------')
-        logger.info('PSF beta: {}'.format(args.PSF_beta))
+        logger.debug('Moffat PSF settings')
+        logger.debug('-------------------')
+        logger.debug('PSF beta: {}'.format(args.PSF_beta))
     else:
-        logger.info('Gaussian PSF settings')
-        logger.info('---------------------')
-    logger.info('PSF phi: {}'.format(args.PSF_phi))
-    logger.info('PSF ellip: {}'.format(args.PSF_ellip))
-    logger.info('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
-    logger.info('PSF alpha: {}'.format(args.alpha))
+        logger.debug('Gaussian PSF settings')
+        logger.debug('---------------------')
+    logger.debug('PSF phi: {}'.format(args.PSF_phi))
+    logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
+    logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
+    logger.debug('PSF alpha: {}'.format(args.alpha))
 
     # Go ahead and calculate sqrt(r^2) for PSF here...
     # Ignoring corrections due to ellipticity for now.
@@ -236,13 +252,13 @@ def one_ring_test(args):
     else:
         r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
-    logger.info('PSF sqrt(r^2): {}'.format(r2_psf))
+    logger.debug('PSF sqrt(r^2): {}'.format(r2_psf))
 
     if not args.noDCR:
-        logger.info('')
-        logger.info('Observation settings')
-        logger.info('--------------------')
-        logger.info('zenith angle: {} degrees'.format(args.zenith_angle))
+        logger.debug('')
+        logger.debug('Observation settings')
+        logger.debug('--------------------')
+        logger.debug('zenith angle: {} degrees'.format(args.zenith_angle))
 
     if args.slow:
         galtool = chroma.ChromaticSersicTool
@@ -254,24 +270,20 @@ def one_ring_test(args):
     gparam['x0'].value = args.gal_x0 * args.pixel_scale
     gparam['y0'].value = args.gal_y0 * args.pixel_scale
     gparam['gmag'].value = args.gal_ellip
-    logger.info('')
-    logger.info('Galaxy settings')
-    logger.info('---------------')
-    logger.info('Galaxy Sersic index: {}'.format(args.sersic_n))
-    logger.info('Galaxy ellipticity: {}'.format(args.gal_ellip))
-    logger.info('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
-    logger.info('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
-    logger.info('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
+    logger.debug('')
+    logger.debug('Galaxy settings')
+    logger.debug('---------------')
+    logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
+    logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
+    logger.debug('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
+    logger.debug('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
+    logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
 
-    gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
+    offset = (args.image_x0, args.image_y0)
+    gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
     gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
 
-    # Measure shear bias
-    m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
-                               args.pixel_scale, args.stamp_size, args.ring_n,
-                               galtool, args.diagnostic, args.use_hsm)
-
-    # Now do the analytic part, which can be a little tricky.
+    # Analytic estimate of shear bias
 
     # First calculate \Delta V
     if not args.noDCR:
@@ -285,8 +297,8 @@ def one_ring_test(args):
         seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
         seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha)
         dr2r2 = (seeing2 - seeing1)/seeing1
-        logger.info("star seeing correction: {}".format(seeing1))
-        logger.info("galaxy seeing correction: {}".format(seeing2))
+        logger.debug("star seeing correction: {}".format(seeing1))
+        logger.debug("galaxy seeing correction: {}".format(seeing2))
     else:
         dr2r2 = 0.0
 
@@ -299,6 +311,20 @@ def one_ring_test(args):
     c1 = (dIxx-dIyy) / (2.0 * (args.gal_r2**2))
     c2 = dIxy / args.gal_r2**2
 
+    if args.perturb:
+        galtool = chroma.PerturbFastChromaticSersicTool
+        r2byr2 = seeing2/seeing1
+    else:
+        r2byr2 = None
+
+    # Measure shear bias with ring test
+    m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
+                               args.pixel_scale, args.stamp_size, args.ring_n,
+                               galtool, args.diagnostic, args.use_hsm, r2byr2=r2byr2,
+                               offset=offset)
+
+    # And..., results.
+
     logger.info('')
     logger.info('Shear Calibration Results')
     logger.info('-------------------------')
@@ -309,8 +335,7 @@ def one_ring_test(args):
 def runme():
     """Useful for profiling one_ring_test() using IPython and prun.
     """
-    class junk(object):
-        pass
+    class junk(object): pass
     args = junk()
     args.datadir = '../../data/'
     args.starspec = 'SEDs/ukg5v.ascii'
@@ -379,9 +404,13 @@ if __name__ == '__main__':
                         help="Set pixel scale in arcseconds (Default 0.2)")
     parser.add_argument('--stamp_size', type=int, default=31,
                         help="Set postage stamp size in pixels (Default 31)")
-    parser.add_argument('--thin', type=float, default=1.e-5,
+    parser.add_argument('--image_x0', type=float, default=0.0,
+                        help="Image origin x-offset")
+    parser.add_argument('--image_y0', type=float, default=0.0,
+                        help="Image origin y-offset")
+    parser.add_argument('--thin', type=float, default=1.e-4,
                         help="Thin but retain bandpass integral accuracy to this relative amount."
-                        +" (Default 1e-5).")
+                        +" (Default: 1.e-4).")
     parser.add_argument('--slow', action='store_true',
                         help="Use ChromaticSersicTool (somewhat more careful) instead of "
                             +"FastChromaticSersicTool.")
@@ -394,6 +423,10 @@ if __name__ == '__main__':
                         help="Filename to which to write diagnostic images (Default: '')")
     parser.add_argument('--use_hsm', action='store_true',
                         help="Use HSM regaussianization to estimate ellipticity")
+    parser.add_argument('--perturb', action='store_true',
+                        help="Use PerturbFastChromaticSersicTool to estimate ellipticity")
+    parser.add_argument('--quiet', action='store_true',
+                        help="Don't print ring test settings")
 
     args = parser.parse_args()
 
