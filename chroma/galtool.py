@@ -134,6 +134,29 @@ class GalTool(object):
         mx, my, mxx, myy, mxy = chroma.moments(im)
         return np.sqrt(mxx + myy)
 
+    def compute_AHM(self, gparam):
+        """ Compute the area above half maximum of the convolved image.
+        """
+        original_offset = self.offset
+        original_scale = self.pixel_scale
+        ahms = []
+        for i in range(10):
+            xdither = np.random.uniform(-0.5, 0.5, 1)[0]
+            ydither = np.random.uniform(-0.5, 0.5, 1)[0]
+            rescale = np.random.uniform(0.9, 1.1, 1)[0]
+            self.offset = (xdither, ydither)
+            self.pixel_scale = original_scale * rescale
+            im = self.get_image(gparam, oversample=4)
+            mx = im.array.max()
+            ahms.append(self.pixel_scale**2 * (im.array > mx/2.0).sum() / 16)
+        self.offset = original_offset
+        self.pixel_scale = original_scale
+        return np.mean(ahms), np.std(ahms)/np.sqrt(len(ahms))
+
+    def compute_FWHM(self, gparam):
+        ahm, err = self.compute_AHM(gparam)
+        fwhm = np.sqrt(4.0/np.pi * ahm)
+        return fwhm, fwhm * err/ahm * 0.5
 
 class SersicTool(GalTool):
     """ABC to handle both chromatic and monochromatic single Sersic galaxies.

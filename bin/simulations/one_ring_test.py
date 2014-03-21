@@ -270,6 +270,10 @@ def one_ring_test(args):
     gparam['x0'].value = args.gal_x0 * args.pixel_scale
     gparam['y0'].value = args.gal_y0 * args.pixel_scale
     gparam['gmag'].value = args.gal_ellip
+    offset = (args.image_x0, args.image_y0)
+    gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
+    gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
+
     logger.debug('')
     logger.debug('Galaxy settings')
     logger.debug('---------------')
@@ -278,10 +282,9 @@ def one_ring_test(args):
     logger.debug('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
     logger.debug('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
     logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
+    gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
+    logger.debug('Galaxy FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(gal_fwhm, gal_fwhm_err))
 
-    offset = (args.image_x0, args.image_y0)
-    gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
-    gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
 
     # Analytic estimate of shear bias
 
