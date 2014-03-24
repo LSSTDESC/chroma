@@ -1,3 +1,4 @@
+import os
 import sys
 from argparse import ArgumentParser
 import numpy as np
@@ -254,6 +255,10 @@ def plot_ring_diagnostic(args):
         # cbar = plt.colorbar(img, cax=cbar_ax, orientation='horizontal', cmap=cmap_resid,
         #                     ticks=ticks)
 
+        dir_, file_ = os.path.split(args.outprefix)
+        if dir_ != '':
+            if not os.path.isdir(dir_):
+                os.mkdir(dir_)
         plt.savefig(args.outprefix+'-g1-{}-g2-{}-beta{}.png'.format(g1, g2, beta),
                     dpi=220)
 
