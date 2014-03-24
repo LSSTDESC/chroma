@@ -46,6 +46,11 @@ class SED(galsim.SED):
         ret.__class__ = SED
         return ret
 
+    def atRedshift(self, z):
+        ret = galsim.SED.atRedshift(self, z)
+        ret.__class__ = SED
+        return ret
+
 class Bandpass(galsim.Bandpass):
     """ Subclass galsim.Bandpass to add zeropoints
     """

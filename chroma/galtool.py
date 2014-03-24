@@ -339,15 +339,16 @@ class PerturbFastChromaticSersicTool(SersicTool):
         # Create the unperturbed effective PSF:
         star = galsim.Gaussian(fwhm=1.e-8) * SED
         prof = galsim.Convolve(star, PSF)
-        # and now do the perturbation
-        # punt on DCR for now, but try out chromatic seeing
-        if r2byr2 is not None:
-            prof = prof.createDilated(np.sqrt(r2byr2))
-        # and draw into an InterpolatedImage
         prof0 = prof.evaluateAtWavelength(bandpass.effective_wavelength)
         scale = prof0.nyquistDx()
-        N = prof0.SBProfile.getGoodImageSize(scale,1.0)
+        N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N, N, scale=scale)
+        # and now do the perturbation
+        # punt on DCR for now, but try out chromatic seeing
+        if r2byr2 is None:
+            r2byr2 = 1.0
+        prof = prof.createDilated(np.sqrt(r2byr2))
+        # and draw into an InterpolatedImage
         prof.draw(bandpass, image=im)
         self.PSF = galsim.InterpolatedImage(im)
         self.offset = offset
