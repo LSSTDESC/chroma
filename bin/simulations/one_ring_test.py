@@ -324,7 +324,7 @@ def one_ring_test(args):
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
                                galtool, args.diagnostic, args.use_hsm, r2byr2=r2byr2,
-                               offset=offset)
+                               deltaV = dV, offset=offset)
 
     # And..., results.
 

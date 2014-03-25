@@ -331,8 +331,8 @@ class PerturbFastChromaticSersicTool(SersicTool):
         @param stamp_size   Draw images this many pixels square
         @param pixel_scale  Pixels are this wide in arcsec.
         @param deltaRbar    centroid shift of PSF (assumed to be in the vertical direction)
-        @param datalV       second moment zenith (vertical) direction shift
-        @param r2ybr2       r^2_{gal} / r^2_{psf}
+        @param deltaV       second moment zenith (vertical) direction shift
+        @param r2ybr2       r^2_{PSF, gal} / r^2_{PSF, *}
         """
         self.stamp_size = stamp_size
         self.pixel_scale = pixel_scale
@@ -343,13 +343,23 @@ class PerturbFastChromaticSersicTool(SersicTool):
         scale = prof0.nyquistDx()
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N, N, scale=scale)
-        # and now do the perturbation
-        # punt on DCR for now, but try out chromatic seeing
+        # chromatic seeing correction
         if r2byr2 is None:
             r2byr2 = 1.0
         prof = prof.createDilated(np.sqrt(r2byr2))
+        # DCR correction
+        if deltaV is None:
+            kernel = galsim.Gaussian(fwhm=1.e-8)
+        else:
+            q = 1.e-3
+            sigma = (q * abs(deltaV))**0.5
+            kernel = galsim.Gaussian(sigma=sigma)
+            kernel = kernel.createSheared(g1=-(1-q)/(1+q))
+            if deltaV < 0.0:
+                kernel = galsim.Deconvolve(kernel)
+        final = galsim.Convolve(prof, kernel)
         # and draw into an InterpolatedImage
-        prof.draw(bandpass, image=im)
+        final.draw(bandpass, image=im)
         self.PSF = galsim.InterpolatedImage(im)
         self.offset = offset
         self.gsparams = gsparams
