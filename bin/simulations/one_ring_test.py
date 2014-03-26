@@ -117,7 +117,7 @@ class HSMEllipMeasurer(EllipMeasurer):
         return complex(ellip.g1, ellip.g2)
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, use_hsm=False, maximum_fft_size=32768,
+                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=32768,
                         deltaRbar=None, deltaV=None, r2byr2=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
@@ -140,7 +140,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
         hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
 
     gen_target_image = TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
-    if use_hsm:
+    if hsm:
         measure_ellip = HSMEllipMeasurer(fit_tool)
     else:
         measure_ellip = LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
@@ -222,10 +222,11 @@ def one_ring_test(args):
         monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     else:
         monoPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
-    monoPSF.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
+    monoPSF.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
     if not args.noDCR: #include DCR
         PSF = galsim.ChromaticAtmosphere(monoPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
+                                         parallactic_angle=args.parallactic_angle * galsim.degrees,
                                          alpha=args.alpha)
     else: #otherwise just include a powerlaw wavelength dependent FWHM
         PSF = galsim.ChromaticObject(monoPSF)
@@ -249,7 +250,7 @@ def one_ring_test(args):
     if args.moffat:
         r2_psf = args.PSF_FWHM * np.sqrt(2.0 /
                                          (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-    else:
+    else: #gaussian
         r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
     logger.debug('PSF sqrt(r^2): {}'.format(r2_psf))
@@ -259,6 +260,7 @@ def one_ring_test(args):
         logger.debug('Observation settings')
         logger.debug('--------------------')
         logger.debug('zenith angle: {} degrees'.format(args.zenith_angle))
+        logger.debug('parallactic angle: {} degrees'.format(args.parallactic_angle))
 
     if args.slow:
         galtool = chroma.ChromaticSersicTool
@@ -302,8 +304,10 @@ def one_ring_test(args):
         dr2r2 = (seeing2 - seeing1)/seeing1
         logger.debug("star seeing correction: {}".format(seeing1))
         logger.debug("galaxy seeing correction: {}".format(seeing2))
+        r2byr2 = seeing2/seeing1
     else:
         dr2r2 = 0.0
+        r2byr2 = 1.0
 
     dIxx = (r2_psf**2/2.0) * dr2r2
     dIxy = 0.0
@@ -316,17 +320,14 @@ def one_ring_test(args):
 
     if args.perturb:
         galtool = chroma.PerturbFastChromaticSersicTool
-        r2byr2 = seeing2/seeing1
-    else:
-        r2byr2 = None
 
     # Measure shear bias with ring test
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
-                               galtool, args.diagnostic, args.use_hsm, r2byr2=r2byr2,
+                               galtool, args.diagnostic, args.hsm, r2byr2=r2byr2,
                                deltaV = dV, offset=offset)
 
-    # And..., results.
+    # And ... drumroll ... results!
 
     logger.info('')
     logger.info('Shear Calibration Results')
@@ -378,9 +379,12 @@ if __name__ == '__main__':
                         help="galaxy redshift (Default 0.0)")
     parser.add_argument('-f', '--filter', default='filters/LSST_r.dat',
                         help="filter for simulation (Default 'filters/LSST_r.dat')")
-    parser.add_argument('--zenith_angle', default=45.0, type=float,
+    parser.add_argument('-za', '--zenith_angle', default=45.0, type=float,
                         help="zenith angle in degrees for differential chromatic refraction " +
                              "computation (Default 45.0)")
+    parser.add_argument('-q', '--parallactic_angle', default=0.0, type=float,
+                        help="parallactic angle in degrees for differential chromatic refraction " +
+                             "computation (Default 0.0)")
     parser.add_argument('--moffat', action='store_true',
                         help="Use Moffat PSF (Default Gaussian)")
     parser.add_argument('--PSF_beta', type=float, default=2.5,
@@ -424,7 +428,7 @@ if __name__ == '__main__':
                         +" (Default: include DCR)")
     parser.add_argument('--diagnostic',
                         help="Filename to which to write diagnostic images (Default: '')")
-    parser.add_argument('--use_hsm', action='store_true',
+    parser.add_argument('--hsm', action='store_true',
                         help="Use HSM regaussianization to estimate ellipticity")
     parser.add_argument('--perturb', action='store_true',
                         help="Use PerturbFastChromaticSersicTool to estimate ellipticity")

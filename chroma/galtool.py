@@ -345,7 +345,7 @@ class PerturbFastChromaticSersicTool(SersicTool):
         im = galsim.ImageD(N, N, scale=scale)
         # chromatic seeing correction
         if r2byr2 is None:
-            r2byr2 = 1.0
+           r2byr2 = 1.0
         prof = prof.createDilated(np.sqrt(r2byr2))
         # DCR correction
         if deltaV is None:
