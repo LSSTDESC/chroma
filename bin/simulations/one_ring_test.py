@@ -332,9 +332,11 @@ def one_ring_test(args):
     logger.info('')
     logger.info('Shear Calibration Results')
     logger.info('-------------------------')
-    logger.info(('        ' + ' {:>12s}'*4).format('m1','m2','c1','c2'))
-    logger.info(('analytic' + ' {:12.8f}'*4).format(m1, m2, c1, c2))
-    logger.info(('ring    ' + ' {:12.8f}'*4).format(m[0], m[1], c[0], c[1]))
+    logger.info(('        ' + ' {:>10s}'*4).format('m1','m2','c1','c2'))
+    logger.info(('analytic' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(m1, m2, c1, c2))
+    logger.info(('ring    ' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(m[0], m[1], c[0], c[1]))
+    logger.info(('DES req ' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(0.008, 0.008, 0.0025, 0.0025))
+    logger.info(('LSST req' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(0.003, 0.003, 0.0015, 0.0015))
 
 def runme():
     """Useful for profiling one_ring_test() using IPython and prun.
