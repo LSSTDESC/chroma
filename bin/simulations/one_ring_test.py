@@ -258,6 +258,17 @@ def one_ring_test(args):
     gal_SED = gal_SED.withFlux(1.0, bandpass)
     star_SED = star_SED.withFlux(1.0, bandpass)
 
+    # By default, use args.PSF_FWHM = 0.7.  However, override args.PSF_FWHM if
+    # r2_PSF is explicitly set.
+    if args.r2_PSF is not None:
+        if args.moffat:
+            args.PSF_FWHM = args.r2_PSF / np.sqrt(
+                2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+        elif args.kolmogorov:
+            args.PSF_FWHM = args.r2_PSF / np.sqrt(2.0/np.log(256.0))
+        else: #default is Gaussian
+            args.PSF_FWHM = args.r2_PSF / np.sqrt(2.0/np.log(256.0))
+
     # Define the PSF
     if args.moffat:
         monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
@@ -442,6 +453,8 @@ if __name__ == '__main__':
                         help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
     parser.add_argument('--PSF_FWHM', type=float, default=0.7,
                         help="Set FWHM of PSF in arcsec (Default 0.7).")
+    parser.add_argument('--r2_PSF', type=float,
+                        help="Override PSF_FWHM with second moment radius sqrt(r^2).")
     parser.add_argument('--PSF_phi', type=float, default=0.0,
                         help="Set position angle of PSF in radians (Default 0.0).")
     parser.add_argument('--PSF_ellip', type=float, default=0.0,
