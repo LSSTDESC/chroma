@@ -48,125 +48,6 @@ def fiducial_galaxy():
     gparam.add('phi', value=0.0)
     return gparam
 
-class TargetImageGenerator(object):
-    """ A class to generate target images in a ring test.
-
-    @param gparam      lmfit.Parameters object containing galaxy attributes
-    @param galtool     Used to convert lmfit.Parameters object into an actual image using GalSim.
-    @param hdulist     If not None, then write images to this FITS file hdulist.
-    @param oversample  Amount by which to oversample images optionally placed in FITS file.
-    """
-    def __init__(self, gparam, galtool, hdulist=None, oversample=4):
-        self.gparam = gparam.copy()
-        self.galtool = galtool
-        self.hdulist = hdulist
-        self.oversample = oversample
-
-    def __call__(self, gamma, beta):
-        """ Return ring test image, optionally drawing to hdulist along the way.
-
-        @param gamma  Shear to apply to galaxy before drawing as a complex number.
-        @param beta   Angle around ellipticity ring for ring test in radians.  Corresponds to
-                      rotating the fiducial galaxy by `beta/2.0` radians.
-        @returns      Sheared and rotated galaxy image.
-        """
-        shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
-        target_image = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear)
-        if self.hdulist is not None:
-            hdu = fits.ImageHDU(target_image.array, name='TARGET')
-            hdu.header.append(('GAMMA1', gamma.real))
-            hdu.header.append(('GAMMA2', gamma.imag))
-            hdu.header.append(('BETA', beta))
-            for k,v in self.gparam.iteritems():
-                hdu.header.append((k, v.value))
-            self.hdulist.append(hdu)
-            target_high_res = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear,
-                                                     oversample=self.oversample)
-            self.hdulist.append(fits.ImageHDU(target_high_res.array, name='TARGETHR'))
-            target_uncvl = self.galtool.get_uncvl_image(self.gparam, ring_beta=beta,
-                                                        ring_shear=shear,
-                                                        oversample=self.oversample,
-                                                        center=True)
-            self.hdulist.append(fits.ImageHDU(target_uncvl.array, name='TARGETUC'))
-        return target_image
-
-class EllipMeasurer(object):
-    """ Abstract base class for ellipticity measurer, which measures the ellipticities of ring
-    test target images, and optionally writes best-fit images to a FITS hdulist.
-
-    @param galtool     Used to draw PSF, and possibly candidate galaxy fit images.
-    @param hdulist     Optionally write PSF images and best-fit images here.
-    @param oversample  If writing to an hdulist, use this oversampling factor.
-    """
-    def __init__(self, galtool, hdulist=None, oversample=4):
-        self.galtool = galtool
-        self.hdulist = hdulist
-        self.oversample = oversample
-
-    def __call__(self):
-        raise NotImplementedError("EllipMeasurer needs to be subclassed.")
-
-class LSTSQEllipMeasurer(EllipMeasurer):
-    """ Measure ellipticity by performing a least-squares fit over galaxy parameters.
-    """
-    def resid(self, param, target_image):
-        """ Return least-squares residuals of image generated from `param` and `target_image`.
-
-        @param  param         lmfit.Parameters object describing candidate galaxy fit.
-        @param  target_image  Image to match via least-squares
-        @returns    Flattened residuals for lmfit.minimize()
-        """
-        image = self.galtool.get_image(param)
-        return (image.array - target_image.array).flatten()
-
-    def __call__(self, target_image, init_param):
-        """ Return estimated ellipticity of `target_image`
-
-        @param target_image  Image to match via least-squares
-        @param init_param    Initial guess for best-fit galaxy parameters.
-        @returns   Ellipticity estimate.
-        """
-        result = lmfit.minimize(self.resid, init_param, args=(target_image,))
-        if self.hdulist is not None:
-            fit_image = self.galtool.get_image(result.params)
-            hdu = fits.ImageHDU(fit_image.array, name='FIT')
-            for k,v in result.params.iteritems():
-                hdu.header.append((k, v.value))
-            self.hdulist.append(hdu)
-            fit_image_high_res = self.galtool.get_image(result.params, oversample=self.oversample)
-            self.hdulist.append(fits.ImageHDU(fit_image_high_res.array, name='FITHR'))
-            fit_image_uncvl = self.galtool.get_uncvl_image(result.params,
-                                                           oversample=self.oversample,
-                                                           center=True)
-            self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
-        gmag = result.params['gmag'].value
-        phi = result.params['phi'].value
-        return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
-
-class HSMEllipMeasurer(EllipMeasurer):
-    """ Use the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm to estimate
-    ellipticity.
-    """
-    def psf_image(self):
-        """ Use self.galtool to lazily return an image of the PSF.
-        @returns PSF image
-        """
-        if not hasattr(self, '_psf_image'):
-            self._psf_image = self.galtool.get_PSF_image()
-        return self._psf_image
-
-    def __call__(self, target_image, init_param=None):
-        """ Return estimated ellipticity of `target_image`
-
-        @param target_image  Image to match via least-squares
-        @param init_param    Initial guess for best-fit galaxy parameters.
-        @returns   Ellipticity estimate.
-        """
-        psf_image = self.psf_image()
-        results = galsim.hsm.EstimateShear(target_image, psf_image)
-        ellip = galsim.Shear(e1=results.corrected_e1, e2=results.corrected_e2)
-        return complex(ellip.g1, ellip.g2)
-
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
                         ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=32768,
                         r2byr2=None, deltaRbar=None, deltaV=None, parang=None, offset=(0,0)):
@@ -190,11 +71,11 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
         hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
         hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
 
-    gen_target_image = TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
+    gen_target_image = chroma.TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
     if hsm:
-        measure_ellip = HSMEllipMeasurer(fit_tool)
+        measure_ellip = chroma.HSMEllipMeasurer(fit_tool)
     else:
-        measure_ellip = LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
+        measure_ellip = chroma.LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
 
     # This will serve as the function that returns an initial guess of the sheared and rotated
     # galaxy parameters.
@@ -218,6 +99,10 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     m = m0, m1
 
     if diagfile is not None:
+        path, base = os.path.split(diagfile)
+        if path is not '':
+            if not os.path.isdir(path):
+                os.mkdir(path)
         hdulist.writeto(diagfile, clobber=True)
 
     return m, c
@@ -374,7 +259,7 @@ def one_ring_test(args):
         logger.debug('Moffat PSF settings')
         logger.debug('-------------------')
         logger.debug('PSF beta: {}'.format(args.PSF_beta))
-    elif:
+    elif args.kolmogorov:
         logger.debug('Kolmogorov PSF settings')
         logger.debug('-----------------------')
     else:
