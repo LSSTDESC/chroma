@@ -320,7 +320,7 @@ class PerturbFastChromaticSersicTool(SersicTool):
     contribution and then reconvolve by the expected galactic contribution.
     """
     def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale,
-                 deltaRbar=None, deltaV=None, r2byr2=None,
+                 r2byr2=None, deltaRbar=None, deltaV=None, parang=0,
                  offset=(0,0), gsparams=None):
         """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
         speed up image drawing by cacheing an effective PSF.
@@ -330,9 +330,10 @@ class PerturbFastChromaticSersicTool(SersicTool):
         @param PSF          galsim.ChromaticObject representing chromatic PSF
         @param stamp_size   Draw images this many pixels square
         @param pixel_scale  Pixels are this wide in arcsec.
-        @param deltaRbar    centroid shift of PSF (assumed to be in the vertical direction)
-        @param deltaV       second moment zenith (vertical) direction shift
-        @param r2ybr2       r^2_{PSF, gal} / r^2_{PSF, *}
+        @param r2ybr2       r^2_{PSF, gal} / r^2_{PSF, *} for chromatic seeing correction.
+        @param deltaRbar    First moment of DCR difference kernel.
+        @param deltaV       Second moment of DCR difference kernel.
+        @param parang       Parallactic angle of DCR difference kernel.
         """
         self.stamp_size = stamp_size
         self.pixel_scale = pixel_scale
@@ -351,12 +352,16 @@ class PerturbFastChromaticSersicTool(SersicTool):
         if deltaV is None:
             kernel = galsim.Gaussian(fwhm=1.e-8)
         else:
+            # Axes ratio of Gaussian representing DCR kernel.  In principle, this is 0.0, but
+            # we need to set it to some small value for computability.
             q = 1.e-3
             sigma = (q * abs(deltaV))**0.5
             kernel = galsim.Gaussian(sigma=sigma)
             kernel = kernel.createSheared(g1=-(1-q)/(1+q))
+            kernel = kernel.createRotated(parang * galsim.degrees)
             if deltaV < 0.0:
                 kernel = galsim.Deconvolve(kernel)
+
         final = galsim.Convolve(prof, kernel)
         # and draw into an InterpolatedImage
         final.draw(bandpass, image=im)

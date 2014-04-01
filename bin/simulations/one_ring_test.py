@@ -24,7 +24,19 @@ import _mypath
 import chroma
 
 def fiducial_galaxy():
-    """Setup lmfit.Parameters to represent a Single Sersic galaxy.
+    """Setup lmfit.Parameters to represent a Single Sersic galaxy.  Variables defining the
+    single Sersic galaxy are:
+    x0   - the x-coordinate of the galaxy center
+    y0   - the y-coordinate of the galaxy center
+    n    - the Sersic index.  0.5 gives a Gaussian profile, 1.0 gives an exponential profile,
+           4.0 gives a de Vaucouleurs profile.
+    hlr  - the galaxy half-light-radius.  This is strictly speaking the half light radius of
+           a circularly symmetric profile of the given Sersic index `n`.
+    gmag - the magnitude of the galaxy ellipticity given in `g` units as used by GalSim.  In
+           this convention, the major/minor axis ratio is given by:
+           b/a = (1 - gmag) / (1 + gmag)
+    phi  - the position angle of the galaxy major axis in radians.  0 indicates that the major
+           axis is along the x-axis.
     """
     gparam = lmfit.Parameters()
     gparam.add('x0', value=0.1)
@@ -37,15 +49,27 @@ def fiducial_galaxy():
     return gparam
 
 class TargetImageGenerator(object):
-    """ Use a galtool to generate a target image and optionally append an ImageHDU with galaxy
-    parameters used to create it to a FITS HDUList.
+    """ A class to generate target images in a ring test.
+
+    @param gparam      lmfit.Parameters object containing galaxy attributes
+    @param galtool     Used to convert lmfit.Parameters object into an actual image using GalSim.
+    @param hdulist     If not None, then write images to this FITS file hdulist.
+    @param oversample  Amount by which to oversample images optionally placed in FITS file.
     """
     def __init__(self, gparam, galtool, hdulist=None, oversample=4):
         self.gparam = gparam.copy()
         self.galtool = galtool
         self.hdulist = hdulist
         self.oversample = oversample
+
     def __call__(self, gamma, beta):
+        """ Return ring test image, optionally drawing to hdulist along the way.
+
+        @param gamma  Shear to apply to galaxy before drawing as a complex number.
+        @param beta   Angle around ellipticity ring for ring test in radians.  Corresponds to
+                      rotating the fiducial galaxy by `beta/2.0` radians.
+        @returns      Sheared and rotated galaxy image.
+        """
         shear = galsim.Shear(g1=gamma.real, g2=gamma.imag)
         target_image = self.galtool.get_image(self.gparam, ring_beta=beta, ring_shear=shear)
         if self.hdulist is not None:
@@ -67,23 +91,41 @@ class TargetImageGenerator(object):
         return target_image
 
 class EllipMeasurer(object):
-    """ Measure ellipticity and optionally append an ImageHDU with best fit galaxy parameters
-    to a FITS HDUList.
+    """ Abstract base class for ellipticity measurer, which measures the ellipticities of ring
+    test target images, and optionally writes best-fit images to a FITS hdulist.
+
+    @param galtool     Used to draw PSF, and possibly candidate galaxy fit images.
+    @param hdulist     Optionally write PSF images and best-fit images here.
+    @param oversample  If writing to an hdulist, use this oversampling factor.
     """
     def __init__(self, galtool, hdulist=None, oversample=4):
         self.galtool = galtool
         self.hdulist = hdulist
         self.oversample = oversample
+
     def __call__(self):
-        raise NotImplementedError
+        raise NotImplementedError("EllipMeasurer needs to be subclassed.")
 
 class LSTSQEllipMeasurer(EllipMeasurer):
     """ Measure ellipticity by performing a least-squares fit over galaxy parameters.
     """
     def resid(self, param, target_image):
+        """ Return least-squares residuals of image generated from `param` and `target_image`.
+
+        @param  param         lmfit.Parameters object describing candidate galaxy fit.
+        @param  target_image  Image to match via least-squares
+        @returns    Flattened residuals for lmfit.minimize()
+        """
         image = self.galtool.get_image(param)
         return (image.array - target_image.array).flatten()
+
     def __call__(self, target_image, init_param):
+        """ Return estimated ellipticity of `target_image`
+
+        @param target_image  Image to match via least-squares
+        @param init_param    Initial guess for best-fit galaxy parameters.
+        @returns   Ellipticity estimate.
+        """
         result = lmfit.minimize(self.resid, init_param, args=(target_image,))
         if self.hdulist is not None:
             fit_image = self.galtool.get_image(result.params)
@@ -106,11 +148,20 @@ class HSMEllipMeasurer(EllipMeasurer):
     ellipticity.
     """
     def psf_image(self):
+        """ Use self.galtool to lazily return an image of the PSF.
+        @returns PSF image
+        """
         if not hasattr(self, '_psf_image'):
             self._psf_image = self.galtool.get_PSF_image()
         return self._psf_image
 
-    def __call__(self, target_image, init_param):
+    def __call__(self, target_image, init_param=None):
+        """ Return estimated ellipticity of `target_image`
+
+        @param target_image  Image to match via least-squares
+        @param init_param    Initial guess for best-fit galaxy parameters.
+        @returns   Ellipticity estimate.
+        """
         psf_image = self.psf_image()
         results = galsim.hsm.EstimateShear(target_image, psf_image)
         ellip = galsim.Shear(e1=results.corrected_e1, e2=results.corrected_e2)
@@ -118,7 +169,7 @@ class HSMEllipMeasurer(EllipMeasurer):
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
                         ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=32768,
-                        deltaRbar=None, deltaV=None, r2byr2=None, offset=(0,0)):
+                        r2byr2=None, deltaRbar=None, deltaV=None, parang=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
     gsparams = galsim.GSParams()
@@ -127,7 +178,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
                           offset=offset, gsparams=gsparams)
     if galtool == chroma.PerturbFastChromaticSersicTool:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
-                           deltaRbar, deltaV, r2byr2,
+                           r2byr2, deltaRbar, deltaV, parang,
                            offset=offset, gsparams=gsparams)
     else:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
@@ -145,14 +196,17 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     else:
         measure_ellip = LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
 
+    # This will serve as the function that returns an initial guess of the sheared and rotated
+    # galaxy parameters.
     def get_ring_params(gamma, beta):
         return fit_tool.get_ring_params(gparam, beta, galsim.Shear(g1=gamma.real, g2=gamma.imag))
 
-    # Ring test for two values of gamma, solve for m and c.
+    # Do ring test for two values of the complex reduced shear `gamma`, solve for m and c.
     gamma0 = 0.0 + 0.0j
     gamma0_hat = chroma.ringtest(gamma0, ring_n, gen_target_image, get_ring_params, measure_ellip,
                                  silent=True)
-    # c is just gamma_hat when input gamma_true is (0.0, 0.0)
+    # c is the same as the estimated reduced shear `gamma_hat` when the input reduced shear
+    # is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
@@ -169,6 +223,9 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     return m, c
 
 def one_ring_test(args):
+    """ Run a single ring test.  There are many configurable options here.  From the command-line,
+    run `python one_ring_test.py --help` to see them.
+    """
     logging.basicConfig(format="%(message)s")
     logger = logging.getLogger("one_ring_test")
     if args.quiet:
@@ -196,30 +253,16 @@ def one_ring_test(args):
     PSF_wave = bandpass.effective_wavelength
 
     # scale SEDs
+    # This probably isn't strictly required, but in general I think it's good to work with numbers
+    # near one.
     gal_SED = gal_SED.withFlux(1.0, bandpass)
     star_SED = star_SED.withFlux(1.0, bandpass)
-
-    logger.debug('')
-    logger.debug('General settings')
-    logger.debug('----------------')
-    logger.debug('stamp size: {}'.format(args.stamp_size))
-    logger.debug('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
-    logger.debug('ring test angles: {}'.format(args.ring_n))
-
-    logger.debug('')
-    logger.debug('Spectra settings')
-    logger.debug('----------------')
-    logger.debug('Data directory: {}'.format(args.datadir))
-    logger.debug('Filter: {}'.format(args.filter))
-    logger.debug('Filter effective wavelength: {}'.format(PSF_wave))
-    logger.debug('Thinning with relative error: {}'.format(args.thin))
-    logger.debug('Galaxy SED: {}'.format(args.galspec))
-    logger.debug('Galaxy redshift: {}'.format(args.redshift))
-    logger.debug('Star SED: {}'.format(args.starspec))
 
     # Define the PSF
     if args.moffat:
         monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
+    elif args.kolmogorov:
+        monoPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
     else:
         monoPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
     monoPSF.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
@@ -232,41 +275,22 @@ def one_ring_test(args):
         PSF = galsim.ChromaticObject(monoPSF)
         PSF.applyDilation(lambda w:(w/PSF_wave)**args.alpha)
 
-    logger.debug('')
+    # Calculate sqrt(r^2) for the PSF.
+    # Ignoring corrections due to non-zero PSF ellipticity.
     if args.moffat:
-        logger.debug('Moffat PSF settings')
-        logger.debug('-------------------')
-        logger.debug('PSF beta: {}'.format(args.PSF_beta))
-    else:
-        logger.debug('Gaussian PSF settings')
-        logger.debug('---------------------')
-    logger.debug('PSF phi: {}'.format(args.PSF_phi))
-    logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
-    logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
-    logger.debug('PSF alpha: {}'.format(args.alpha))
-
-    # Go ahead and calculate sqrt(r^2) for PSF here...
-    # Ignoring corrections due to ellipticity for now.
-    if args.moffat:
-        r2_psf = args.PSF_FWHM * np.sqrt(2.0 /
-                                         (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-    else: #gaussian
+        r2_psf = args.PSF_FWHM * np.sqrt(
+            2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+    elif args.kolmogorov: # not sure how to do this one.  Punt with Gaussian for now.
         r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
-
-    logger.debug('PSF sqrt(r^2): {}'.format(r2_psf))
-
-    if not args.noDCR:
-        logger.debug('')
-        logger.debug('Observation settings')
-        logger.debug('--------------------')
-        logger.debug('zenith angle: {} degrees'.format(args.zenith_angle))
-        logger.debug('parallactic angle: {} degrees'.format(args.parallactic_angle))
+    else: #default is Gaussian
+        r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
     if args.slow:
         galtool = chroma.ChromaticSersicTool
     else:
         galtool = chroma.FastChromaticSersicTool
 
+    # What am I doing here?
     gparam = fiducial_galaxy()
     gparam['n'].value = args.sersic_n
     gparam['x0'].value = args.gal_x0 * args.pixel_scale
@@ -275,18 +299,7 @@ def one_ring_test(args):
     offset = (args.image_x0, args.image_y0)
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
     gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
-
-    logger.debug('')
-    logger.debug('Galaxy settings')
-    logger.debug('---------------')
-    logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
-    logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
-    logger.debug('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
-    logger.debug('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
-    logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
     gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
-    logger.debug('Galaxy FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(gal_fwhm, gal_fwhm_err))
-
 
     # Analytic estimate of shear bias
 
@@ -309,64 +322,98 @@ def one_ring_test(args):
         dr2r2 = 0.0
         r2byr2 = 1.0
 
-    dIxx = (r2_psf**2/2.0) * dr2r2
-    dIxy = 0.0
-    dIyy = (r2_psf**2/2.0) * dr2r2
-    dIyy += dV
+    # chromatic seeing correction
+    dI_seeing = np.matrix(np.identity(2), dtype=float) * r2_psf**2/2.0 * dr2r2
+    # dIxx = (r2_psf**2/2.0) * dr2r2
+    # dIxy = 0.0
+    # dIyy = (r2_psf**2/2.0) * dr2r2
+    # DCR correction.  How do I generalize this to any angle?
+    dI_DCR = np.matrix(np.zeros((2,2), dtype=float))
+    dI_DCR[1,1] = dV
+    c2p = np.cos(args.parallactic_angle * np.pi/180.0)
+    s2p = np.sin(args.parallactic_angle * np.pi/180.0)
+    R = np.matrix([[c2p, -s2p],
+                   [s2p,  c2p]])
+    dI_DCR = R * dI_DCR * R.T
+    dI = dI_seeing + dI_DCR
 
-    m1 = m2 = -(dIxx + dIyy) / args.gal_r2**2
-    c1 = (dIxx-dIyy) / (2.0 * (args.gal_r2**2))
-    c2 = dIxy / args.gal_r2**2
+    # m1 = m2 = -(dIxx + dIyy) / args.gal_r2**2
+    # c1 = (dIxx-dIyy) / (2.0 * (args.gal_r2**2))
+    # c2 = dIxy / args.gal_r2**2
+    m1 = m2 = -float(dI.trace()) / args.gal_r2**2
+    c1 = (dI[0,0] - dI[1,1]) / (2.0 * args.gal_r2**2)
+    c2 = dI[0,1] / args.gal_r2**2
 
     if args.perturb:
         galtool = chroma.PerturbFastChromaticSersicTool
+
+    # Print out configuration details for this run
+    logger.debug('')
+    logger.debug('General settings')
+    logger.debug('----------------')
+    logger.debug('stamp size: {}'.format(args.stamp_size))
+    logger.debug('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
+    logger.debug('ring test angles: {}'.format(args.ring_n))
+
+    logger.debug('')
+    logger.debug('Spectra settings')
+    logger.debug('----------------')
+    logger.debug('Data directory: {}'.format(args.datadir))
+    logger.debug('Filter: {}'.format(args.filter))
+    logger.debug('Filter effective wavelength: {}'.format(PSF_wave))
+    logger.debug('Thinning with relative error: {}'.format(args.thin))
+    logger.debug('Galaxy SED: {}'.format(args.galspec))
+    logger.debug('Galaxy redshift: {}'.format(args.redshift))
+    logger.debug('Star SED: {}'.format(args.starspec))
+    logger.debug('')
+    if args.moffat:
+        logger.debug('Moffat PSF settings')
+        logger.debug('-------------------')
+        logger.debug('PSF beta: {}'.format(args.PSF_beta))
+    else:
+        logger.debug('Gaussian PSF settings')
+        logger.debug('---------------------')
+    logger.debug('PSF phi: {}'.format(args.PSF_phi))
+    logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
+    logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
+    logger.debug('PSF alpha: {}'.format(args.alpha))
+    logger.debug('PSF sqrt(r^2): {}'.format(r2_psf))
+
+    if not args.noDCR:
+        logger.debug('')
+        logger.debug('Observation settings')
+        logger.debug('--------------------')
+        logger.debug('zenith angle: {} degrees'.format(args.zenith_angle))
+        logger.debug('parallactic angle: {} degrees'.format(args.parallactic_angle))
+
+    logger.debug('')
+    logger.debug('Galaxy settings')
+    logger.debug('---------------')
+    logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
+    logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
+    logger.debug('Galaxy x-offset: {} arcsec'.format(args.gal_x0))
+    logger.debug('Galaxy y-offset: {} arcsec'.format(args.gal_y0))
+    logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
+    logger.debug('Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(
+        gal_fwhm, gal_fwhm_err))
 
     # Measure shear bias with ring test
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
                                galtool, args.diagnostic, args.hsm, r2byr2=r2byr2,
-                               deltaV = dV, offset=offset)
+                               deltaV=dV, parang=args.parallactic_angle,
+                               offset=offset)
 
     # And ... drumroll ... results!
 
     logger.info('')
     logger.info('Shear Calibration Results')
     logger.info('-------------------------')
-    logger.info(('        ' + ' {:>10s}'*4).format('m1','m2','c1','c2'))
-    logger.info(('analytic' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(m1, m2, c1, c2))
-    logger.info(('ring    ' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(m[0], m[1], c[0], c[1]))
-    logger.info(('DES req ' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(0.008, 0.008, 0.0025, 0.0025))
-    logger.info(('LSST req' + ' {:10.5f}'*2 + ' {:10.6f}'*2).format(0.003, 0.003, 0.0015, 0.0015))
-
-def runme():
-    """Useful for profiling one_ring_test() using IPython and prun.
-    """
-    class junk(object): pass
-    args = junk()
-    args.datadir = '../../data/'
-    args.starspec = 'SEDs/ukg5v.ascii'
-    args.galspec = 'SEDs/CWW_E_ext.ascii'
-    args.redshift = 0.0
-    args.filter = 'filters/LSST_r.dat'
-    args.zenith_angle = 45.0
-    args.gaussian = False
-    args.PSF_beta = 2.5
-    args.PSF_FWHM = 0.7
-    args.PSF_phi = 0.0
-    args.PSF_ellip = 0.0
-    args.sersic_n = 0.5
-    args.gal_ellip = 0.3
-    args.gal_x0 = 0.0
-    args.gal_y0 = 0.0
-    args.gal_r2 = 0.27
-    args.ring_n = 3
-    args.pixel_scale = 0.2
-    args.stamp_size = 31
-    args.thin = 1.e-5
-    args.slow = False
-    args.alpha = -0.2
-    args.noDCR = False
-    one_ring_test(args)
+    logger.info(('        ' + ' {:>9s}'*4).format('m1','m2','c1','c2'))
+    logger.info(('analytic' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(m1, m2, c1, c2))
+    logger.info(('ring    ' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(m[0], m[1], c[0], c[1]))
+    logger.info(('DES req ' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(0.008, 0.008, 0.0025, 0.0025))
+    logger.info(('LSST req' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(0.003, 0.003, 0.0015, 0.0015))
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -387,6 +434,8 @@ if __name__ == '__main__':
     parser.add_argument('-q', '--parallactic_angle', default=0.0, type=float,
                         help="parallactic angle in degrees for differential chromatic refraction " +
                              "computation (Default 0.0)")
+    parser.add_argument('--kolmogorov', action='store_true',
+                        help="Use Kolmogorov PSF (Default Gaussian)")
     parser.add_argument('--moffat', action='store_true',
                         help="Use Moffat PSF (Default Gaussian)")
     parser.add_argument('--PSF_beta', type=float, default=2.5,
