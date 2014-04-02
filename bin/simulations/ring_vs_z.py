@@ -153,6 +153,17 @@ def ring_vs_z(args):
     logger.info('# Galaxy SED: {}'.format(args.galspec))
     logger.info('# Star SED: {}'.format(args.starspec))
 
+    # By default, use args.PSF_FWHM = 0.7.  However, override args.PSF_FWHM if
+    # PSF_r2 is explicitly set.
+    if args.PSF_r2 is not None:
+        if args.moffat:
+            args.PSF_FWHM = args.PSF_r2 / np.sqrt(
+                2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+        elif args.kolmogorov:
+            args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+        else: #default is Gaussian
+            args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+
     # Define the PSF
     if args.moffat:
         monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
@@ -186,14 +197,14 @@ def ring_vs_z(args):
     # Calculate sqrt(r^2) for PSF here...
     # Ignoring corrections due to ellipticity for now.
     if args.moffat:
-        r2_psf = args.PSF_FWHM * np.sqrt(
+        PSF_r2 = args.PSF_FWHM * np.sqrt(
             2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
     elif args.kolmogorov: # not sure how to do this one.  Punt with Gaussian for now.
-        r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
+        PSF_r2 = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
     else: #default is Gaussian
-        r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
+        PSF_r2 = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
-    logger.info('# PSF sqrt(r^2): {}'.format(r2_psf))
+    logger.info('# PSF sqrt(r^2): {}'.format(PSF_r2))
 
     if not args.noDCR:
         logger.info('# ')
@@ -261,7 +272,7 @@ def ring_vs_z(args):
             r2byr2 = 1.0
 
         # chromatic seeing correction
-        dI_seeing = np.matrix(np.identity(2), dtype=float) * r2_psf**2/2.0 * dr2r2
+        dI_seeing = np.matrix(np.identity(2), dtype=float) * PSF_r2**2/2.0 * dr2r2
         # DCR correction.
         dI_DCR = np.matrix(np.zeros((2,2), dtype=float))
         dI_DCR[1,1] = dV
@@ -328,7 +339,7 @@ if __name__ == '__main__':
                         help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
     parser.add_argument('--PSF_FWHM', type=float, default=0.7,
                         help="Set FWHM of PSF in arcsec (Default 0.7).")
-    parser.add_argument('--r2_PSF', type=float,
+    parser.add_argument('--PSF_r2', type=float,
                         help="Override PSF_FWHM with second moment radius sqrt(r^2).")
     parser.add_argument('--PSF_phi', type=float, default=0.0,
                         help="Set position angle of PSF in radians (Default 0.0).")
