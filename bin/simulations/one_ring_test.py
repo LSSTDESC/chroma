@@ -39,8 +39,8 @@ def fiducial_galaxy():
            axis is along the x-axis.
     """
     gparam = lmfit.Parameters()
-    gparam.add('x0', value=0.1)
-    gparam.add('y0', value=0.3)
+    gparam.add('x0', value=0.0)
+    gparam.add('y0', value=0.0)
     gparam.add('n', value=4.0, vary=False)
     gparam.add('hlr', value=0.27)
     gparam.add('flux', value=1.0, vary=False)
@@ -49,7 +49,7 @@ def fiducial_galaxy():
     return gparam
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=32768,
+                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=65536,
                         r2byr2=None, deltaRbar=None, deltaV=None, parang=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
@@ -192,7 +192,11 @@ def one_ring_test(args):
     gparam['gmag'].value = args.gal_ellip
     offset = (args.image_x0, args.image_y0)
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
-    gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
+    if args.gal_convFWHM is not None:
+        gparam = gtool.set_FWHM(gparam, args.gal_convFWHM)
+        args.gal_r2 = gtool.get_uncvl_r2(gparam)
+    else:
+        gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
     gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
 
     #--------------------------------
@@ -313,9 +317,9 @@ if __name__ == '__main__':
                         help="directory to find SED and filter files.")
     parser.add_argument('-s', '--starspec', default='SEDs/ukg5v.ascii',
                         help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii')")
-    parser.add_argument('-g', '--galspec', default='SEDs/CWW_E_ext.ascii',
+    parser.add_argument('-g', '--galspec', default='SEDs/KIN_Sa_ext.ascii',
                         help="galactic spectrum used to create target image " +
-                             "(Default 'SEDs/CWW_E_ext.ascii')")
+                             "(Default 'SEDs/KIN_Sa_ext.ascii')")
     parser.add_argument('-f', '--filter', default='filters/LSST_r.dat',
                         help="filter for simulation (Default 'filters/LSST_r.dat')")
 
@@ -357,6 +361,8 @@ if __name__ == '__main__':
                         help="Set ellipticity of galaxy (Default 0.3)")
     parser.add_argument('--gal_r2', type=float, default=0.27,
                         help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
+    parser.add_argument('--gal_convFWHM', type=float,
+                        help="Override gal_r2 by setting galaxy PSF-convolved FWHM.")
 
     # Simulation input arguments
     parser.add_argument('--ring_n', type=int, default=3,
@@ -366,9 +372,9 @@ if __name__ == '__main__':
     parser.add_argument('--stamp_size', type=int, default=31,
                         help="Set postage stamp size in pixels (Default 31)")
     parser.add_argument('--image_x0', type=float, default=0.0,
-                        help="Image origin x-offset")
+                        help="Image origin x-offset in pixels (Default 0.0)")
     parser.add_argument('--image_y0', type=float, default=0.0,
-                        help="Image origin y-offset")
+                        help="Image origin y-offset in pixels (Default 0.0)")
     parser.add_argument('--slow', action='store_true',
                         help="Use ChromaticSersicTool (somewhat more careful) instead of "
                             +"FastChromaticSersicTool.")

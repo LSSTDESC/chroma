@@ -134,27 +134,38 @@ class GalTool(object):
         mx, my, mxx, myy, mxy = chroma.moments(im)
         return np.sqrt(mxx + myy)
 
-    def compute_AHM(self, gparam):
+    def compute_AHM(self, gparam, oversample=4):
         """ Compute the area above half maximum of the convolved image.
         """
         original_offset = self.offset
         original_scale = self.pixel_scale
         ahms = []
         for i in range(10):
-            xdither = np.random.uniform(-0.5, 0.5, 1)[0]
-            ydither = np.random.uniform(-0.5, 0.5, 1)[0]
-            rescale = np.random.uniform(0.9, 1.1, 1)[0]
-            self.offset = (xdither, ydither)
-            self.pixel_scale = original_scale * rescale
-            im = self.get_image(gparam, oversample=4)
+            itry = 0
+            while itry < 10:
+                xdither = np.random.uniform(-0.5, 0.5, 1)[0]
+                ydither = np.random.uniform(-0.5, 0.5, 1)[0]
+                rescale = np.random.uniform(0.9, 1.1, 1)[0]
+                self.offset = (xdither, ydither)
+                self.pixel_scale = original_scale * rescale
+                try:
+                    im = self.get_image(gparam, oversample=oversample)
+                except RuntimeError:
+                    itry += 1
+                else:
+                    break
+            if itry >= 10:
+                raise RuntimeError("Unable to create image to estimate AHM")
             mx = im.array.max()
-            ahms.append(self.pixel_scale**2 * (im.array > mx/2.0).sum() / 16)
+            ahms.append(self.pixel_scale**2 * (im.array > mx/2.0).sum() / oversample**2)
         self.offset = original_offset
         self.pixel_scale = original_scale
         return np.mean(ahms), np.std(ahms)/np.sqrt(len(ahms))
 
-    def compute_FWHM(self, gparam):
-        ahm, err = self.compute_AHM(gparam)
+    def compute_FWHM(self, gparam, oversample=4):
+        """ Compute FWHM of the convolved galaxy image.
+        """
+        ahm, err = self.compute_AHM(gparam, oversample=oversample)
         fwhm = np.sqrt(4.0/np.pi * ahm)
         return fwhm, fwhm * err/ahm * 0.5
 
@@ -174,8 +185,20 @@ class SersicTool(GalTool):
         gal.setFlux(gparam['flux'].value)
         return gal
 
-    def set_r2(self, gparam, r2, oversample=16):
-        """ Set the second moment square radius.
+    def set_FWHM(self, gparam, FWHM, oversample=4):
+        """ Set the galaxy PSF-convolved FWHM.
+        """
+        def FWHM_resid(scale):
+            g1 = copy.deepcopy(gparam)
+            g1['hlr'].value *= scale
+            current_FWHM = self.compute_FWHM(g1, oversample=oversample)
+            return current_FWHM[0] - FWHM
+        scale = newton(FWHM_resid, 1.0, tol=0.001)
+        gparam['hlr'].value *= scale
+        return gparam
+
+    def set_r2(self, gparam, r2, oversample=4):
+        """ Set the second moment radius sqrt(r^2).
 
         @param gparam      lmfit.Parameters object describing galaxy.
         @param r2          Target second moment radius sqrt(r^2)
@@ -435,11 +458,25 @@ class DoubleSersicTool(GalTool):
         final2.draw(self.bandpass, image=im2)
         return im1, im2
 
-    def set_r2(self, gparam, r2, oversample=16):
-        """ Set the second moment square radius.
+    def set_FWHM(self, gparam, FWHM, oversample=4):
+        """ Set the galaxy PSF-convolved FWHM.
+        """
+        def FWHM_resid(scale):
+            g1 = copy.deepcopy(gparam)
+            g1['hlr_1'].value *= scale
+            g1['hlr_2'].value *= scale
+            current_FWHM = self.compute_FWHM(g1, oversample=oversample)
+            return current_FWHM[0] - FWHM
+        scale = newton(FWHM_resid, 1.0, tol=0.01)
+        gparam['hlr_1'].value *= scale
+        gparam['hlr_2'].value *= scale
+        return gparam
+
+    def set_r2(self, gparam, r2, oversample=4):
+        """ Set the second moment radius sqrt(r^2).
 
         @param gparam      lmfit.Parameters object describing galaxy.
-        @param r2          Target second moment square radius
+        @param r2          Target second moment radius sqrt(r^2)
         @param oversample  Factor by which to oversample drawn image for r2 computation.
         @returns           New lmfit.Parameters object.
         """
