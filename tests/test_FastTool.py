@@ -24,18 +24,16 @@ def fiducial_galaxy():
 def image_comparison(args):
     # slow method
     bandpass = galsim.Bandpass(args.datadir+args.filter)
-    bandpass = bandpass.thin(100)
+    bandpass = bandpass.thin(1.e-4)
 
-    gal_SED = galsim.SED(args.datadir+args.spec)
-    gal_SED.setRedshift(args.redshift)
-    gal_SED.setFlux(bandpass, 1.0)
+    gal_SED = galsim.SED(args.datadir+args.spec).atRedshift(args.redshift).withFlux(1.0, bandpass)
 
     PSF685 = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     PSF685.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
     PSF = galsim.ChromaticAtmosphere(PSF685, base_wavelength=685.0,
                                      zenith_angle=args.zenith_angle * galsim.degrees,
                                      alpha=0.0)
-    gtool = chroma.SersicTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
+    gtool = chroma.ChromaticSersicTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
 
     gparam = fiducial_galaxy()
     gparam['n'].value = args.sersic_n
@@ -48,7 +46,7 @@ def image_comparison(args):
 
 
     # fast method
-    fast_gtool = chroma.SersicFastTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
+    fast_gtool = chroma.FastChromaticSersicTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
     fast_image = fast_gtool.get_image(gparam, ring_shear=galsim.Shear(g1=args.g1, g2=args.g2))
 
     # rescale = (old_image * new_image.array).sum() / (new_image.array**2).sum()
