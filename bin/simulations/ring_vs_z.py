@@ -328,9 +328,9 @@ if __name__ == '__main__':
                         help="maximum galaxy redshift (Default 2.0)")
     parser.add_argument('--dz', type=float, default=0.05,
                         help="delta galaxy redshift (Default 0.05)")
-    parser.add_argument('--thin', type=float, default=1.e-4,
+    parser.add_argument('--thin', type=float, default=1.e-8,
                         help="Thin spectra while retaining bandpass integral accuracy to this "
-                        +"relative amount. (Default: 1.e-4).")
+                        +"relative amount. (Default: 1.e-8).")
 
     # Observation input arguments
     parser.add_argument('-za', '--zenith_angle', default=45.0, type=float,

@@ -326,9 +326,9 @@ if __name__ == '__main__':
     # Spectrum treatment arguments
     parser.add_argument('-z', '--redshift', type=float, default=0.0,
                         help="galaxy redshift (Default 0.0)")
-    parser.add_argument('--thin', type=float, default=1.e-4,
+    parser.add_argument('--thin', type=float, default=1.e-8,
                         help="Thin but retain bandpass integral accuracy to this relative amount."
-                        +" (Default: 1.e-4).")
+                        +" (Default: 1.e-8).")
 
     # Observation input arguments
     parser.add_argument('-za', '--zenith_angle', default=45.0, type=float,

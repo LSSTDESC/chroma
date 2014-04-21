@@ -182,7 +182,7 @@ class SersicTool(GalTool):
                             gsparams=self.gsparams)
         gal = gal.shear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
         gal = gal.shift(gparam['x0'].value, gparam['y0'].value)
-        gal.setFlux(gparam['flux'].value)
+        gal = gal.withFlux(gparam['flux'].value)
         return gal
 
     def set_FWHM(self, gparam, FWHM, oversample=4):
@@ -426,7 +426,7 @@ class DoubleSersicTool(GalTool):
         mono_gal1 = mono_gal1.shear(
             g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
         mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
-        mono_gal1.setFlux(gparam['flux_1'].value)
+        mono_gal1 = mono_gal1.withFlux(gparam['flux_1'].value)
 
         mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
                                   half_light_radius=gparam['hlr_2'].value,
@@ -434,7 +434,7 @@ class DoubleSersicTool(GalTool):
         mono_gal2 = mono_gal2.shear(
             g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
         mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
-        mono_gal2.setFlux(gparam['flux_2'].value)
+        mono_gal2 = mono_gal2.withFlux(gparam['flux_2'].value)
 
         gal1 = galsim.Chromatic(mono_gal1, self.SED1)
         gal2 = galsim.Chromatic(mono_gal2, self.SED2)
@@ -614,7 +614,7 @@ class FastDoubleSersicTool(DoubleSersicTool):
         mono_gal1 = mono_gal1.shear(
             g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
         mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
-        mono_gal1.setFlux(gparam['flux_1'].value)
+        mono_gal1 = mono_gal1.withFlux(gparam['flux_1'].value)
 
         mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
                                   half_light_radius=gparam['hlr_2'].value,
@@ -622,7 +622,7 @@ class FastDoubleSersicTool(DoubleSersicTool):
         mono_gal2 = mono_gal2.shear(
             g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
         mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
-        mono_gal2.setFlux(gparam['flux_2'].value)
+        mono_gal2 = mono_gal2.withFlux(gparam['flux_2'].value)
 
         return gal1, gal2
 
