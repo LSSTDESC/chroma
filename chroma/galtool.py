@@ -47,9 +47,9 @@ class GalTool(object):
         gal = self._gparam_to_galsim(gparam)
         pix = galsim.Pixel(pixel_scale)
         if ring_beta is not None:
-            gal.applyRotation(ring_beta / 2.0 * galsim.radians)
+            gal = gal.rotate(ring_beta / 2.0 * galsim.radians)
         if ring_shear is not None:
-            gal.applyShear(ring_shear)
+            gal = gal.shear(ring_shear)
         final = galsim.Convolve(gal, self.PSF, pix)
         if isinstance(final, galsim.ChromaticObject):
             final.draw(self.bandpass, image=im, offset=self.offset)
@@ -108,12 +108,12 @@ class GalTool(object):
         gal = self._gparam_to_galsim(gparam)
         if center:
             centroid = gal.centroid()
-            gal.applyShift(-centroid)
+            gal = gal.shift(-centroid)
         pix = galsim.Pixel(pixel_scale)
         if ring_beta is not None:
-            gal.applyRotation(ring_beta / 2.0 * galsim.radians)
+            gal = gal.rotate(ring_beta / 2.0 * galsim.radians)
         if ring_shear is not None:
-            gal.applyShear(ring_shear)
+            gal = gal.shear(ring_shear)
         final = galsim.Convolve(gal, pix)
         if isinstance(final, galsim.ChromaticObject):
             final.draw(self.bandpass, image=im, offset=self.offset)
@@ -180,8 +180,8 @@ class SersicTool(GalTool):
         gal = galsim.Sersic(n=gparam['n'].value,
                             half_light_radius=gparam['hlr'].value,
                             gsparams=self.gsparams)
-        gal.applyShear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
-        gal.applyShift(gparam['x0'].value, gparam['y0'].value)
+        gal = gal.shear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
+        gal = gal.shift(gparam['x0'].value, gparam['y0'].value)
         gal.setFlux(gparam['flux'].value)
         return gal
 
@@ -370,7 +370,7 @@ class PerturbFastChromaticSersicTool(SersicTool):
         # chromatic seeing correction
         if r2byr2 is None:
            r2byr2 = 1.0
-        prof = prof.createDilated(np.sqrt(r2byr2))
+        prof = prof.dilate(np.sqrt(r2byr2))
         # DCR correction
         if deltaV is None:
             kernel = galsim.Gaussian(fwhm=1.e-8)
@@ -380,8 +380,8 @@ class PerturbFastChromaticSersicTool(SersicTool):
             q = 1.e-3
             sigma = (q * abs(deltaV))**0.5
             kernel = galsim.Gaussian(sigma=sigma)
-            kernel = kernel.createSheared(g1=-(1-q)/(1+q))
-            kernel = kernel.createRotated(parang * galsim.degrees)
+            kernel = kernel.shear(g1=-(1-q)/(1+q))
+            kernel = kernel.rotate(parang * galsim.degrees)
             if deltaV < 0.0:
                 kernel = galsim.Deconvolve(kernel)
 
@@ -423,15 +423,17 @@ class DoubleSersicTool(GalTool):
         mono_gal1 = galsim.Sersic(n=gparam['n_1'].value,
                                   half_light_radius=gparam['hlr_1'].value,
                                   gsparams=self.gsparams)
-        mono_gal1.applyShear(g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
-        mono_gal1.applyShift(gparam['x0_1'].value, gparam['y0_1'].value)
+        mono_gal1 = mono_gal1.shear(
+            g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
+        mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
         mono_gal1.setFlux(gparam['flux_1'].value)
 
         mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
                                   half_light_radius=gparam['hlr_2'].value,
                                   gsparams=self.gsparams)
-        mono_gal2.applyShear(g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
-        mono_gal2.applyShift(gparam['x0_2'].value, gparam['y0_2'].value)
+        mono_gal2 = mono_gal2.shear(
+            g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
+        mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
         mono_gal2.setFlux(gparam['flux_2'].value)
 
         gal1 = galsim.Chromatic(mono_gal1, self.SED1)
@@ -609,15 +611,17 @@ class FastDoubleSersicTool(DoubleSersicTool):
         mono_gal1 = galsim.Sersic(n=gparam['n_1'].value,
                                   half_light_radius=gparam['hlr_1'].value,
                                   gsparams=self.gsparams)
-        mono_gal1.applyShear(g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
-        mono_gal1.applyShift(gparam['x0_1'].value, gparam['y0_1'].value)
+        mono_gal1 = mono_gal1.shear(
+            g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
+        mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
         mono_gal1.setFlux(gparam['flux_1'].value)
 
         mono_gal2 = galsim.Sersic(n=gparam['n_2'].value,
                                   half_light_radius=gparam['hlr_2'].value,
                                   gsparams=self.gsparams)
-        mono_gal2.applyShear(g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
-        mono_gal2.applyShift(gparam['x0_2'].value, gparam['y0_2'].value)
+        mono_gal2 = mono_gal2.shear(
+            g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
+        mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
         mono_gal2.setFlux(gparam['flux_2'].value)
 
         return gal1, gal2
@@ -638,11 +642,11 @@ class FastDoubleSersicTool(DoubleSersicTool):
         gal1, gal2 = self._gparam_to_galsim(gparam)
         pix = galsim.Pixel(pixel_scale)
         if ring_beta is not None:
-            gal1.applyRotation(ring_beta / 2.0 * galsim.radians)
-            gal2.applyRotation(ring_beta / 2.0 * galsim.radians)
+            gal1 = gal1.rotate(ring_beta / 2.0 * galsim.radians)
+            gal2 = gal2.rotate(ring_beta / 2.0 * galsim.radians)
         if ring_shear is not None:
-            gal1.applyShear(ring_shear)
-            gal2.applyShear(ring_shear)
+            gal1 = gal1.shear(ring_shear)
+            gal2 = gal2.shear(ring_shear)
         final1 = galsim.Convolve(gal1, self.PSF1, pix)
         final2 = galsim.Convolve(gal2, self.PSF2, pix)
         final1.draw(image=im, offset=self.offset)

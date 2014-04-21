@@ -29,7 +29,7 @@ def image_comparison(args):
     gal_SED = galsim.SED(args.datadir+args.spec).atRedshift(args.redshift).withFlux(1.0, bandpass)
 
     PSF685 = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
-    PSF685.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
+    PSF685 = PSF685.shear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.radians)
     PSF = galsim.ChromaticAtmosphere(PSF685, base_wavelength=685.0,
                                      zenith_angle=args.zenith_angle * galsim.degrees,
                                      alpha=0.0)

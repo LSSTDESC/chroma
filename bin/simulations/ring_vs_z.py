@@ -171,7 +171,7 @@ def ring_vs_z(args):
         monoPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
     else:
         monoPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
-    monoPSF.applyShear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
+    monoPSF = monoPSF.shear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
     if not args.noDCR: #include DCR
         PSF = galsim.ChromaticAtmosphere(monoPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
@@ -179,7 +179,7 @@ def ring_vs_z(args):
                                          alpha=args.alpha)
     else: #otherwise just include a powerlaw wavelength dependent FWHM
         PSF = galsim.ChromaticObject(monoPSF)
-        PSF.applyDilation(lambda w:(w/PSF_wave)**args.alpha)
+        PSF = PSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
 
     logger.info('# ')
     if args.moffat:
@@ -214,6 +214,8 @@ def ring_vs_z(args):
 
     if args.slow:
         galtool = chroma.ChromaticSersicTool
+    elif args.perturb:
+        galtool = chroma.PerturbFastChromaticSersicTool
     else:
         galtool = chroma.FastChromaticSersicTool
 
