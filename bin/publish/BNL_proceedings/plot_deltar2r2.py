@@ -38,8 +38,11 @@ def plot_gals(ax, stardata, galdata, column, band):
         ax.plot(zs, dSbyS, c=gal_color, label=gal_name)
 
 if __name__ == '__main__':
-    stardata = cPickle.load(open('../../analytic/output/stars.pkl'))
-    galdata = cPickle.load(open('../../analytic/output/galaxies.pkl'))
+    try:
+        stardata = cPickle.load(open('../../analytic/output/stars.pkl'))
+        galdata = cPickle.load(open('../../analytic/output/galaxies.pkl'))
+    except:
+        raise IOError("Need to run analytic_table.py script in directory $CHROMA/bin/analytic/")
 
     # LSST r-band filter
     f = plt.figure(figsize=(6,4))
