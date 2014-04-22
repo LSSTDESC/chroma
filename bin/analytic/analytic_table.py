@@ -21,6 +21,7 @@ For galaxies, magnitudes and biases are computed over a range of redshifts.
 """
 
 import cPickle
+import os
 
 import numpy as np
 
@@ -142,6 +143,8 @@ def construct_analytic_table():
         star_data[i]['star_type'] = star_type
         for name in data.dtype.names:
             star_data[i][name] = data[name]
+    if not os.path.isdir('output'):
+        os.mkdir('output')
     cPickle.dump(star_data, open('output/stars.pkl', 'wb'))
 
     # now onto galaxies
