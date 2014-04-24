@@ -45,8 +45,8 @@ def fiducial_galaxy():
     return gparam
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=32768,
-                        r2byr2=None, deltaRbar=None, deltaV=None, parang=None, offset=(0,0)):
+                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=65536,
+                        r2byr2=None, Vstar=None, Vgal=None, parang=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
     gsparams = galsim.GSParams()
@@ -55,8 +55,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
                           offset=offset, gsparams=gsparams)
     if galtool == chroma.PerturbFastChromaticSersicTool:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
-                           r2byr2, deltaRbar, deltaV, parang,
-                           offset=offset, gsparams=gsparams)
+                           r2byr2, Vstar, Vgal, parang, offset=offset, gsparams=gsparams)
     else:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
                            offset=offset, gsparams=gsparams)
@@ -95,6 +94,10 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
     m = m0, m1
 
     if diagfile is not None:
+        path, base = os.path.split(diagfile)
+        if path is not '':
+            if not os.path.isdir(path):
+                os.mkdir(path)
         hdulist.writeto(diagfile, clobber=True)
 
     return m, c
@@ -266,9 +269,12 @@ def ring_vs_z(args):
         if not args.noDCR:
             dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
             dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
-            dV = (dmom_DCR2[1] - dmom_DCR1[1]) * (3600 * 180 / np.pi)**2
+            Vstar = dmom_DCR1[1] * (3600 * 180 / np.pi)**2
+            Vgal = dmom_DCR2[1] * (3600 * 180 / np.pi)**2
         else:
-            dV = 0.0
+            Vstar = 0.0
+            Vgal = 0.0
+        dV = Vgal - Vstar
         # Second calculate \Delta r^2 / r^2
         if args.alpha != 0.0:
             seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
@@ -301,7 +307,7 @@ def ring_vs_z(args):
         m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                    args.pixel_scale, args.stamp_size, args.ring_n,
                                    galtool, None, args.hsm, r2byr2=r2byr2,
-                                   deltaV=dV, parang=args.parallactic_angle,
+                                   Vstar=Vstar, Vgal=Vgal, parang=args.parallactic_angle,
                                    offset=offset)
 
         logger.info(('   {:>5.2f}'+' {:>9.6f}'*8).format(z, m1, m[0], m2, m[1], c1, c[0], c2, c[1]))
