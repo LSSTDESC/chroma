@@ -337,13 +337,16 @@ class FastChromaticSersicTool(SersicTool):
         self.gsparams = gsparams
 
 class PerturbFastChromaticSersicTool(SersicTool):
-    """ Similar to ChromaticSersicTool, but add ability to perturb the effective PSF by convolving
-    (or deconvolving) by a Gaussian with center $\Delta \bar{R}$ and variance $\Delta V$, and
-    dilating by sqrt(r^2_{gal}/r^2_{psf}).  Alternatively, for DCR I could deconvolve by the stellar
-    contribution and then reconvolve by the expected galactic contribution.
+    """ Similar to ChromaticSersicTool, but add ability to perturb the effective PSF to match the
+    desired second moments.  First, deconvolve the (stellar) effective PSF in the zenith direction
+    by a Gaussian with variance $V_star$, which is the added contribution to the star's
+    zenith-direction second moment due to DCR.  Second, dilate the effective PSF by
+    $sqrt(r^2_{gal}/r^2_{psf})$ to remove difference in chromatic seeing between the galaxy and the
+    star. Third convolve the effective PSF in the zenith-direction by $V_gal$ to match the DCR
+    effect of the galaxy PSF.
     """
     def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale,
-                 r2byr2=None, deltaRbar=None, deltaV=None, parang=0,
+                 r2byr2=None, Vstar=None, Vgal=None, parang=0,
                  offset=(0,0), gsparams=None):
         """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
         speed up image drawing by cacheing an effective PSF.
@@ -354,40 +357,52 @@ class PerturbFastChromaticSersicTool(SersicTool):
         @param stamp_size   Draw images this many pixels square
         @param pixel_scale  Pixels are this wide in arcsec.
         @param r2ybr2       r^2_{PSF, gal} / r^2_{PSF, *} for chromatic seeing correction.
-        @param deltaRbar    First moment of DCR difference kernel.
-        @param deltaV       Second moment of DCR difference kernel.
+        @param Vstar        Second moment of DCR kernel for star PSF.
+        @param Vgal         Second moment of DCR kernel for galaxy PSF.
         @param parang       Parallactic angle of DCR difference kernel.
         """
+        if Vstar is None:
+            Vstar = 1.e-8
+        if Vgal is None:
+            Vgal = 1.e-8
+        if r2byr2 is None:
+            r2byr2 = 1.0
         self.stamp_size = stamp_size
         self.pixel_scale = pixel_scale
         # Create the unperturbed effective PSF:
         star = galsim.Gaussian(fwhm=1.e-8) * SED
         prof = galsim.Convolve(star, PSF)
+
+        #-----------------------
+        # Stellar DCR correction
+
+        # `q` is the axis ratio of a 2D Gaussian representing the 1D DCR kernel. In principle, this
+        # should be 0.0, but we need to set it to some small value for computability.
+        q = 1.e-4
+        sigma = (q * Vstar)**0.5
+        kernel = galsim.Gaussian(sigma=sigma)
+        kernel = kernel.shear(g1=-(1-q)/(1+q))
+        kernel = kernel.rotate(parang * galsim.degrees)
+        prof = galsim.Convolve(galsim.Deconvolve(kernel), prof)
+
+        #----------------------------
+        # Chromatic Seeing correction
+        prof = prof.dilate(np.sqrt(r2byr2))
+
+        #------------------------
+        # Galactic DCR correction
+        sigma = (q * Vgal)**0.5
+        kernel = galsim.Gaussian(sigma=sigma)
+        kernel = kernel.shear(g1=-(1-q)/(1+q))
+        kernel = kernel.rotate(parang * galsim.degrees)
+        prof = galsim.Convolve(kernel, prof)
+
+        # and draw into an InterpolatedImage
         prof0 = prof.evaluateAtWavelength(bandpass.effective_wavelength)
         scale = prof0.nyquistDx()
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
-        im = galsim.ImageD(N, N, scale=scale)
-        # chromatic seeing correction
-        if r2byr2 is None:
-           r2byr2 = 1.0
-        prof = prof.dilate(np.sqrt(r2byr2))
-        # DCR correction
-        if deltaV is None:
-            kernel = galsim.Gaussian(fwhm=1.e-8)
-        else:
-            # Axes ratio of Gaussian representing DCR kernel.  In principle, this is 0.0, but
-            # we need to set it to some small value for computability.
-            q = 1.e-3
-            sigma = (q * abs(deltaV))**0.5
-            kernel = galsim.Gaussian(sigma=sigma)
-            kernel = kernel.shear(g1=-(1-q)/(1+q))
-            kernel = kernel.rotate(parang * galsim.degrees)
-            if deltaV < 0.0:
-                kernel = galsim.Deconvolve(kernel)
-
-        final = galsim.Convolve(prof, kernel)
-        # and draw into an InterpolatedImage
-        final.draw(bandpass, image=im)
+        im = galsim.ImageD(N*9, N*9, scale=scale*0.3)
+        prof.draw(bandpass, image=im)
         self.PSF = galsim.InterpolatedImage(im)
         self.offset = offset
         self.gsparams = gsparams

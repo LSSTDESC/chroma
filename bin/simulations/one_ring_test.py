@@ -50,7 +50,7 @@ def fiducial_galaxy():
 
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
                         ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=65536,
-                        r2byr2=None, deltaRbar=None, deltaV=None, parang=None, offset=(0,0)):
+                        r2byr2=None, Vstar=None, Vgal=None, parang=None, offset=(0,0)):
     """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
 
     gsparams = galsim.GSParams()
@@ -59,8 +59,7 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
                           offset=offset, gsparams=gsparams)
     if galtool == chroma.PerturbFastChromaticSersicTool:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
-                           r2byr2, deltaRbar, deltaV, parang,
-                           offset=offset, gsparams=gsparams)
+                           r2byr2, Vstar, Vgal, parang, offset=offset, gsparams=gsparams)
     else:
         fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
                            offset=offset, gsparams=gsparams)
@@ -206,9 +205,12 @@ def one_ring_test(args):
     if not args.noDCR:
         dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
         dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
-        dV = (dmom_DCR2[1] - dmom_DCR1[1]) * (3600 * 180 / np.pi)**2
+        Vstar = dmom_DCR1[1] * (3600 * 180 / np.pi)**2
+        Vgal = dmom_DCR2[1] * (3600 * 180 / np.pi)**2
     else:
-        dV = 0.0
+        Vstar = 0.0
+        Vgal = 0.0
+    dV = Vgal - Vstar
     # Second calculate \Delta r^2 / r^2
     if args.alpha != 0.0:
         seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
@@ -259,6 +261,12 @@ def one_ring_test(args):
     logger.debug('Galaxy redshift: {}'.format(args.redshift))
     logger.debug('Star SED: {}'.format(args.starspec))
     logger.debug('')
+    logger.debug('Spectra chromatic biases')
+    logger.debug('------------------------')
+    logger.debug('Vstar: {:8.6f} arcsec^2'.format(Vstar))
+    logger.debug('Vgal: {:8.6f} arcsec^2'.format(Vgal))
+    logger.debug('r^2_{{PSF,gal}}/r^2_{{PSF,*}}: {:8.6f}'.format(r2byr2))
+    logger.debug('')
     if args.moffat:
         logger.debug('Moffat PSF settings')
         logger.debug('-------------------')
@@ -269,7 +277,7 @@ def one_ring_test(args):
     else:
         logger.debug('Gaussian PSF settings')
         logger.debug('---------------------')
-    logger.debug('PSF phi: {}'.format(args.PSF_phi))
+    logger.debug('PSF phi: {} degrees'.format(args.PSF_phi))
     logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
     logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
     logger.debug('PSF sqrt(r^2): {}'.format(r2_psf))
@@ -295,7 +303,7 @@ def one_ring_test(args):
     m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
                                args.pixel_scale, args.stamp_size, args.ring_n,
                                galtool, args.diagnostic, args.hsm, r2byr2=r2byr2,
-                               deltaV=dV, parang=args.parallactic_angle,
+                               Vstar=Vstar, Vgal=Vgal, parang=args.parallactic_angle,
                                offset=offset)
 
     # And ... drumroll ... results!
@@ -350,7 +358,7 @@ if __name__ == '__main__':
     parser.add_argument('--PSF_r2', type=float,
                         help="Override PSF_FWHM with second moment radius sqrt(r^2).")
     parser.add_argument('--PSF_phi', type=float, default=0.0,
-                        help="Set position angle of PSF in radians (Default 0.0).")
+                        help="Set position angle of PSF in degrees (Default 0.0).")
     parser.add_argument('--PSF_ellip', type=float, default=0.0,
                         help="Set ellipticity of PSF (Default 0.0)")
 
