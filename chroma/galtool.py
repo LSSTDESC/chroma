@@ -169,6 +169,43 @@ class GalTool(object):
         fwhm = np.sqrt(4.0/np.pi * ahm)
         return fwhm, fwhm * err/ahm * 0.5
 
+    def compute_HLA(self, gparam, oversample=4, flux=None):
+        """ Compute the half-light-area of the PSF-convolved galaxy image.
+        I.e., the area of the contour containing half the image light.
+        """
+        im = self.get_image(gparam, oversample=oversample)
+        if flux is None:
+            flux = im.array.sum()
+        pixel_values = im.array.ravel()
+        pixel_values.sort()
+        cumulative_sum = np.cumsum(pixel_values[::-1])
+        npix = np.interp(0.5, cumulative_sum, np.arange(len(cumulative_sum)))
+        return npix * self.pixel_scale**2 / oversample**2
+
+    def compute_HLR(self, gparam, oversample=4, flux=None):
+        """ Compute the half-light-radius of the PSF-convolved galaxy image.
+        """
+        return np.sqrt(1.0/np.pi * self.compute_HLA(gparam, oversample, flux))
+
+    def compute_uncvl_HLA(self, gparam, oversample=4, flux=None):
+        """ Compute the half-light-area of the unconvolved galaxy image.
+        I.e., the area of the contour containing half the image light.
+        """
+        im = self.get_uncvl_image(gparam, oversample=oversample)
+        if flux is None:
+            flux = im.array.sum()
+        pixel_values = im.array.ravel()
+        pixel_values.sort()
+        cumulative_sum = np.cumsum(pixel_values[::-1])
+        npix = np.interp(0.5, cumulative_sum, np.arange(len(cumulative_sum)))
+        return npix * self.pixel_scale**2 / oversample**2
+
+    def compute_uncvl_HLR(self, gparam, oversample=4, flux=None):
+        """ Compute the half-light-radius of the unconvolved galaxy image.
+        """
+        return np.sqrt(1.0/np.pi * self.compute_uncvl_HLA(gparam, oversample, flux))
+
+
 class SersicTool(GalTool):
     """ABC to handle both chromatic and monochromatic single Sersic galaxies.
     """

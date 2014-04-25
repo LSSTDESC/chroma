@@ -197,6 +197,10 @@ def one_ring_test(args):
     else:
         gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
     gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
+    gsparams = galsim.GSParams()
+    gsparams.maximum_fft_size = 65536
+    gtool.gsparams = gsparams
+    gal_hlr = gtool.compute_uncvl_HLR(gparam, flux=1.0, oversample=4)
 
     #--------------------------------
     # Analytic estimate of shear bias
@@ -296,6 +300,7 @@ def one_ring_test(args):
     logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
     logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
     logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
+    logger.debug('Galaxy HLR: {:6.3f} arcsec'.format(gal_hlr))
     logger.debug('Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(
         gal_fwhm, gal_fwhm_err))
 
