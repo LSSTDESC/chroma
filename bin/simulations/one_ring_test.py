@@ -193,14 +193,16 @@ def one_ring_test(args):
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
     if args.gal_convFWHM is not None:
         gparam = gtool.set_FWHM(gparam, args.gal_convFWHM)
-        args.gal_r2 = gtool.get_uncvl_r2(gparam)
+    elif args.gal_HLR is not None:
+        gparam['hlr'].value = args.gal_HLR
     else:
         gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
+    args.gal_r2 = gtool.get_uncvl_r2(gparam)
     gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
-    gsparams = galsim.GSParams()
-    gsparams.maximum_fft_size = 65536
-    gtool.gsparams = gsparams
-    gal_hlr = gtool.compute_uncvl_HLR(gparam, flux=1.0, oversample=4)
+    # gsparams = galsim.GSParams()
+    # gsparams.maximum_fft_size = 65536
+    # gtool.gsparams = gsparams
+    # gal_hlr = gtool.compute_uncvl_HLR(gparam, flux=1.0, oversample=4)
 
     #--------------------------------
     # Analytic estimate of shear bias
@@ -300,7 +302,7 @@ def one_ring_test(args):
     logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
     logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
     logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
-    logger.debug('Galaxy HLR: {:6.3f} arcsec'.format(gal_hlr))
+    logger.debug('Galaxy HLR: {:6.3f} arcsec'.format(gparam['hlr'].value))
     logger.debug('Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(
         gal_fwhm, gal_fwhm_err))
 
@@ -376,6 +378,8 @@ if __name__ == '__main__':
                         help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
     parser.add_argument('--gal_convFWHM', type=float,
                         help="Override gal_r2 by setting galaxy PSF-convolved FWHM.")
+    parser.add_argument('--gal_HLR', type=float,
+                        help="Override gal_r2 by setting galaxy half-light-radius.")
 
     # Simulation input arguments
     parser.add_argument('--ring_n', type=int, default=3,
