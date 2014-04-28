@@ -210,7 +210,7 @@ class GalTool(object):
 
 class SersicTool(GalTool):
     def __init__(self, PSF, stamp_size, pixel_scale, offset=(0,0),
-                 SED=None, bandpass=None, gsparams=None):
+                 SED=1.0, bandpass=None, gsparams=None):
         self.PSF = PSF
         self.stamp_size = stamp_size
         self.pixel_scale = pixel_scale
@@ -226,7 +226,7 @@ class SersicTool(GalTool):
                             gsparams=self.gsparams)
         gal = gal.shear(g=gparam['g'].value, beta=gparam['phi'].value * galsim.radians)
         gal = gal.shift(gparam['x0'].value, gparam['y0'].value)
-        gal = gal.withFlux(gparam['flux'].value)
+        gal = gal.withFlux(gparam['flux'].value) * self.SED
         return gal
 
     def set_FWHM(self, gparam, FWHM, oversample=4):
