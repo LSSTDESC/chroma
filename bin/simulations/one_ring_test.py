@@ -23,34 +23,7 @@ except:
 import _mypath
 import chroma
 
-def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
-                        ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=65536,
-                        r2byr2=None, Vstar=None, Vgal=None, parang=None, offset=(0,0)):
-    """Perform two ring tests to solve for shear calibration parameters `m` and `c`."""
-
-    gsparams = galsim.GSParams()
-    gsparams.maximum_fft_size = maximum_fft_size
-    target_tool = galtool(gal_SED, bandpass, PSF, stamp_size, pixel_scale,
-                          offset=offset, gsparams=gsparams)
-    if galtool == chroma.PerturbFastChromaticSersicTool:
-        fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
-                           r2byr2, Vstar, Vgal, parang, offset=offset, gsparams=gsparams)
-    else:
-        fit_tool = galtool(star_SED, bandpass, PSF, stamp_size, pixel_scale,
-                           offset=offset, gsparams=gsparams)
-
-    hdulist=None
-    if diagfile is not None:
-        hdulist=fits.HDUList()
-        hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
-        hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
-
-    gen_target_image = chroma.TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
-    if hsm:
-        measure_ellip = chroma.HSMEllipMeasurer(fit_tool)
-    else:
-        measure_ellip = chroma.LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
-
+def measure_shear_calib(gparam, gen_target_image, fit_tool, measurer, nring=3):
     # This will serve as the function that returns an initial guess of the sheared and rotated
     # galaxy parameters.
     def get_ring_params(gamma, beta):
@@ -58,26 +31,19 @@ def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, s
 
     # Do ring test for two values of the complex reduced shear `gamma`, solve for m and c.
     gamma0 = 0.0 + 0.0j
-    gamma0_hat = chroma.ringtest(gamma0, ring_n, gen_target_image, get_ring_params, measure_ellip,
+    gamma0_hat = chroma.ringtest(gamma0, nring, gen_target_image, get_ring_params, measurer,
                                  silent=True)
     # c is the same as the estimated reduced shear `gamma_hat` when the input reduced shear
     # is (0.0, 0.0)
     c = gamma0_hat.real, gamma0_hat.imag
 
     gamma1 = 0.01 + 0.02j
-    gamma1_hat = chroma.ringtest(gamma1, ring_n, gen_target_image, get_ring_params, measure_ellip,
+    gamma1_hat = chroma.ringtest(gamma1, nring, gen_target_image, get_ring_params, measurer,
                                  silent=True)
     # solve for m
     m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
     m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
     m = m0, m1
-
-    if diagfile is not None:
-        path, base = os.path.split(diagfile)
-        if path is not '':
-            if not os.path.isdir(path):
-                os.mkdir(path)
-        hdulist.writeto(diagfile, clobber=True)
 
     return m, c
 
@@ -85,6 +51,7 @@ def one_ring_test(args):
     """ Run a single ring test.  There are many configurable options here.  From the command-line,
     run `python one_ring_test.py --help` to see them.
     """
+    # setup logging
     logging.basicConfig(format="%(message)s")
     logger = logging.getLogger("one_ring_test")
     if args.quiet:
@@ -102,7 +69,7 @@ def one_ring_test(args):
     # build G5v star SED
     star_SED = chroma.SED(args.datadir+args.starspec)
 
-    # Thin if requested
+    # Thin bandpass and spectra if requested
     if args.thin is not None:
         gal_SED = gal_SED.thin(args.thin)
         star_SED = star_SED.thin(args.thin)
@@ -124,25 +91,28 @@ def one_ring_test(args):
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(
                 2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
         elif args.kolmogorov:
+            # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov
+            # profile?
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
         else: #default is Gaussian
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
 
     # Define the PSF
     if args.moffat:
-        monoPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
+        monochromaticPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     elif args.kolmogorov:
-        monoPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
+        monochromaticPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
     else:
-        monoPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
-    monoPSF = monoPSF.shear(g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
-    if not args.noDCR: #include DCR
-        PSF = galsim.ChromaticAtmosphere(monoPSF, base_wavelength=PSF_wave,
+        monochromaticPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
+    monochromaticPSF = monochromaticPSF.shear(
+            g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
+    if not args.noDCR: # add DCR
+        PSF = galsim.ChromaticAtmosphere(monochromaticPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
                                          parallactic_angle=args.parallactic_angle * galsim.degrees,
                                          alpha=args.alpha)
     else: #otherwise just include a powerlaw wavelength dependent FWHM
-        PSF = galsim.ChromaticObject(monoPSF)
+        PSF = galsim.ChromaticObject(monochromaticPSF)
         PSF = PSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
 
     # Calculate sqrt(r^2) for the PSF.
@@ -150,34 +120,33 @@ def one_ring_test(args):
     if args.moffat:
         r2_psf = args.PSF_FWHM * np.sqrt(
             2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-    elif args.kolmogorov: # not sure how to do this one.  Punt with Gaussian for now.
+    elif args.kolmogorov:
+        # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov profile?
         r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
     else: #default is Gaussian
         r2_psf = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
-    if args.slow:
-        galtool = chroma.ChromaticSersicTool
-    else:
-        galtool = chroma.FastChromaticSersicTool
+    offset = (args.image_x0, args.image_y0)
+    target_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
+                                    gal_SED, bandpass)
+    fit_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
+                                 star_SED, bandpass)
+    if not args.slow:
+        target_tool.use_effective_PSF()
+        fit_tool.use_effective_PSF()
 
     # Initialize galaxy
-    offset = (args.image_x0, args.image_y0)
-    gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
-    gparam = gtool.default_galaxy()
+    gparam = target_tool.default_galaxy()
     gparam['n'].value = args.sersic_n
     gparam['g'].value = args.gal_ellip
     if args.gal_convFWHM is not None:
-        gparam = gtool.set_FWHM(gparam, args.gal_convFWHM)
+        gparam = target_tool.set_FWHM(gparam, args.gal_convFWHM)
     elif args.gal_HLR is not None:
         gparam['hlr'].value = args.gal_HLR
     else:
-        gparam = gtool.set_uncvl_r2(gparam, args.gal_r2)
-    args.gal_r2 = gtool.get_uncvl_r2(gparam)
-    gal_fwhm, gal_fwhm_err = gtool.compute_FWHM(gparam)
-    # gsparams = galsim.GSParams()
-    # gsparams.maximum_fft_size = 65536
-    # gtool.gsparams = gsparams
-    # gal_hlr = gtool.compute_uncvl_HLR(gparam, flux=1.0, oversample=4)
+        gparam = target_tool.set_uncvl_r2(gparam, args.gal_r2)
+    args.gal_r2 = target_tool.get_uncvl_r2(gparam)
+    gal_fwhm, gal_fwhm_err = target_tool.compute_FWHM(gparam)
 
     #--------------------------------
     # Analytic estimate of shear bias
@@ -221,7 +190,8 @@ def one_ring_test(args):
     c2 = dI[0,1] / args.gal_r2**2
 
     if args.perturb:
-        galtool = chroma.PerturbFastChromaticSersicTool
+        fit_tool.apply_perturbative_correction(r2byr2, Vstar, Vgal,
+                                               args.parallactic_angle * galsim.degrees)
 
     # Print out configuration details for this run
     logger.debug('')
@@ -229,7 +199,7 @@ def one_ring_test(args):
     logger.debug('----------------')
     logger.debug('stamp size: {}'.format(args.stamp_size))
     logger.debug('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
-    logger.debug('ring test angles: {}'.format(args.ring_n))
+    logger.debug('ring test angles: {}'.format(args.nring))
 
     logger.debug('')
     logger.debug('Spectra settings')
@@ -281,12 +251,24 @@ def one_ring_test(args):
     logger.debug('Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(
         gal_fwhm, gal_fwhm_err))
 
-    # Measure shear bias with ring test
-    m, c = measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF,
-                               args.pixel_scale, args.stamp_size, args.ring_n,
-                               galtool, args.diagnostic, args.hsm, r2byr2=r2byr2,
-                               Vstar=Vstar, Vgal=Vgal, parang=args.parallactic_angle,
-                               offset=offset)
+    hdulist = None
+    if args.diagnostic is not None:
+        hdulist = fits.HDUList()
+        hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
+        hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
+    if args.hsm:
+        measurer = chroma.HSMEllipMeasurer(fit_tool)
+    else:
+        measurer = chroma.LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
+    gen_target_image = chroma.TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
+    m, c = measure_shear_calib(gparam, gen_target_image, fit_tool, measurer, nring=args.nring)
+
+    if args.diagnostic is not None:
+        path, base = os.path.split(args.diagnostic)
+        if path is not '':
+            if not os.path.isdir(path):
+                os.mkdir(path)
+        hdulist.writeto(args.diagnostic, clobber=True)
 
     # And ... drumroll ... results!
 
@@ -357,7 +339,7 @@ if __name__ == '__main__':
                         help="Override gal_r2 by setting galaxy half-light-radius.")
 
     # Simulation input arguments
-    parser.add_argument('--ring_n', type=int, default=3,
+    parser.add_argument('--nring', type=int, default=3,
                         help="Set number of angles in ring test (Default 3)")
     parser.add_argument('--pixel_scale', type=float, default=0.2,
                         help="Set pixel scale in arcseconds (Default 0.2)")
