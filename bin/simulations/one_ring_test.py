@@ -23,31 +23,6 @@ except:
 import _mypath
 import chroma
 
-def fiducial_galaxy():
-    """Setup lmfit.Parameters to represent a Single Sersic galaxy.  Variables defining the
-    single Sersic galaxy are:
-    x0   - the x-coordinate of the galaxy center
-    y0   - the y-coordinate of the galaxy center
-    n    - the Sersic index.  0.5 gives a Gaussian profile, 1.0 gives an exponential profile,
-           4.0 gives a de Vaucouleurs profile.
-    hlr  - the galaxy half-light-radius.  This is strictly speaking the half light radius of
-           a circularly symmetric profile of the given Sersic index `n`.
-    gmag - the magnitude of the galaxy ellipticity given in `g` units as used by GalSim.  In
-           this convention, the major/minor axis ratio is given by:
-           b/a = (1 - gmag) / (1 + gmag)
-    phi  - the position angle of the galaxy major axis in radians.  0 indicates that the major
-           axis is along the x-axis.
-    """
-    gparam = lmfit.Parameters()
-    gparam.add('x0', value=0.0)
-    gparam.add('y0', value=0.0)
-    gparam.add('n', value=4.0, vary=False)
-    gparam.add('hlr', value=0.27)
-    gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.2, min=0.0, max=1.0)
-    gparam.add('phi', value=0.0)
-    return gparam
-
 def measure_shear_calib(gparam, bandpass, gal_SED, star_SED, PSF, pixel_scale, stamp_size,
                         ring_n, galtool, diagfile=None, hsm=False, maximum_fft_size=65536,
                         r2byr2=None, Vstar=None, Vgal=None, parang=None, offset=(0,0)):
@@ -186,11 +161,11 @@ def one_ring_test(args):
         galtool = chroma.FastChromaticSersicTool
 
     # Initialize galaxy
-    gparam = fiducial_galaxy()
-    gparam['n'].value = args.sersic_n
-    gparam['gmag'].value = args.gal_ellip
     offset = (args.image_x0, args.image_y0)
     gtool = galtool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale, offset=offset)
+    gparam = gtool.default_galaxy()
+    gparam['n'].value = args.sersic_n
+    gparam['g'].value = args.gal_ellip
     if args.gal_convFWHM is not None:
         gparam = gtool.set_FWHM(gparam, args.gal_convFWHM)
     elif args.gal_HLR is not None:

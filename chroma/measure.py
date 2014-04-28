@@ -57,9 +57,9 @@ class LSTSQEllipMeasurer(EllipMeasurer):
                                                            oversample=self.oversample,
                                                            center=True)
             self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
-        gmag = result.params['gmag'].value
+        g = result.params['g'].value
         phi = result.params['phi'].value
-        return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+        return g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
 
 class HSMEllipMeasurer(EllipMeasurer):
     """ Use the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm to estimate

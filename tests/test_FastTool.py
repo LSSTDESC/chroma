@@ -10,17 +10,6 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
-def fiducial_galaxy():
-    gparam = lmfit.Parameters()
-    gparam.add('x0', value=0.1)
-    gparam.add('y0', value=0.3)
-    gparam.add('n', value=4.0, vary=False)
-    gparam.add('hlr', value=0.27)
-    gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.2, min=0.0, max=1.0)
-    gparam.add('phi', value=0.0)
-    return gparam
-
 def image_comparison(args):
     # slow method
     bandpass = galsim.Bandpass(args.datadir+args.filter)
@@ -35,11 +24,11 @@ def image_comparison(args):
                                      alpha=0.0)
     gtool = chroma.ChromaticSersicTool(gal_SED, bandpass, PSF, args.stamp_size, args.pixel_scale)
 
-    gparam = fiducial_galaxy()
+    gparam = gtool.default_galaxy()
     gparam['n'].value = args.sersic_n
     gparam['x0'].value = args.gal_x0
     gparam['y0'].value = args.gal_y0
-    gparam['gmag'].value = args.gal_ellip
+    gparam['g'].value = args.gal_ellip
     gparam['phi'].value = args.gal_phi
     gparam = gtool.set_uncvl_r2(gparam, (args.gal_r2)**2)
     image = gtool.get_image(gparam, ring_shear=galsim.Shear(g1=args.g1, g2=args.g2))

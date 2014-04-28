@@ -23,19 +23,6 @@ import matplotlib.pyplot as plt
 import _mypath
 import chroma
 
-def fiducial_galaxy():
-    """Setup lmfit.Parameters to represent a Single Sersic galaxy.
-    """
-    gparam = lmfit.Parameters()
-    gparam.add('x0', value=0.1)
-    gparam.add('y0', value=0.3)
-    gparam.add('n', value=4.0, vary=False)
-    gparam.add('hlr', value=0.27)
-    gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.2, min=0.0, max=1.0)
-    gparam.add('phi', value=0.0)
-    return gparam
-
 class TargetImageGenerator(object):
     """ Use a galtool to generate a target image and optionally append an ImageHDU with galaxy
     parameters used to create it to a FITS HDUList.
@@ -96,9 +83,9 @@ class LSTSQEllipMeasurer(EllipMeasurer):
             fit_image_uncvl = self.galtool.get_uncvl_image(result.params,
                                                            oversample=self.oversample)
             self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
-        gmag = result.params['gmag'].value
+        g = result.params['g'].value
         phi = result.params['phi'].value
-        return gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+        return g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
 
 
 def measure_shear_calib(gparam, star_PSF, gal_PSF, pixel_scale, stamp_size, ring_n, galtool):
@@ -144,7 +131,7 @@ def toy_PSF_correction(args):
     scale_factor = (gal_r2 / star_r2)**0.5
     fit_PSF = star_PSF.createDilated(scale_factor)
 
-    gparam = fiducial_galaxy()
+    gparam = chroma.SersicTool.default_galaxy()
 
     # need a plot with 1d PSF profiles
     fig = plt.figure(figsize=(6,4))

@@ -7,6 +7,7 @@ import copy
 import numpy as np
 from scipy.optimize import newton
 import galsim
+import lmfit
 
 import chroma
 
@@ -217,7 +218,7 @@ class SersicTool(GalTool):
         gal = galsim.Sersic(n=gparam['n'].value,
                             half_light_radius=gparam['hlr'].value,
                             gsparams=self.gsparams)
-        gal = gal.shear(g=gparam['gmag'].value, beta=gparam['phi'].value * galsim.radians)
+        gal = gal.shear(g=gparam['g'].value, beta=gparam['phi'].value * galsim.radians)
         gal = gal.shift(gparam['x0'].value, gparam['y0'].value)
         gal = gal.withFlux(gparam['flux'].value)
         return gal
@@ -285,12 +286,11 @@ class SersicTool(GalTool):
         gparam1 = copy.deepcopy(gparam)
         rot_phi = gparam['phi'].value + ring_beta/2.0
         # complex ellipticity
-        c_ellip = gparam['gmag'].value * \
-          complex(np.cos(2.0 * rot_phi), np.sin(2.0 * rot_phi))
+        c_ellip = gparam['g'].value * complex(np.cos(2.0 * rot_phi), np.sin(2.0 * rot_phi))
         c_gamma = ring_shear.g1 + 1j * ring_shear.g2
         # sheared complex ellipticity
         s_c_ellip = chroma.apply_shear(c_ellip, c_gamma)
-        s_gmag = abs(s_c_ellip)
+        s_g = abs(s_c_ellip)
         s_phi = np.angle(s_c_ellip) / 2.0
 
         gparam1['x0'].value \
@@ -299,9 +299,35 @@ class SersicTool(GalTool):
         gparam1['y0'].value \
           = gparam['x0'].value * np.sin(ring_beta / 2.0) \
           + gparam['y0'].value * np.cos(ring_beta / 2.0)
-        gparam1['gmag'].value = s_gmag
+        gparam1['g'].value = s_g
         gparam1['phi'].value = s_phi
         return gparam1
+
+    @staticmethod
+    def default_galaxy():
+        """Setup lmfit.Parameters to represent a single Sersic galaxy.  Pick some default
+        parameter values.  Parameters defining the single Sersic galaxy are:
+        x0   - the x-coordinate of the galaxy center
+        y0   - the y-coordinate of the galaxy center
+        n    - the Sersic index.  0.5 gives a Gaussian profile, 1.0 gives an exponential profile,
+               4.0 gives a de Vaucouleurs profile.
+        hlr  - the galaxy half-light-radius.  This is strictly speaking the half light radius of
+               a circularly symmetric profile of the given Sersic index `n`.
+        g    - the magnitude of the galaxy ellipticity given in `g` units as used by GalSim.  In
+               this convention, the major/minor axis ratio is given by: b/a = (1 - g) / (1 + g)
+        phi  - the position angle of the galaxy major axis in radians.  0 indicates that the major
+               axis is along the x-axis.
+        """
+        gparam = lmfit.Parameters()
+        gparam.add('x0', value=0.0)
+        gparam.add('y0', value=0.0)
+        gparam.add('n', value=4.0, vary=False)
+        gparam.add('hlr', value=0.27)
+        gparam.add('flux', value=1.0, vary=False)
+        gparam.add('g', value=0.2, min=0.0, max=1.0)
+        gparam.add('phi', value=0.0)
+        return gparam
+
 
 
 class MonoSersicTool(SersicTool):
@@ -476,7 +502,7 @@ class DoubleSersicTool(GalTool):
                                   half_light_radius=gparam['hlr_1'].value,
                                   gsparams=self.gsparams)
         mono_gal1 = mono_gal1.shear(
-            g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
+            g=gparam['g_1'].value, beta=gparam['phi_1'].value * galsim.radians)
         mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
         mono_gal1 = mono_gal1.withFlux(gparam['flux_1'].value)
 
@@ -484,7 +510,7 @@ class DoubleSersicTool(GalTool):
                                   half_light_radius=gparam['hlr_2'].value,
                                   gsparams=self.gsparams)
         mono_gal2 = mono_gal2.shear(
-            g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
+            g=gparam['g_2'].value, beta=gparam['phi_2'].value * galsim.radians)
         mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
         mono_gal2 = mono_gal2.withFlux(gparam['flux_2'].value)
 
@@ -582,12 +608,11 @@ class DoubleSersicTool(GalTool):
 
         rot_phi1 = gparam['phi_1'].value + ring_beta/2.0
         # complex ellipticity
-        c_ellip1 = gparam['gmag_1'].value * \
-          complex(np.cos(2.0 * rot_phi1), np.sin(2.0 * rot_phi1))
+        c_ellip1 = gparam['g_1'].value * complex(np.cos(2.0 * rot_phi1), np.sin(2.0 * rot_phi1))
         c_gamma1 = ring_shear.g1 + 1j * ring_shear.g2
         # sheared complex ellipticity
         s_c_ellip1 = chroma.apply_shear(c_ellip1, c_gamma)
-        s_gmag1 = abs(s_c_ellip1)
+        s_g1 = abs(s_c_ellip1)
         s_phi1 = np.angle(s_c_ellip1) / 2.0
 
         gparam1['x0_1'].value \
@@ -596,17 +621,17 @@ class DoubleSersicTool(GalTool):
         gparam1['y0_1'].value \
           = gparam['x0_1'].value * np.sin(ring_beta / 2.0) \
           + gparam['y0_1'].value * np.cos(ring_beta / 2.0)
-        gparam1['gmag_1'].value = s_gmag1
+        gparam1['g_1'].value = s_g1
         gparam1['phi_1'].value = s_phi1
 
         rot_phi2 = gparam['phi_2'].value + ring_beta/2.0
         # complex ellipticity
-        c_ellip2 = gparam['gmag_2'].value * \
+        c_ellip2 = gparam['g_2'].value * \
           complex(np.cos(2.0 * rot_phi2), np.sin(2.0 * rot_phi2))
         c_gamma2 = ring_shear.g2 + 1j * ring_shear.g2
         # sheared complex ellipticity
         s_c_ellip2 = chroma.apply_shear(c_ellip2, c_gamma)
-        s_gmag2 = abs(s_c_ellip2)
+        s_g2 = abs(s_c_ellip2)
         s_phi2 = np.angle(s_c_ellip2) / 2.0
 
         gparam1['x0_2'].value \
@@ -615,7 +640,7 @@ class DoubleSersicTool(GalTool):
         gparam1['y0_2'].value \
           = gparam['x0_2'].value * np.sin(ring_beta / 2.0) \
           + gparam['y0_2'].value * np.cos(ring_beta / 2.0)
-        gparam1['gmag_2'].value = s_gmag2
+        gparam1['g_2'].value = s_g2
         gparam1['phi_2'].value = s_phi2
 
         return gparam1
@@ -664,7 +689,7 @@ class FastDoubleSersicTool(DoubleSersicTool):
                                   half_light_radius=gparam['hlr_1'].value,
                                   gsparams=self.gsparams)
         mono_gal1 = mono_gal1.shear(
-            g=gparam['gmag_1'].value, beta=gparam['phi_1'].value * galsim.radians)
+            g=gparam['g_1'].value, beta=gparam['phi_1'].value * galsim.radians)
         mono_gal1 = mono_gal1.shift(gparam['x0_1'].value, gparam['y0_1'].value)
         mono_gal1 = mono_gal1.withFlux(gparam['flux_1'].value)
 
@@ -672,7 +697,7 @@ class FastDoubleSersicTool(DoubleSersicTool):
                                   half_light_radius=gparam['hlr_2'].value,
                                   gsparams=self.gsparams)
         mono_gal2 = mono_gal2.shear(
-            g=gparam['gmag_2'].value, beta=gparam['phi_2'].value * galsim.radians)
+            g=gparam['g_2'].value, beta=gparam['phi_2'].value * galsim.radians)
         mono_gal2 = mono_gal2.shift(gparam['x0_2'].value, gparam['y0_2'].value)
         mono_gal2 = mono_gal2.withFlux(gparam['flux_2'].value)
 

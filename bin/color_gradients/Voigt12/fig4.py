@@ -114,8 +114,8 @@ def fig4_gal_ellip(bd_engine, PSF_model):
     fil = open('output/fig4_gal_ellip.dat', 'w')
     for gal_ellip in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]:
         gparam = fiducial_galaxy()
-        gparam['b_gmag'].value = gal_ellip
-        gparam['d_gmag'].value = gal_ellip
+        gparam['b_g'].value = gal_ellip
+        gparam['d_g'].value = gal_ellip
         m, c = measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, redshift,
                                    PSF_ellip, PSF_phi, PSF_model, bd_engine)
         print 'c:    {:10g}  {:10g}'.format(c[0], c[1])

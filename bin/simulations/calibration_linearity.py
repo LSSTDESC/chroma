@@ -10,17 +10,6 @@ import chroma
 
 data_dir = '../../../data/'
 
-def fiducial_galaxy():
-    gparam = lmfit.Parameters()
-    gparam.add('x0', value=0.1)
-    gparam.add('y0', value=0.3)
-    gparam.add('n', value=4.0, vary=False)
-    gparam.add('r_e', value=1.0)
-    gparam.add('flux', value=1.0, vary=False)
-    gparam.add('gmag', value=0.0, min=0.0, max=1.0)
-    gparam.add('phi', value=0.0)
-    return gparam
-
 # wiki.python.org/moin/PythonDecoratorLibrary#Memoize
 import collections
 import functools
@@ -63,9 +52,9 @@ def measure_gamma_hat(gparam, gal_PSF, star_PSF, s_engine, gamma0):
             im = s_engine.get_image(param, star_PSF)
             return (im - target_image).flatten()
         result = lmfit.minimize(resid, init_param)
-        gmag = result.params['gmag'].value
+        g = result.params['g'].value
         phi = result.params['phi'].value
-        c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
+        c_ellip = g * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
         return c_ellip
 
     def get_ring_params(gamma, beta):
@@ -92,11 +81,11 @@ def calibration_linearity(filter_name, gal, z, star, n, e, zenith=30*numpy.pi/18
     star_PSF = PSF_model(swave, sphotons, zenith=zenith)
     smom = chroma.disp_moments(swave, sphotons, zenith=zenith)
 
-    gparam = fiducial_galaxy()
-    gparam['gmag'].value = e
-    gparam['n'].value = n
-    # gparam['gmag'].value = 0.0
     galtool = chroma.GalTools.SGalTool(s_engine)
+    gparam = galtool.default_galaxy()
+    gparam['g'].value = e
+    gparam['n'].value = n
+    # gparam['g'].value = 0.0
 
     # normalize size to second moment (before PSF convolution)
     print 'n: {}'.format(gparam['n'].value)

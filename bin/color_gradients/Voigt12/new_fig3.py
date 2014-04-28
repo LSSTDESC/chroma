@@ -20,7 +20,7 @@ def fiducial_galaxy():
     gparam.add('b_n', value=4.0, vary=False)
     gparam.add('b_hlr', value=1.1 * 1.1)
     gparam.add('b_flux', value=0.25)
-    gparam.add('b_gmag', value=0.2, min=0.0, max=1.0)
+    gparam.add('b_g', value=0.2, min=0.0, max=1.0)
     gparam.add('b_phi', value=0.0)
     # disk
     gparam.add('d_x0', expr='b_x0')
@@ -28,7 +28,7 @@ def fiducial_galaxy():
     gparam.add('d_n', value=1.0, vary=False)
     gparam.add('d_hlr', value=1.1)
     gparam.add('d_flux', expr='1.0 - b_flux')
-    gparam.add('d_gmag', expr='b_gmag')
+    gparam.add('d_g', expr='b_g')
     gparam.add('d_phi', expr='b_phi')
     # initialize constrained variables
     dummyfit = lmfit.Minimizer(lambda x: 0, gparam)
@@ -94,18 +94,16 @@ def ring_params(gparam, gamma, beta):
     b_phi_ring = gparam['b_phi'].value + beta/2.0
     d_phi_ring = gparam['d_phi'].value + beta/2.0
     # bulge complex ellipticity
-    b_c_ellip = gparam['b_gmag'].value * \
-      complex(np.cos(2.0 * b_phi_ring), np.sin(2.0 * b_phi_ring))
+    b_c_ellip = gparam['b_g'].value * complex(np.cos(2.0 * b_phi_ring), np.sin(2.0 * b_phi_ring))
     # bulge sheared complex ellipticity
     b_s_c_ellip = shear_galaxy(b_c_ellip, gamma)
-    b_s_gmag = abs(b_s_c_ellip)
+    b_s_g = abs(b_s_c_ellip)
     b_s_phi = np.angle(b_s_c_ellip) / 2.0
     # disk complex ellipticity
-    d_c_ellip = gparam['d_gmag'].value * \
-      complex(np.cos(2.0 * d_phi_ring), np.sin(2.0 * d_phi_ring))
+    d_c_ellip = gparam['d_g'].value * complex(np.cos(2.0 * d_phi_ring), np.sin(2.0 * d_phi_ring))
     # disk sheared complex ellipticity
     d_s_c_ellip = shear_galaxy(d_c_ellip, gamma)
-    d_s_gmag = abs(d_s_c_ellip)
+    d_s_g = abs(d_s_c_ellip)
     d_s_phi = np.angle(d_s_c_ellip) / 2.0
     # radius rescaling
     rescale = np.sqrt(1.0 - abs(gamma)**2.0)
@@ -122,8 +120,8 @@ def ring_params(gparam, gamma, beta):
     gparam1['d_y0'].value \
       = gparam['d_x0'].value * np.sin(beta / 2.0) \
       + gparam['d_y0'].value * np.cos(beta / 2.0)
-    gparam1['b_gmag'].value = b_s_gmag
-    gparam1['d_gmag'].value = d_s_gmag
+    gparam1['b_g'].value = b_s_g
+    gparam1['d_g'].value = d_s_g
     gparam1['b_phi'].value = b_s_phi
     gparam1['d_phi'].value = d_s_phi
     gparam1['b_hlr'].value = gparam['b_hlr'].value * rescale
@@ -153,9 +151,9 @@ def measure_shear_calib(gparam, bandpass, b_SED, d_SED, c_SED, PSF):
             final.draw(bandpass, image=image)
             return (image.array - target_image.array).flatten()
         result = lmfit.minimize(resid, init_param)
-        gmag = result.params['d_gmag'].value
+        g = result.params['d_g'].value
         phi = result.params['d_phi'].value
-        c_ellip = gmag * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+        c_ellip = g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
         return c_ellip
 
     def get_ring_params(gamma, beta):
@@ -228,14 +226,14 @@ def param_to_gal(gparam, b_SED, d_SED):
                                flux=gparam['b_flux'].value)
     mono_bulge.applyShift(gparam['b_x0'].value * pixel_scale,
                           gparam['b_y0'].value * pixel_scale)
-    mono_bulge.applyShear(g=gparam['b_gmag'].value, beta=gparam['b_phi'].value * galsim.radians)
+    mono_bulge.applyShear(g=gparam['b_g'].value, beta=gparam['b_phi'].value * galsim.radians)
     bulge = galsim.Chromatic(mono_bulge, b_SED)
     mono_disk = galsim.Sersic(n=gparam['d_n'].value,
                               half_light_radius=gparam['d_hlr'].value * pixel_scale,
                               flux=gparam['d_flux'].value)
     mono_disk.applyShift(gparam['d_x0'].value * pixel_scale,
                          gparam['d_y0'].value * pixel_scale)
-    mono_disk.applyShear(g=gparam['d_gmag'].value, beta=gparam['d_phi'].value * galsim.radians)
+    mono_disk.applyShear(g=gparam['d_g'].value, beta=gparam['d_phi'].value * galsim.radians)
     disk = galsim.Chromatic(mono_disk, d_SED)
     gal = bulge+disk
     return gal
@@ -599,14 +597,14 @@ def fig3_disk_spectrum():
 #             mono_bulge.applyShift(gparam['b_x0'].value * pixel_scale,
 #                                   gparam['b_y0'].value * pixel_scale)
 #             bulge = galsim.Chromatic(mono_bulge, b_SED)
-#             bulge.applyShear(g=gparam['b_gmag'].value, beta=gparam['b_phi'].value * galsim.radians)
+#             bulge.applyShear(g=gparam['b_g'].value, beta=gparam['b_phi'].value * galsim.radians)
 #             mono_disk = galsim.Sersic(n=gparam['d_n'].value,
 #                                       half_light_radius=gparam['d_hlr'].value * pixel_scale,
 #                                       flux=gparam['d_flux'].value)
 #             mono_disk.applyShift(gparam['d_x0'].value * pixel_scale,
 #                                  gparam['d_y0'].value * pixel_scale)
 #             disk = galsim.Chromatic(mono_disk, d_SED)
-#             disk.applyShear(g=gparam['d_gmag'].value, beta=gparam['d_phi'].value * galsim.radians)
+#             disk.applyShear(g=gparam['d_g'].value, beta=gparam['d_phi'].value * galsim.radians)
 #             gal = bulge+disk
 #             final = galsim.Convolve([gal, PSF, pix])
 #             target_image = galsim.ImageD(15, 15, scale=pixel_scale)
@@ -624,14 +622,14 @@ def fig3_disk_spectrum():
 #             mono_bulge.applyShift(g['b_x0'].value * pixel_scale,
 #                                   g['b_y0'].value * pixel_scale)
 #             bulge = galsim.Chromatic(mono_bulge, c_SED)
-#             bulge.applyShear(g=g['b_gmag'].value, beta=g['b_phi'].value * galsim.radians)
+#             bulge.applyShear(g=g['b_g'].value, beta=g['b_phi'].value * galsim.radians)
 #             mono_disk = galsim.Sersic(n=g['d_n'].value,
 #                                       half_light_radius=g['d_hlr'].value * pixel_scale,
 #                                       flux=g['d_flux'].value)
 #             mono_disk.applyShift(g['d_x0'].value * pixel_scale,
 #                                  g['d_y0'].value * pixel_scale)
 #             disk = galsim.Chromatic(mono_disk, c_SED)
-#             disk.applyShear(g=g['d_gmag'].value, beta=g['d_phi'].value * galsim.radians)
+#             disk.applyShear(g=g['d_g'].value, beta=g['d_phi'].value * galsim.radians)
 #             gal = bulge+disk
 #             final = galsim.Convolve([gal, PSF, pix])
 #             im = galsim.ImageD(15, 15, scale=pixel_scale)

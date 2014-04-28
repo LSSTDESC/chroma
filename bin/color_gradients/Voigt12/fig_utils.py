@@ -14,7 +14,7 @@ def fiducial_galaxy():
     gparam.add('b_n', value=4.0, vary=False)
     gparam.add('b_r_e', value=1.1 * 1.1)
     gparam.add('b_flux', value=0.25)
-    gparam.add('b_gmag', value=0.2)
+    gparam.add('b_g', value=0.2)
     gparam.add('b_phi', value=0.0)
     #disk
     gparam.add('d_x0', expr='b_x0')
@@ -22,7 +22,7 @@ def fiducial_galaxy():
     gparam.add('d_n', value=1.0, vary=False)
     gparam.add('d_r_e', value=1.1)
     gparam.add('d_flux', expr='1.0 - b_flux')
-    gparam.add('d_gmag', expr='b_gmag')
+    gparam.add('d_g', expr='b_g')
     gparam.add('d_phi', expr='b_phi')
     #initialize constrained variables
     dummyfit = lmfit.Minimizer(lambda x: 0, gparam)
@@ -84,9 +84,9 @@ def measure_shear_calib(gparam, filter_file, bulge_SED_file, disk_SED_file, reds
             im = bd_engine.get_image(param, composite_PSF, composite_PSF)
             return (im - target_image).flatten()
         result = lmfit.minimize(resid, init_param)
-        gmag = result.params['d_gmag'].value
+        g = result.params['d_g'].value
         phi = result.params['d_phi'].value
-        c_ellip = gmag * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
+        c_ellip = g * complex(numpy.cos(2.0 * phi), numpy.sin(2.0 * phi))
         return c_ellip
 
     def get_ring_params(gamma, beta):
