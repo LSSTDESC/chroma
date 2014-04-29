@@ -5,6 +5,11 @@ import cPickle
 import os
 
 import numpy as np
+import matplotlib
+try:
+    matplotlib.use('Agg')
+except:
+    pass
 import matplotlib.pyplot as plt
 
 def plot_DCR_moment_shifts(filter_name):
