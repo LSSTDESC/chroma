@@ -10,11 +10,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Specify the locations of three different plot elements.
-hist_axes_range = [0.13, 0.12, 0.1, 0.8]
-scatter_axes_range = [0.23, 0.12, 0.73, 0.8]
-colorbar_axes_range = [0.84, 0.15, 0.025, 0.35]
+hist_axes_range = [0.17, 0.12, 0.07, 0.8]
+scatter_axes_range = [0.24, 0.12, 0.72, 0.8]
+colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 data_dir = '../../../data/'
 star_table = '../../analytic/output/stars.pkl'
+fontsize = 16
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, **kwargs):
@@ -81,7 +82,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     f = plt.figure(figsize=(8, 6))
     # scatter plot
     ax = f.add_axes(scatter_axes_range)
-    xlim = (-0.1, 3)
+    xlim = (-0.1, 2.5)
     ax.set_xlim(xlim)
 
     # fill in some data based on which chromatic bias is requested.
@@ -143,16 +144,17 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     clim = set_range(c)
     clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(gals.redshift, galdata, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel('redshift', fontsize=12)
+    ax.set_xlabel('redshift', fontsize=fontsize)
+
     if bias in ['Rbar', 'V']:
-        ax.set_title('zenith angle = 45 degrees, filter = {}'.format(band), fontsize=12)
+        ax.set_title('zenith angle = 45 degrees, filter = {}'.format(band), fontsize=fontsize)
     else: # size bias is indep of zenith angle, so don't print it.
-        ax.set_title('filter = {}'.format(band), fontsize=12)
+        ax.set_title('filter = {}'.format(band), fontsize=fontsize)
     ax.yaxis.set_ticklabels([])
     ax.set_ylim(ylim)
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#AAAAAA', zorder=1)
     for label in ax.get_xticklabels():
-        label.set_fontsize(12)
+        label.set_fontsize(fontsize)
 
     # star histogram
     hist_ax = f.add_axes(hist_axes_range)
@@ -163,28 +165,29 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     xlim = hist_ax.get_xlim()
     hist_ax.set_xlim(xlim)
     hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel(title, fontsize=12)
+    hist_ax.set_ylabel(title, fontsize=fontsize)
     # gal histogram
     hist_with_peak(galdata, bins=200, range=ylim, orientation='horizontal',
                    histtype='step', color='red')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
-                 'stars', fontsize=12, color='blue')
+                 'stars', fontsize=fontsize, color='blue')
     hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
-                 'gals', fontsize=12, color='red')
+                 'gals', fontsize=fontsize, color='red')
     for label in hist_ax.get_yticklabels():
-        label.set_fontsize(12)
+        label.set_fontsize(fontsize)
 
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
     cbar_ax.set_ylabel('{} - {}'.format(cbands[0].replace('LSST_',''), cbands[1].replace('LSST_','')),
-                       fontsize=12)
+                       fontsize=fontsize)
     for label in cbar_ax.get_yticklabels():
-        label.set_fontsize(12)
+        label.set_fontsize(fontsize)
 
     f.savefig(outfile, dpi=220)
 
 if __name__ == '__main__':
+    s=3
     parser = ArgumentParser()
     parser.add_argument('--galfile', default = 'output/corrected_galaxy_data.pkl',
                         help="input galaxy file. Default 'output/corrected_galaxy_data.pkl'")
@@ -210,41 +213,41 @@ if __name__ == '__main__':
 
     if not args.nominal_plots:
         plot_bias(gals, stars, args.bias, args.band, args.color,
-                  outfile=args.outfile, corrected=args.corrected, s=2)
+                  outfile=args.outfile, corrected=args.corrected, s=s)
     else:
         if args.corrected:
             # LSST r-band
             plot_bias(gals, stars, 'Rbar', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar.corrected.LSST_r.png', corrected=True, s=2)
+                      outfile='output/dRbar.corrected.LSST_r.png', corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV.corrected.LSST_r.png', corrected=True, s=2)
+                      outfile='output/dV.corrected.LSST_r.png', corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02.corrected.LSST_r.png', corrected=True, s=2)
+                      outfile='output/dS_m02.corrected.LSST_r.png', corrected=True, s=s)
             # LSST i-band
             plot_bias(gals, stars, 'Rbar', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar.corrected.LSST_i.png', corrected=True, s=2)
+                      outfile='output/dRbar.corrected.LSST_i.png', corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV.corrected.LSST_i.png', corrected=True, s=2)
+                      outfile='output/dV.corrected.LSST_i.png', corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02.corrected.LSST_i.png', corrected=True, s=2)
+                      outfile='output/dS_m02.corrected.LSST_i.png', corrected=True, s=s)
             # Euclid 350nm band
             plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_p06.corrected.Euclid_350.png', corrected=True, s=2)
+                      outfile='output/dS_p06.corrected.Euclid_350.png', corrected=True, s=s)
         else:
             # LSST r-band
             plot_bias(gals, stars, 'Rbar', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar.LSST_r.png', s=2)
+                      outfile='output/dRbar.LSST_r.png', s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV.LSST_r.png', s=2)
+                      outfile='output/dV.LSST_r.png', s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02.LSST_r.png', s=2)
+                      outfile='output/dS_m02.LSST_r.png', s=s)
             # LSST i-band
             plot_bias(gals, stars, 'Rbar', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar.LSST_i.png', s=2)
+                      outfile='output/dRbar.LSST_i.png', s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV.LSST_i.png', s=2)
+                      outfile='output/dV.LSST_i.png', s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02.LSST_i.png', s=2)
+                      outfile='output/dS_m02.LSST_i.png', s=s)
             # Euclid 350nm band
             plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_p06.Euclid_350.png', s=2)
+                      outfile='output/dS_p06.Euclid_350.png', s=s)
