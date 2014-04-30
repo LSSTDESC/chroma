@@ -19,6 +19,7 @@ cwave = np.linspace(500, 860, 256)
 fig, ax = plt.subplots(2, 2, figsize=(8,5))
 
 spectra = ['../../data/SEDs/'+s for s in ('ukg5v.ascii', 'CWW_Sbc_ext.ascii')]
+specnames = ['G5V star', 'Sbc galaxy']
 redshifts = [0.0, 0.7]
 filters = ['../../data/filters/'+s for s in ('LSST_r.dat', 'LSST_i.dat')]
 
@@ -33,9 +34,11 @@ for i, s in enumerate(spectra):
     ax[i,0].plot(wave, photons/scale, color='black')
     ax[i,0].set_xlim(500, 900)
     ax[i,0].set_ylim(0.0, 1.0)
-    ax[i,0].set_ylabel('$d(\mathrm{N_{photons}})/d\lambda$', fontsize=12)
+    ax[i,0].set_ylabel('$d\mathrm{N_{photons}}/d\lambda$', fontsize=12)
+    ax[i,0].text(525, 0.85, specnames[i], fontsize=11)
     ax[i,1].set_ylim(0.0, 1.0)
-    ax[i,1].set_ylabel('$d(\mathrm{N_{photons}})/d\mathrm{R}$', fontsize=12)
+    ax[i,1].set_ylabel('$d\mathrm{N_{photons}}/d\mathrm{R}$', fontsize=12)
+    ax[i,1].text(26.275, 0.85, specnames[i], fontsize=11)
     xs = np.linspace(26.2, 27.2, 100)
     moffat = moffat1d(fwhm=0.6, beta=2.6, center=26.7)
     ax[i,1].plot(xs, moffat(xs)/1.2, color='black')
@@ -45,13 +48,13 @@ for i, s in enumerate(spectra):
         photons_filtered = photons * filter_(wave)
         color = np.interp(wave, cwave, np.linspace(1.0, 0.0, 256))
 
+        # zenith angle = 35 degrees
         R = chroma.get_refraction(wave, 35 * np.pi/180) * 3600 * 180/np.pi
         dR = np.diff(R)
         dwave = np.diff(wave)
         dwave_dR = dwave / dR # Jacobian
         dwave_dR = np.append(dwave_dR, dwave_dR[-1]) # fudge the last array element
         angle_dens = photons_filtered * np.abs(dwave_dR)
-
 
         # first axis is normal spectrum
         ax[i,0].plot(wave, 1.3 * photons_filtered/scale, color='black')
@@ -61,6 +64,9 @@ for i, s in enumerate(spectra):
         # second axis is photons binned by refraction
         ax[i,1].plot(R, angle_dens/angle_dens.max() / 1.2, color='black')
         chroma.chroma_fill_between(R, angle_dens/angle_dens.max() / 1.2, 0, c=color, axes=ax[i,1])
+        if i==0:
+            ax[1,1].plot(R, angle_dens/angle_dens.max() / 1.2, color='black', alpha=0.2)
+            ax[1,1].text(26.9, 0.7, specnames[0], fontsize=11, alpha=0.2)
 
         for label in ax[i,1].get_xticklabels():
             label.set_fontsize(10)
