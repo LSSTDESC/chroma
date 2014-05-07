@@ -99,6 +99,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * 180/np.pi * 3600
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * 180/np.pi * 3600
+            title = '$\delta(\Delta \overline{\mathrm{R}})$ (arcsec)'
     elif bias == 'V':
         title = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
         ax.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#999999', zorder=2)
@@ -109,6 +110,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
+            title = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
     elif bias == 'S_m02':
         title = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#999999', zorder=2)
@@ -119,6 +121,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
+            title = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p06':
         title = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#777777', zorder=2)
@@ -128,6 +131,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
+            title = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p10':
         title = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         stardata = (stars[bias][band] - bias0) / bias0
@@ -136,6 +140,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
+            title = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     else:
         raise ValueError("Unknown chromatic bias in plot_bias")
 
