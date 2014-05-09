@@ -61,10 +61,11 @@ class GalTool(object):
         return im
 
     def get_PSF_image(self, oversample=1):
-        """ Draw an image of the effective PSF.  Note that we choose to convolve by the pixel
-        response function too here.
+        """ Draw an image of the effective PSF.  Note that we choose to include convolution by the
+        pixel response function here.
 
         @param oversample  Integer factor by which to scale output image resolution and size.
+        @returns  galsim.Image
         """
         stamp_size = self.stamp_size * oversample
         pixel_scale = self.pixel_scale / float(oversample)
@@ -78,7 +79,7 @@ class GalTool(object):
             final = galsim.Convolve(self.PSF, pix)
             final.draw(image=im)
         else:
-            raise ValueError("Don't recognize galaxy object type in GalTool.")
+            raise ValueError("Don't recognize galaxy object type.")
         return im
 
     def get_r2(self, gparam, oversample=1):
@@ -208,10 +209,15 @@ class GalTool(object):
 
 
 class SersicTool(GalTool):
-    """ABC to handle both chromatic and monochromatic single Sersic galaxies.
-    """
-    def __init__(self):
-        raise NotImplementedError("Cannot instantiate ABC SersicTool.")
+    def __init__(self, PSF, stamp_size, pixel_scale, offset=(0,0),
+                 SED=1.0, bandpass=None, gsparams=None):
+        self.PSF = PSF
+        self.stamp_size = stamp_size
+        self.pixel_scale = pixel_scale
+        self.offset = offset
+        self.gsparams = gsparams
+        self.SED = SED
+        self.bandpass = bandpass
 
     def _gparam_to_galsim(self, gparam):
         # Turn lmfit.Parameters into a galsim.ChromaticObject
@@ -220,7 +226,7 @@ class SersicTool(GalTool):
                             gsparams=self.gsparams)
         gal = gal.shear(g=gparam['g'].value, beta=gparam['phi'].value * galsim.radians)
         gal = gal.shift(gparam['x0'].value, gparam['y0'].value)
-        gal = gal.withFlux(gparam['flux'].value)
+        gal = gal.withFlux(gparam['flux'].value) * self.SED
         return gal
 
     def set_FWHM(self, gparam, FWHM, oversample=4):
@@ -328,113 +334,25 @@ class SersicTool(GalTool):
         gparam.add('phi', value=0.0)
         return gparam
 
-
-
-class MonoSersicTool(SersicTool):
-    """A GalTool to represent single Sersic profile with a monochromatic PSF.
-    """
-    def __init__(self, PSF, stamp_size, pixel_scale, offset=(0,0), gsparams=None):
-        """ Initialize a single Sersic profile achromatic galaxy/PSF.
-
-        @param PSF     galsim.GSObject for the PSF
-        @param stamp_size   Draw images this many pixels square
-        @param pixel_scale  Pixels are this wide in arcsec.
-        """
-        self.PSF = PSF
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
-        self.offset = offset
-        self.gsparams = gsparams
-
-
-class ChromaticSersicTool(SersicTool):
-    """ A GalTool to represent single Sersic profile chromatic galaxies.
-    """
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, offset=(0,0), gsparams=None):
-        """ Initialize a single Sersic profile chromatic galaxy.
-
-        @param SED          galsim.SED galaxy spectrum
-        @param bandpass     galsim.Bandpass to represent filter being imaged through.
-        @param PSF          galsim.ChromaticObject representing chromatic PSF
-        @param stamp_size   Draw images this many pixels square
-        @param pixel_scale  Pixels are this wide in arcsec.
-        """
-        self.SED = SED
-        self.bandpass = bandpass
-        self.PSF = PSF
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
-        self.offset = offset
-        self.gsparams = gsparams
-
-    def _gparam_to_galsim(self, gparam):
-        # Turn lmfit.Parameters into a galsim.ChromaticObject
-        mono_gal = SersicTool._gparam_to_galsim(self, gparam)
-        chromatic_gal = mono_gal * self.SED
-        return chromatic_gal
-
-
-class FastChromaticSersicTool(SersicTool):
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale, offset=(0,0), gsparams=None):
-        """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
-        speed up image drawing by cacheing an effective PSF.
-
-        @param SED          galsim.SED galaxy spectrum
-        @param bandpass     galsim.Bandpass to represent filter being imaged through.
-        @param PSF          galsim.ChromaticObject representing chromatic PSF
-        @param stamp_size   Draw images this many pixels square
-        @param pixel_scale  Pixels are this wide in arcsec.
-        """
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
-        # now create the effective PSF!
-        star = galsim.Gaussian(fwhm=1.e-8) * SED
-        prof = galsim.Convolve(star, PSF)
-        prof0 = prof.evaluateAtWavelength(bandpass.effective_wavelength)
+    def use_effective_PSF(self):
+        star = galsim.Gaussian(fwhm=1.e-8) * self.SED
+        prof = galsim.Convolve(star, self.PSF)
+        prof0 = prof.evaluateAtWavelength(self.bandpass.effective_wavelength)
         scale = prof0.nyquistDx()
         N = prof0.SBProfile.getGoodImageSize(scale,1.0)
         im = galsim.ImageD(N, N, scale=scale)
-        prof.draw(bandpass, image=im)
+        prof.draw(self.bandpass, image=im)
         self.PSF = galsim.InterpolatedImage(im) # remember the effective PSF
-        self.offset = offset
-        self.gsparams = gsparams
 
-class PerturbFastChromaticSersicTool(SersicTool):
-    """ Similar to ChromaticSersicTool, but add ability to perturb the effective PSF to match the
-    desired second moments.  First, deconvolve the (stellar) effective PSF in the zenith direction
-    by a Gaussian with variance $V_star$, which is the added contribution to the star's
-    zenith-direction second moment due to DCR.  Second, dilate the effective PSF by
-    $sqrt(r^2_{gal}/r^2_{psf})$ to remove difference in chromatic seeing between the galaxy and the
-    star. Third convolve the effective PSF in the zenith-direction by $V_gal$ to match the DCR
-    effect of the galaxy PSF.
-    """
-    def __init__(self, SED, bandpass, PSF, stamp_size, pixel_scale,
-                 r2byr2=None, Vstar=None, Vgal=None, parang=0,
-                 offset=(0,0), gsparams=None):
-        """ Initialize a single Sersic profile chromatic galaxy.  Internally use some trickery to
-        speed up image drawing by cacheing an effective PSF.
-
-        @param SED          galsim.SED galaxy spectrum
-        @param bandpass     galsim.Bandpass to represent filter being imaged through.
-        @param PSF          galsim.ChromaticObject representing chromatic PSF
-        @param stamp_size   Draw images this many pixels square
-        @param pixel_scale  Pixels are this wide in arcsec.
-        @param r2ybr2       r^2_{PSF, gal} / r^2_{PSF, *} for chromatic seeing correction.
-        @param Vstar        Second moment of DCR kernel for star PSF.
-        @param Vgal         Second moment of DCR kernel for galaxy PSF.
-        @param parang       Parallactic angle of DCR difference kernel.
-        """
-        if Vstar is None:
-            Vstar = 1.e-8
-        if Vgal is None:
-            Vgal = 1.e-8
-        if r2byr2 is None:
-            r2byr2 = 1.0
-        self.stamp_size = stamp_size
-        self.pixel_scale = pixel_scale
-        # Create the unperturbed effective PSF:
-        star = galsim.Gaussian(fwhm=1.e-8) * SED
-        prof = galsim.Convolve(star, PSF)
+    def apply_perturbative_correction(self, r2byr2=1.0, Vstar=1.e-8, Vgal=1.e-8,
+                                      parang=0.0*galsim.degrees):
+        if isinstance(self.PSF, galsim.ChromaticObject):
+            star = galsim.Gaussian(fwhm=1.e-8) * self.SED
+            prof = galsim.Convolve(star, self.PSF)
+        elif isinstance(self.PSF, galsim.GSObject):
+            prof = self.PSF
+        else:
+            raise ValueError("Don't recognize galaxy object type.")
 
         #-----------------------
         # Stellar DCR correction
@@ -445,7 +363,7 @@ class PerturbFastChromaticSersicTool(SersicTool):
         sigma = (q * Vstar)**0.5
         kernel = galsim.Gaussian(sigma=sigma)
         kernel = kernel.shear(g1=-(1-q)/(1+q))
-        kernel = kernel.rotate(parang * galsim.degrees)
+        kernel = kernel.rotate(parang)
         prof = galsim.Convolve(galsim.Deconvolve(kernel), prof)
 
         #----------------------------
@@ -457,22 +375,22 @@ class PerturbFastChromaticSersicTool(SersicTool):
         sigma = (q * Vgal)**0.5
         kernel = galsim.Gaussian(sigma=sigma)
         kernel = kernel.shear(g1=-(1-q)/(1+q))
-        kernel = kernel.rotate(parang * galsim.degrees)
+        kernel = kernel.rotate(parang)
         prof = galsim.Convolve(kernel, prof)
 
         # and draw into an InterpolatedImage
-        prof0 = prof.evaluateAtWavelength(bandpass.effective_wavelength)
+        prof0 = prof.evaluateAtWavelength(self.bandpass.effective_wavelength)
         scale = prof0.nyquistDx()
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N*9, N*9, scale=scale*0.3)
-        prof.draw(bandpass, image=im)
+        if isinstance(prof, galsim.ChromaticObject):
+            prof.draw(self.bandpass, image=im)
+        else:
+            prof.draw(image=im)
         self.PSF = galsim.InterpolatedImage(im)
-        self.offset = offset
-        self.gsparams = gsparams
 
 
 # Note that DoubleSersicTool and FastDoubleSersicTool are both currently untested.
-
 class DoubleSersicTool(GalTool):
     """ A GalTool to represent a sum of two chroma Sersic profiles.
     """
