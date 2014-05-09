@@ -124,6 +124,39 @@ def ringtest(gamma, n_ring, gen_target_image, gen_init_param, measure_ellip, sil
     gamma_hat = np.mean(gamma_hats)
     return gamma_hat
 
+def measure_shear_calib(gparam, gen_target_image, get_ring_params, measurer, nring=3):
+    """ Measure the shear calibration parameters m1, m2, c1, and c2 by performing ring tests for
+    two values of true shear.
+
+    @param    gparam            Parameters describing the galaxy to be simulated.
+    @param    gen_target_image  Python function that returns a GalSim.Image given a `gparam`
+                                argument.
+    @param    get_ring_params   Python function that returns gparam initial guesses as a function
+                                of shear and angle around the ellipticity ring.
+    @param    measurer          A chroma.EllipMeasurer instance to measure the ellipticity of each
+                                target image around the ring.
+    @param    nring             Number of angles around the ellipticity ring for which to generate
+                                images.
+    @returns  ((m1, m2), (c1, c2))
+    """
+    # Do ring test for two values of the complex reduced shear `gamma`, solve for m and c.
+    gamma0 = 0.0 + 0.0j
+    gamma0_hat = ringtest(gamma0, nring, gen_target_image, get_ring_params, measurer,
+                          silent=True)
+    # c is the same as the estimated reduced shear `gamma_hat` when the input reduced shear
+    # is (0.0, 0.0)
+    c = gamma0_hat.real, gamma0_hat.imag
+
+    gamma1 = 0.01 + 0.02j
+    gamma1_hat = ringtest(gamma1, nring, gen_target_image, get_ring_params, measurer,
+                          silent=True)
+    # solve for m
+    m0 = (gamma1_hat.real - c[0])/gamma1.real - 1.0
+    m1 = (gamma1_hat.imag - c[1])/gamma1.imag - 1.0
+    m = m0, m1
+
+    return m, c
+
 def moments(image):
     """Compute first and second (quadrupole) moments of `image`.  Scales result for non-unit width
     pixels.
