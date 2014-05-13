@@ -167,23 +167,19 @@ def ring_vs_z(args):
     logger.info('# ---------------')
     logger.info('# Galaxy Sersic index: {}'.format(args.sersic_n))
     logger.info('# Galaxy ellipticity: {}'.format(args.gal_ellip))
-    if args.gal_convFWHM is None:
-        logger.info('# Galaxy sqrt(r2): {} arcsec'.format(args.gal_r2))
-    else:
+    if args.gal_convFWHM is not None:
         logger.info('# Galaxy PSF-convolved FWHM: {:6.3f} arcsec'.format(
                     args.gal_convFWHM))
+    elif args.gal_HLR is not None:
+        logger.info('# Galaxy HLR: {} arcsec'.format(args.gal_HLR))
+    else:
+        logger.info('# Galaxy sqrt(r2): {} arcsec'.format(args.gal_r2))
 
     logger.info('# ')
     logger.info('# Shear Calibration Results')
     logger.info('# -------------------------')
     logger.info(('#  {:>5s}'+' {:>9s}'*8).format('z', 'anltc m1', 'ring m1', 'anltc m2', 'ring m2',
                                                  'anltc c1', 'ring c1', 'anltc c2', 'ring c2'))
-
-    offset = (args.image_x0, args.image_y0)
-    fit_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
-                                 star_SED, bandpass)
-    if not args.slow:
-        fit_tool.use_effective_PSF()
 
     zs = np.arange(args.zmin, args.zmax+0.001, args.dz)
     for z in zs:
@@ -194,10 +190,14 @@ def ring_vs_z(args):
             gal_SED = gal_SED.thin(args.thin)
         gal_SED = gal_SED.withFlux(1.0, bandpass)
 
+        offset = (args.image_x0, args.image_y0)
+        fit_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
+                                     star_SED, bandpass)
         target_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                         gal_SED, bandpass)
         if not args.slow:
             target_tool.use_effective_PSF()
+            fit_tool.use_effective_PSF()
 
         # build galaxy
         gparam = target_tool.default_galaxy()
