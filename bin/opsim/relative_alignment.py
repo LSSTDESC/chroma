@@ -1,50 +1,54 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import _mypath
 import chroma
 
 def loadcat():
-    return numpy.load('indata/opsim.npy')
+    return np.load('indata/opsim.npy')
 
 def lensing_visits(cat):
     r_cond = cat['filter'] == 'r'
     i_cond = cat['filter'] == 'i'
-    X_cond = cat['airmass'] < 2.0
-    return numpy.logical_and(numpy.logical_or(r_cond, i_cond), X_cond)
+    X_cond = cat['airmass'] < 1.5
+    return (r_cond | i_cond) & X_cond
 
-def plot_field(cat, field, filter_name, align_SED, target_SED, target_z, ax,
+def plot_field(cat, field, filter_name, align_SED_file, target_SED_file, target_z, ax,
                label, **kwargs):
     wobj = (cat['fieldID'] == field) & (cat['filter'] == filter_name)
 
     data_dir = '../../data/'
     filter_dir = data_dir+'filters/'
     SED_dir = data_dir+'SEDs/'
-    filter_file = filter_dir+'LSST_{}.dat'.format(filter_name)
-    swave, sphotons = chroma.utils.get_photons(SED_dir+align_SED, filter_file, 0)
-    gwave, gphotons = chroma.utils.get_photons(SED_dir+target_SED, filter_file, target_z)
-    s_mom = chroma.disp_moments(swave, sphotons, zenith=numpy.pi/4.0) # tan(z) = 1
-    g_mom = chroma.disp_moments(gwave, gphotons, zenith=numpy.pi/4.0) # tan(z) = 1
-    delta_R = (g_mom[0] - s_mom[0]) * 180./numpy.pi * 3600 * 1000 # milliarcseconds
-    delta_V = (g_mom[1] - s_mom[1]) * (180./numpy.pi * 3600)**2 # square arcseconds
-    delta_ellip = delta_V / (2.0 * 0.273) * numpy.tan(cat[wobj]['z_a'])**2
+    align_SED = chroma.SED(SED_dir+align_SED_file)
+    target_SED = chroma.SED(SED_dir+target_SED_file).atRedshift(target_z)
+    bandpass = chroma.Bandpass(filter_dir+'LSST_{}.dat'.format(filter_name))
 
-    r = delta_R * numpy.tan(cat[wobj]['z_a'])
+    align_moments = align_SED.getDCRMomentShifts(bandpass, zenith=np.pi/4.0)
+    target_moments = target_SED.getDCRMomentShifts(bandpass, zenith=np.pi/4.0)
+
+    delta_R = (target_moments[0] - align_moments[0]) * 180./np.pi * 3600 * 1000 # milliarcseconds
+    delta_V = (target_moments[1] - align_moments[1]) * (180./np.pi * 3600)**2 # square arcseconds
+
+    rsquared = 0.4**2 # square arcseconds
+    m = delta_V * np.tan(cat[wobj]['z_a'])**2 / rsquared
+
+    r = delta_R * np.tan(cat[wobj]['z_a'])
     q = cat[wobj]['q']
 
-    x0 = r * numpy.sin(q)
-    y0 = r * numpy.cos(q)
-    x1 = (r + delta_ellip*2000) * numpy.sin(q)
-    y1 = (r + delta_ellip*2000) * numpy.cos(q)
+    x0 = r * np.sin(q)
+    y0 = r * np.cos(q)
+    x1 = (r + m*2000) * np.sin(q)
+    y1 = (r + m*2000) * np.cos(q)
     for i, (x00, x11, y00, y11) in enumerate(zip(x0, x1, y0, y1)):
         if i == 0:
             ax.plot([x00, x11], [y00, y11], label=label, **kwargs)
         else:
             ax.plot([x00, x11], [y00, y11], **kwargs)
     ax.plot([-80, -80 + 2000*0.01], [80, 80], color='black')
-    ax.text(-82, 83, '0.01', size=18)
-#    ax.scatter(numpy.r_[x0, x1], numpy.r_[y0,y1], s=1, label=target_SED, **kwargs)
-#    ax.plot(numpy.r_[x0, x1].T, numpy.r_[y0,y1].T, label=target_SED, **kwargs)
+    ax.text(-82, 83, 'm=0.01', size=14)
 
 if __name__ == '__main__':
 
@@ -76,4 +80,7 @@ if __name__ == '__main__':
     ax.tick_params(axis='both', which='major', labelsize=18)
     fig.tight_layout()
     #plt.show()
+    import os
+    if not os.path.isdir('output/'):
+        os.mkdir('output/')
     plt.savefig('output/relative_alignment.png', dpi=220)
