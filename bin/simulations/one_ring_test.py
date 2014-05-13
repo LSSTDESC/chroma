@@ -7,7 +7,6 @@ images and fitting their ellipticity either by fitting model parameters with lea
 using the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm.
 """
 
-
 import os
 from argparse import ArgumentParser
 import logging
@@ -39,7 +38,7 @@ def one_ring_test(args):
     bandpass = chroma.Bandpass(args.datadir+args.filter)
 
     # load and redshift galaxy SED
-    gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
+    gal_SED = chroma.SED(args.datadir+args.galspec, flux_type="flambda")
     gal_SED = gal_SED.atRedshift(args.redshift)
 
     # load stellar SED
@@ -132,7 +131,7 @@ def one_ring_test(args):
     if args.gal_convFWHM is not None:
         gparam = target_tool.set_FWHM(gparam, args.gal_convFWHM)
     elif args.gal_HLR is not None:
-        gparam['hlr'].value = args.gal_HLR
+        gparam["hlr"].value = args.gal_HLR
     else:
         gparam = target_tool.set_uncvl_r2(gparam, args.gal_r2)
     args.gal_r2 = target_tool.get_uncvl_r2(gparam)
@@ -187,61 +186,61 @@ def one_ring_test(args):
                                                args.parallactic_angle * galsim.degrees)
 
     # Print out configuration details for this run
-    logger.debug('')
-    logger.debug('General settings')
-    logger.debug('----------------')
-    logger.debug('stamp size: {}'.format(args.stamp_size))
-    logger.debug('pixel scale: {} arcsec/pixel'.format(args.pixel_scale))
-    logger.debug('ring test angles: {}'.format(args.nring))
+    logger.debug("")
+    logger.debug("General settings")
+    logger.debug("----------------")
+    logger.debug("stamp size: {}".format(args.stamp_size))
+    logger.debug("pixel scale: {} arcsec/pixel".format(args.pixel_scale))
+    logger.debug("ring test angles: {}".format(args.nring))
 
-    logger.debug('')
-    logger.debug('Spectra settings')
-    logger.debug('----------------')
-    logger.debug('Data directory: {}'.format(args.datadir))
-    logger.debug('Filter: {}'.format(args.filter))
-    logger.debug('Filter effective wavelength: {}'.format(PSF_wave))
-    logger.debug('Thinning with relative error: {}'.format(args.thin))
-    logger.debug('Galaxy SED: {}'.format(args.galspec))
-    logger.debug('Galaxy redshift: {}'.format(args.redshift))
-    logger.debug('Star SED: {}'.format(args.starspec))
-    logger.debug('')
-    logger.debug('Spectra chromatic biases')
-    logger.debug('------------------------')
-    logger.debug('Vstar: {:8.6f} arcsec^2'.format(Vstar))
-    logger.debug('Vgal: {:8.6f} arcsec^2'.format(Vgal))
-    logger.debug('r^2_{{PSF,gal}}/r^2_{{PSF,*}}: {:8.6f}'.format(r2r2))
-    logger.debug('')
+    logger.debug("")
+    logger.debug("Spectra settings")
+    logger.debug("----------------")
+    logger.debug("Data directory: {}".format(args.datadir))
+    logger.debug("Filter: {}".format(args.filter))
+    logger.debug("Filter effective wavelength: {}".format(PSF_wave))
+    logger.debug("Thinning with relative error: {}".format(args.thin))
+    logger.debug("Galaxy SED: {}".format(args.galspec))
+    logger.debug("Galaxy redshift: {}".format(args.redshift))
+    logger.debug("Star SED: {}".format(args.starspec))
+    logger.debug("")
+    logger.debug("Spectra chromatic biases")
+    logger.debug("------------------------")
+    logger.debug("Vstar: {:8.6f} arcsec^2".format(Vstar))
+    logger.debug("Vgal: {:8.6f} arcsec^2".format(Vgal))
+    logger.debug("r^2_{{PSF,gal}}/r^2_{{PSF,*}}: {:8.6f}".format(r2r2))
+    logger.debug("")
     if args.moffat:
-        logger.debug('Moffat PSF settings')
-        logger.debug('-------------------')
-        logger.debug('PSF beta: {}'.format(args.PSF_beta))
+        logger.debug("Moffat PSF settings")
+        logger.debug("-------------------")
+        logger.debug("PSF beta: {}".format(args.PSF_beta))
     elif args.kolmogorov:
-        logger.debug('Kolmogorov PSF settings')
-        logger.debug('-----------------------')
+        logger.debug("Kolmogorov PSF settings")
+        logger.debug("-----------------------")
     else:
-        logger.debug('Gaussian PSF settings')
-        logger.debug('---------------------')
-    logger.debug('PSF phi: {} degrees'.format(args.PSF_phi))
-    logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
-    logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
-    logger.debug('PSF sqrt(r^2): {}'.format(r2_PSF))
-    logger.debug('PSF alpha: {}'.format(args.alpha))
+        logger.debug("Gaussian PSF settings")
+        logger.debug("---------------------")
+    logger.debug("PSF phi: {} degrees".format(args.PSF_phi))
+    logger.debug("PSF ellip: {}".format(args.PSF_ellip))
+    logger.debug("PSF FWHM: {} arcsec".format(args.PSF_FWHM))
+    logger.debug("PSF sqrt(r^2): {}".format(r2_PSF))
+    logger.debug("PSF alpha: {}".format(args.alpha))
 
     if not args.noDCR:
-        logger.debug('')
-        logger.debug('Observation settings')
-        logger.debug('--------------------')
-        logger.debug('zenith angle: {} degrees'.format(args.zenith_angle))
-        logger.debug('parallactic angle: {} degrees'.format(args.parallactic_angle))
+        logger.debug("")
+        logger.debug("Observation settings")
+        logger.debug("--------------------")
+        logger.debug("zenith angle: {} degrees".format(args.zenith_angle))
+        logger.debug("parallactic angle: {} degrees".format(args.parallactic_angle))
 
-    logger.debug('')
-    logger.debug('Galaxy settings')
-    logger.debug('---------------')
-    logger.debug('Galaxy Sersic index: {}'.format(args.sersic_n))
-    logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
-    logger.debug('Galaxy sqrt(r^2): {} arcsec'.format(args.gal_r2))
-    logger.debug('Galaxy HLR: {:6.3f} arcsec'.format(gparam['hlr'].value))
-    logger.debug('Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec'.format(
+    logger.debug("")
+    logger.debug("Galaxy settings")
+    logger.debug("---------------")
+    logger.debug("Galaxy Sersic index: {}".format(args.sersic_n))
+    logger.debug("Galaxy ellipticity: {}".format(args.gal_ellip))
+    logger.debug("Galaxy sqrt(r^2): {} arcsec".format(args.gal_r2))
+    logger.debug("Galaxy HLR: {:6.3f} arcsec".format(gparam["hlr"].value))
+    logger.debug("Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec".format(
         gal_fwhm, gal_fwhm_err))
 
     # If a diagnostic FITS file is requested, then set this up here, and write the images of the
@@ -249,8 +248,8 @@ def one_ring_test(args):
     hdulist = None
     if args.diagnostic is not None:
         hdulist = fits.HDUList()
-        hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
-        hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
+        hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name="GALPSF"))
+        hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name="STARPSF"))
 
     # The chroma.measure_shear_calib() function requires several input function arguments that we
     # haven't defined yet.  The first of these is target_image_generator, which takes input
@@ -281,114 +280,114 @@ def one_ring_test(args):
     # Close the diagnostic FITS file if it was opened above.
     if args.diagnostic is not None:
         path, base = os.path.split(args.diagnostic)
-        if path is not '':
+        if path is not "":
             if not os.path.isdir(path):
                 os.mkdir(path)
         hdulist.writeto(args.diagnostic, clobber=True)
 
     # And print the results!
 
-    logger.info('')
-    logger.info('Shear Calibration Results')
-    logger.info('-------------------------')
-    logger.info(('        ' + ' {:>9s}'*4).format('m1','m2','c1','c2'))
-    logger.info(('analytic' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(m1, m2, c1, c2))
-    logger.info(('ring    ' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(m[0], m[1], c[0], c[1]))
-    logger.info('')
-    logger.info('Survey requirements')
-    logger.info(('DES     ' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(0.008, 0.008, 0.0025, 0.0025))
-    logger.info(('LSST    ' + ' {:9.4f}'*2 + ' {:9.4f}'*2).format(0.003, 0.003, 0.0015, 0.0015))
+    logger.info("")
+    logger.info("Shear Calibration Results")
+    logger.info("-------------------------")
+    logger.info(("        " + " {:>9s}"*4).format("m1","m2","c1","c2"))
+    logger.info(("analytic" + " {:9.4f}"*2 + " {:9.4f}"*2).format(m1, m2, c1, c2))
+    logger.info(("ring    " + " {:9.4f}"*2 + " {:9.4f}"*2).format(m[0], m[1], c[0], c[1]))
+    logger.info("")
+    logger.info("Survey requirements")
+    logger.info(("DES     " + " {:9.4f}"*2 + " {:9.4f}"*2).format(0.008, 0.008, 0.0025, 0.0025))
+    logger.info(("LSST    " + " {:9.4f}"*2 + " {:9.4f}"*2).format(0.003, 0.003, 0.0015, 0.0015))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser()
 
     # Input data file arguments
-    parser.add_argument('--datadir', default='../../data/',
+    parser.add_argument("--datadir", default="../../data/",
                         help="directory to find SED and filter files.")
-    parser.add_argument('-s', '--starspec', default='SEDs/ukg5v.ascii',
-                        help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii')")
-    parser.add_argument('-g', '--galspec', default='SEDs/KIN_Sa_ext.ascii',
+    parser.add_argument("-s", "--starspec", default="SEDs/ukg5v.ascii",
+                        help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii'x)")
+    parser.add_argument("-g", "--galspec", default="SEDs/KIN_Sa_ext.ascii",
                         help="galactic spectrum used to create target image " +
                              "(Default 'SEDs/KIN_Sa_ext.ascii')")
-    parser.add_argument('-f', '--filter', default='filters/LSST_r.dat',
+    parser.add_argument("-f", "--filter", default="filters/LSST_r.dat",
                         help="filter for simulation (Default 'filters/LSST_r.dat')")
 
     # Spectrum treatment arguments
-    parser.add_argument('-z', '--redshift', type=float, default=0.0,
+    parser.add_argument("-z", "--redshift", type=float, default=0.0,
                         help="galaxy redshift (Default 0.0)")
-    parser.add_argument('--thin', type=float, default=1.e-8,
+    parser.add_argument("--thin", type=float, default=1.e-8,
                         help="Thin but retain bandpass integral accuracy to this relative amount."
                         +" (Default: 1.e-8).")
 
     # Observation input arguments
-    parser.add_argument('-za', '--zenith_angle', default=45.0, type=float,
+    parser.add_argument("-za", "--zenith_angle", default=45.0, type=float,
                         help="zenith angle in degrees for differential chromatic refraction " +
-                             "computation (Default 45.0)")
-    parser.add_argument('-q', '--parallactic_angle', default=0.0, type=float,
+                             "computation (Default: 45.0)")
+    parser.add_argument("-q", "--parallactic_angle", default=0.0, type=float,
                         help="parallactic angle in degrees for differential chromatic refraction " +
-                             "computation (Default 0.0)")
+                             "computation (Default: 0.0)")
 
     # PSF structural arguments
     PSF_profile = parser.add_mutually_exclusive_group()
-    PSF_profile.add_argument('--kolmogorov', action='store_true',
+    PSF_profile.add_argument("--kolmogorov", action="store_true",
                              help="Use Kolmogorov PSF (Default Gaussian)")
-    PSF_profile.add_argument('--moffat', action='store_true',
+    PSF_profile.add_argument("--moffat", action="store_true",
                              help="Use Moffat PSF (Default Gaussian)")
-    parser.add_argument('--PSF_beta', type=float, default=2.5,
+    parser.add_argument("--PSF_beta", type=float, default=3.0,
                         help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
     PSF_size = parser.add_mutually_exclusive_group()
-    PSF_size.add_argument('--PSF_FWHM', type=float, default=0.7,
+    PSF_size.add_argument("--PSF_FWHM", type=float, default=0.7,
                           help="Set FWHM of PSF in arcsec (Default 0.7).")
-    PSF_size.add_argument('--PSF_r2', type=float,
+    PSF_size.add_argument("--PSF_r2", type=float,
                           help="Override PSF_FWHM with second moment radius sqrt(r^2).")
-    parser.add_argument('--PSF_phi', type=float, default=0.0,
+    parser.add_argument("--PSF_phi", type=float, default=0.0,
                         help="Set position angle of PSF in degrees (Default 0.0).")
-    parser.add_argument('--PSF_ellip', type=float, default=0.0,
+    parser.add_argument("--PSF_ellip", type=float, default=0.0,
                         help="Set ellipticity of PSF (Default 0.0)")
 
     # Galaxy structural arguments
-    parser.add_argument('-n', '--sersic_n', type=float, default=0.5,
-                        help='Sersic index (Default 0.5)')
-    parser.add_argument('--gal_ellip', type=float, default=0.3,
+    parser.add_argument("-n", "--sersic_n", type=float, default=0.5,
+                        help="Sersic index (Default 0.5)")
+    parser.add_argument("--gal_ellip", type=float, default=0.3,
                         help="Set ellipticity of galaxy (Default 0.3)")
     gal_size = parser.add_mutually_exclusive_group()
-    gal_size.add_argument('--gal_r2', type=float, default=0.27,
+    gal_size.add_argument("--gal_r2", type=float, default=0.27,
                           help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
-    gal_size.add_argument('--gal_convFWHM', type=float,
+    gal_size.add_argument("--gal_convFWHM", type=float,
                           help="Override gal_r2 by setting galaxy PSF-convolved FWHM.")
-    gal_size.add_argument('--gal_HLR', type=float,
+    gal_size.add_argument("--gal_HLR", type=float,
                           help="Override gal_r2 by setting galaxy half-light-radius.")
 
     # Simulation input arguments
-    parser.add_argument('--nring', type=int, default=3,
+    parser.add_argument("--nring", type=int, default=3,
                         help="Set number of angles in ring test (Default 3)")
-    parser.add_argument('--pixel_scale', type=float, default=0.2,
+    parser.add_argument("--pixel_scale", type=float, default=0.2,
                         help="Set pixel scale in arcseconds (Default 0.2)")
-    parser.add_argument('--stamp_size', type=int, default=31,
+    parser.add_argument("--stamp_size", type=int, default=31,
                         help="Set postage stamp size in pixels (Default 31)")
-    parser.add_argument('--image_x0', type=float, default=0.0,
+    parser.add_argument("--image_x0", type=float, default=0.0,
                         help="Image origin x-offset in pixels (Default 0.0)")
-    parser.add_argument('--image_y0', type=float, default=0.0,
+    parser.add_argument("--image_y0", type=float, default=0.0,
                         help="Image origin y-offset in pixels (Default 0.0)")
-    parser.add_argument('--slow', action='store_true',
+    parser.add_argument("--slow", action="store_true",
                         help="Use ChromaticSersicTool (somewhat more careful) instead of "
                             +"FastChromaticSersicTool.")
 
     # Physics arguments
-    parser.add_argument('--alpha', type=float, default=-0.2,
+    parser.add_argument("--alpha", type=float, default=-0.2,
                         help="Power law index for chromatic seeing (Default: -0.2)")
-    parser.add_argument('--noDCR', action='store_true',
+    parser.add_argument("--noDCR", action="store_true",
                         help="Exclude differential chromatic refraction (DCR) in PSF."
                         +" (Default: include DCR)")
 
     # Miscellaneous arguments
-    parser.add_argument('--diagnostic',
+    parser.add_argument("--diagnostic",
                         help="Filename to which to write diagnostic images (Default: '')")
-    parser.add_argument('--hsm', action='store_true',
+    parser.add_argument("--hsm", action="store_true",
                         help="Use HSM regaussianization to estimate ellipticity")
-    parser.add_argument('--perturb', action='store_true',
+    parser.add_argument("--perturb", action="store_true",
                         help="Use PerturbFastChromaticSersicTool to estimate ellipticity")
-    parser.add_argument('--quiet', action='store_true',
+    parser.add_argument("--quiet", action="store_true",
                         help="Don't print settings")
 
     # and run the program...
