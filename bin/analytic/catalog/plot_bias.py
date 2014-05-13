@@ -10,8 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Specify the locations of three different plot elements.
-hist_axes_range = [0.17, 0.12, 0.07, 0.8]
-scatter_axes_range = [0.24, 0.12, 0.72, 0.8]
+hist_axes_range = [0.17, 0.12, 0.09, 0.8]
+scatter_axes_range = [0.26, 0.12, 0.70, 0.8]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 data_dir = '../../../data/'
 star_table = '../../analytic/output/stars.pkl'
