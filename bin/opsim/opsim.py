@@ -363,7 +363,7 @@ def angle_dist(cat, fieldID, framenum=None, hardcopy=False):
         f.savefig("frames/frame{:04d}.png".format(framenum))
     return framenum
 
-def R_variance_vs_dec(cat):
+def epoch_variance(cat):
     good = lensing_visits(cat)
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -385,7 +385,9 @@ def R_variance_vs_dec(cat):
     ax.plot(decs, dys, color="blue", label=r"$\langle(\Delta y)^2\rangle_\mathrm{epochs}$")
     ax.plot(decs, dxys, color="green", label=r"$\langle(\Delta x)(\Delta y)\rangle_\mathrm{epochs}$")
     ax.legend()
-    plt.show()
+    ax.set_xlabel('Declination (deg)')
+    ax.set_ylabel('Misregistration second moments (arcsec$^2$)')
+    plt.savefig('output/epoch_variance.png', dpi=220)
 
 def make_movie_frames(cat, start=0):
     s=list(set(cat["fieldID"]))
