@@ -38,11 +38,11 @@ for i, s in enumerate(spectra):
     ax[i,0].text(525, 0.85, specnames[i], fontsize=11)
     ax[i,1].set_ylim(0.0, 1.0)
     ax[i,1].set_ylabel('$d\mathrm{N_{photons}}/d\mathrm{R}$', fontsize=12)
-    ax[i,1].text(37.6, 0.85, specnames[i], fontsize=11)
-    xs = np.linspace(37.5, 39.0, 100)
-    moffat = moffat1d(fwhm=0.76, beta=3.0, center=38.25)
+    ax[i,1].text(37.675, 0.85, specnames[i], fontsize=11)
+    xs = np.linspace(37.6, 38.8, 100)
+    moffat = moffat1d(fwhm=0.7, beta=3.0, center=38.2)
     ax[i,1].plot(xs, moffat(xs)/1.2, color='black')
-    ax[i,1].set_xlim(37.5, 39.0)
+    ax[i,1].set_xlim(37.6, 38.8)
 
     for f in filters:
         filter_ = chroma.SampledBandpass(f).createTruncated(blue_limit=500, red_limit=1000)
@@ -67,7 +67,7 @@ for i, s in enumerate(spectra):
         chroma.chroma_fill_between(R, angle_dens/angle_dens.max() / 1.2, 0, c=color, axes=ax[i,1])
         if i==0:
             ax[1,1].plot(R, angle_dens/angle_dens.max() / 1.2, color='black', alpha=0.2)
-            ax[1,1].text(38.5, 0.4, specnames[0], fontsize=11, alpha=0.2)
+            ax[1,1].text(38.5, 0.5, specnames[0], fontsize=11, alpha=0.2)
 
         for label in ax[i,1].get_xticklabels():
             label.set_fontsize(10)
