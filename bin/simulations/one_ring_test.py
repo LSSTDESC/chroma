@@ -329,16 +329,18 @@ if __name__ == '__main__':
                              "computation (Default 0.0)")
 
     # PSF structural arguments
-    parser.add_argument('--kolmogorov', action='store_true',
-                        help="Use Kolmogorov PSF (Default Gaussian)")
-    parser.add_argument('--moffat', action='store_true',
-                        help="Use Moffat PSF (Default Gaussian)")
+    PSF_profile = parser.add_mutually_exclusive_group()
+    PSF_profile.add_argument('--kolmogorov', action='store_true',
+                             help="Use Kolmogorov PSF (Default Gaussian)")
+    PSF_profile.add_argument('--moffat', action='store_true',
+                             help="Use Moffat PSF (Default Gaussian)")
     parser.add_argument('--PSF_beta', type=float, default=2.5,
                         help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
-    parser.add_argument('--PSF_FWHM', type=float, default=0.7,
-                        help="Set FWHM of PSF in arcsec (Default 0.7).")
-    parser.add_argument('--PSF_r2', type=float,
-                        help="Override PSF_FWHM with second moment radius sqrt(r^2).")
+    PSF_size = parser.add_mutually_exclusive_group()
+    PSF_size.add_argument('--PSF_FWHM', type=float, default=0.7,
+                          help="Set FWHM of PSF in arcsec (Default 0.7).")
+    PSF_size.add_argument('--PSF_r2', type=float,
+                          help="Override PSF_FWHM with second moment radius sqrt(r^2).")
     parser.add_argument('--PSF_phi', type=float, default=0.0,
                         help="Set position angle of PSF in degrees (Default 0.0).")
     parser.add_argument('--PSF_ellip', type=float, default=0.0,
@@ -349,12 +351,13 @@ if __name__ == '__main__':
                         help='Sersic index (Default 0.5)')
     parser.add_argument('--gal_ellip', type=float, default=0.3,
                         help="Set ellipticity of galaxy (Default 0.3)")
-    parser.add_argument('--gal_r2', type=float, default=0.27,
-                        help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
-    parser.add_argument('--gal_convFWHM', type=float,
-                        help="Override gal_r2 by setting galaxy PSF-convolved FWHM.")
-    parser.add_argument('--gal_HLR', type=float,
-                        help="Override gal_r2 by setting galaxy half-light-radius.")
+    gal_size = parser.add_mutually_exclusive_group()
+    gal_size.add_argument('--gal_r2', type=float, default=0.27,
+                          help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
+    gal_size.add_argument('--gal_convFWHM', type=float,
+                          help="Override gal_r2 by setting galaxy PSF-convolved FWHM.")
+    gal_size.add_argument('--gal_HLR', type=float,
+                          help="Override gal_r2 by setting galaxy half-light-radius.")
 
     # Simulation input arguments
     parser.add_argument('--nring', type=int, default=3,
