@@ -1,579 +1,83 @@
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-# DCR only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR only', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GG_DCR.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SG_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GM_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SM_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2_DCR.png', dpi=220)
-
-# Chromatic seeing only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'Chromatic seeing only', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GG_CS.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SG_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GM_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SM_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2_CS.png', dpi=220)
-
-# both DCR and chromatic seeing plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR and chromatic seeing', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GG_both.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SG_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/GM_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/SM_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2_both.png', dpi=220)
-
-# And not for the fixed FWHM versions
-# DCR only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR only', fontsize=14)
-ax1.text(0.1, 0.09, r'(FWHM fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GG_DCR.dat').T
-
-ax1.plot(z, m1a, color='blue')
-ax1.plot(z, m2a, color='blue')
-ax2.plot(z, c1a, color='blue')
-ax2.plot(z, c2a, color='blue')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SG_DCR.dat').T
-
-ax1.plot(z, m1a, color='red')
-ax1.plot(z, m2a, color='red')
-ax2.plot(z, c1a, color='red')
-ax2.plot(z, c2a, color='red')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GM_DCR.dat').T
-
-ax1.plot(z, m1a, color='magenta')
-ax1.plot(z, m2a, color='magenta')
-ax2.plot(z, c1a, color='magenta')
-ax2.plot(z, c2a, color='magenta')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SM_DCR.dat').T
-
-ax1.plot(z, m1a, color='green')
-ax1.plot(z, m2a, color='green')
-ax2.plot(z, c1a, color='green')
-ax2.plot(z, c2a, color='green')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/FWHM_DCR.png', dpi=220)
-
-# Chromatic seeing only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'Chromatic seeing only', fontsize=14)
-ax1.text(0.1, 0.09, r'(FWHM fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GG_CS.dat').T
-
-ax1.plot(z, m1a, color='blue')
-ax1.plot(z, m2a, color='blue')
-ax2.plot(z, c1a, color='blue')
-ax2.plot(z, c2a, color='blue')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SG_CS.dat').T
-
-ax1.plot(z, m1a, color='red')
-ax1.plot(z, m2a, color='red')
-ax2.plot(z, c1a, color='red')
-ax2.plot(z, c2a, color='red')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GM_CS.dat').T
-
-ax1.plot(z, m1a, color='magenta')
-ax1.plot(z, m2a, color='magenta')
-ax2.plot(z, c1a, color='magenta')
-ax2.plot(z, c2a, color='magenta')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SM_CS.dat').T
-
-ax1.plot(z, m1a, color='green')
-ax1.plot(z, m2a, color='green')
-ax2.plot(z, c1a, color='green')
-ax2.plot(z, c2a, color='green')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/FWHM_CS.png', dpi=220)
-
-# both DCR and chromatic seeing plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR and chromatic seeing', fontsize=14)
-ax1.text(0.1, 0.09, r'(FWHM fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GG_both.dat').T
-
-ax1.plot(z, m1a, color='blue')
-ax1.plot(z, m2a, color='blue')
-ax2.plot(z, c1a, color='blue')
-ax2.plot(z, c2a, color='blue')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SG_both.dat').T
-
-ax1.plot(z, m1a, color='red')
-ax1.plot(z, m2a, color='red')
-ax2.plot(z, c1a, color='red')
-ax2.plot(z, c2a, color='red')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_GM_both.dat').T
-
-ax1.plot(z, m1a, color='magenta')
-ax1.plot(z, m2a, color='magenta')
-ax2.plot(z, c1a, color='magenta')
-ax2.plot(z, c2a, color='magenta')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/FWHMfix_SM_both.dat').T
-
-ax1.plot(z, m1a, color='green')
-ax1.plot(z, m2a, color='green')
-ax2.plot(z, c1a, color='green')
-ax2.plot(z, c2a, color='green')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/FWHM_both.png', dpi=220)
-
-# And now for the perturbative correction plots.
-# DCR only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR only', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GG_DCR.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SG_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GM_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SM_DCR.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2fix_perturb_DCR.png', dpi=220)
-
-# Chromatic seeing only plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'Chromatic seeing only', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GG_CS.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SG_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GM_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SM_CS.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2fix_perturb_CS.png', dpi=220)
-
-# both DCR and chromatic seeing plot
-fig = plt.figure(figsize=(7,5))
-ax1 = fig.add_subplot(211)
-ax2 = fig.add_subplot(212, sharex=ax1)
-plt.setp( ax1.get_xticklabels(), visible=False)
-
-ax1.text(0.1, 0.11, 'DCR and chromatic seeing', fontsize=14)
-ax1.text(0.1, 0.09, r'($r^2$ fixed)', fontsize=14)
-
-ax1.set_ylabel('m')
-ax2.set_ylabel('c')
-ax2.set_xlabel('redshift')
-
-ax1.set_xlim(0.0, 2.0)
-ax1.set_ylim(-0.01, 0.13)
-
-ax2.set_xlim(0.0, 2.0)
-ax2.set_ylim(-0.01, 0.1)
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GG_both.dat').T
-
-ax1.plot(z, m1a, color='k', label='analytic')
-ax1.plot(z, m2a, color='k')
-ax2.plot(z, c1a, color='k', label='analytic')
-ax2.plot(z, c2a, color='k')
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='blue')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='blue', label='Gaussian gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='blue')
-
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SG_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='red')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='red', label='DeV gal, Gaussian PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='red')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_GM_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='magenta')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='magenta', label='Gaussian gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='magenta')
-
-z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt('output/r2fix_perturb_SM_both.dat').T
-
-ax1.scatter(z, m1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax1.scatter(z, m2r, color='None', marker='x', edgecolor='green')
-ax2.scatter(z, c1r, color='None', marker='+', edgecolor='green', label='DeV gal, Moffat PSF')
-ax2.scatter(z, c2r, color='None', marker='x', edgecolor='green')
-
-ax1.legend(fontsize=9)
-ax2.legend(fontsize=9)
-
-fig.tight_layout()
-fig.savefig('output/r2fix_perturb_both.png', dpi=220)
+correction_modes = [("noCorr"),    # no correction
+                    ("Perturb")]   # perturbative correction
+
+size_modes = [("FWHMHLR", r"(PSF$_\mathrm{FWHM}$ and Gal$_\mathrm{HLR}$ fixed)"), # hold FWHM_psf and HLR_gal fixed
+              ("r2r2", r"PSF and gal $r^2$ fixed"),                               # hold r2_psf and r2_gal fixed
+              ("FWHMFWHM", r"PSF and convolved gal FWHM fixed")]              # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
+
+physics_modes = [("both", "DCR and chromatic seeing"),  # don"t turn anything off
+                 ("DCR", "DCR only"),                   # turn off chromatic seeing,
+                 ("CS", "Chromatic seeing only")]      # turn off DCR
+
+profile_modes = [("GG", "Gaussian gal, Gaussian PSF", "blue"),   # Gaussian gal, Gaussian PSF
+                 ("DG", "DeV gal, Gaussian PSF", "red"),         # DeV galaxy, Gaussian PSF
+                 ("GM", "Gaussian gal, Moffat PSF", "magenta"),  # Gaussian galaxy, Moffat PSF
+                 ("DM", "DeV gal, Moffat PSF", "green")]         # DeV galaxy, Moffat PSF
+
+stamp_size = 21
+
+for size_mode in size_modes:
+    for physics_mode in physics_modes:
+        for correction_mode in correction_modes:
+
+            fig = plt.figure(figsize=(7,5))
+            ax1 = fig.add_subplot(211)
+            ax2 = fig.add_subplot(212, sharex=ax1)
+            plt.setp(ax1.get_xticklabels(), visible=False)
+
+            ax1.text(0.1, 0.11, physics_mode[1], fontsize=14)
+            ax1.text(0.1, 0.09, size_mode[1], fontsize=14)
+
+            ax1.set_ylabel('m')
+            ax2.set_ylabel('c')
+            ax2.set_xlabel("redshift")
+
+            ax1.set_xlim(0.0, 2.0)
+            ax1.set_ylim(-0.01, 0.13)
+
+            ax2.set_xlim(0.0, 2.0)
+            ax2.set_ylim(-0.01, 0.1)
+
+            outfilename = "output/ring_vs_z_"
+            outfilename += physics_mode[0]+'_'
+            outfilename += correction_mode+'_'
+            outfilename += size_mode[0]+".png"
+
+            for profile_mode in profile_modes:
+                infilename = "output/ring_vs_z_"
+                infilename += profile_mode[0]+'_'
+                infilename += physics_mode[0]+'_'
+                infilename += correction_mode+'_'
+                infilename += size_mode[0]+".dat"
+                try:
+                    z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt(infilename).T
+                except:
+                    continue
+
+                if size_mode[0] == "r2r2":
+                    if profile_mode == profile_modes[0]:
+                        ax1.plot(z, m1a, color='k', label="analytic")
+                        ax1.plot(z, m2a, color='k')
+                        ax2.plot(z, c1a, color='k', label="analytic")
+                        ax2.plot(z, c2a, color='k')
+                else:
+                    ax1.plot(z, m1a, color=profile_mode[2])
+                    ax1.plot(z, m2a, color=profile_mode[2])
+                    ax2.plot(z, c1a, color=profile_mode[2])
+                    ax2.plot(z, c2a, color=profile_mode[2])
+
+                ax1.scatter(z, m1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
+                ax1.scatter(z, m2r, color="None", marker='x', edgecolor=profile_mode[2])
+                ax2.scatter(z, c1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
+                ax2.scatter(z, c2r, color="None", marker='x', edgecolor=profile_mode[2])
+
+                ax1.legend(fontsize=9)
+                ax2.legend(fontsize=9)
+
+            fig.tight_layout()
+            fig.savefig(outfilename, dpi=220)

@@ -1,93 +1,40 @@
 import subprocess
+import os
 
-# # DCR only
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_GG_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_SG_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_GM_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_SM_DCR.dat"
-# subprocess.call(cmd, shell=True)
+correction_modes = [("", "noCorr"),             # no correction
+                    ("--perturb", "Perturb")]   # perturbative correction
 
-# # Chromatic Seeing only
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_GG_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_SG_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_GM_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_SM_CS.dat"
-# subprocess.call(cmd, shell=True)
+size_modes = [("--PSF_FWHM 0.7 --gal_HLR 0.225", "FWHMHLR"),       # hold FWHM_psf and HLR_gal fixed
+              ("--PSF_r2 0.42 --gal_r2 0.27", "r2r2"),             # hold r2_psf and r2_gal fixed
+              ("--PSF_FWHM 0.7 --gal_convFWHM 0.86", "FWHMFWHM")]  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
 
-# # Both
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_GG_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_SG_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_GM_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_SM_both.dat"
-# subprocess.call(cmd, shell=True)
+physics_modes = [("", "both"),            # don"t turn anything off
+                 ("--alpha 0.0", "DCR"),  # turn off chromatic seeing,
+                 ("--noDCR", "CS")]       # turn off DCR
 
-# # And now do it all again, but specify FWHM instead of r2:
-# # DCR only
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_FWHM 0.7 --gal_convFWHM 0.868 --outfile output/FWHMfix_GG_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --outfile output/FWHMfix_SG_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_FWHM 0.7 --gal_convFWHM 0.868 --moffat --outfile output/FWHMfix_GM_DCR.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --alpha 0.0 --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --moffat --outfile output/FWHMfix_SM_DCR.dat"
-# subprocess.call(cmd, shell=True)
+profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
+                 ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
+                 ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
+                 ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
 
-# # Chromatic Seeing only
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_FWHM 0.7 --gal_convFWHM 0.868 --outfile output/FWHMfix_GG_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --outfile output/FWHMfix_SG_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_FWHM 0.7 --gal_convFWHM 0.868 --moffat --outfile output/FWHMfix_GM_CS.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --noDCR --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --moffat --outfile output/FWHMfix_SM_CS.dat"
-# subprocess.call(cmd, shell=True)
+stamp_size = 21
 
-# # Both
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_FWHM 0.7 --gal_convFWHM 0.868 --outfile output/FWHMfix_GG_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --outfile output/FWHMfix_SG_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_FWHM 0.7 --gal_convFWHM 0.868 --moffat --outfile output/FWHMfix_GM_both.dat"
-# subprocess.call(cmd, shell=True)
-# cmd = "python ring_vs_z.py --stamp_size 21 --PSF_FWHM 0.7 --gal_convFWHM 0.868 -n 4.0 --moffat --outfile output/FWHMfix_SM_both.dat"
-# subprocess.call(cmd, shell=True)
-
-# Try out the perturbative correction.
-# DCR only
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_perturb_GG_DCR.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_perturb_SG_DCR.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_perturb_GM_DCR.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --alpha 0.0 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_perturb_SM_DCR.dat"
-subprocess.call(cmd, shell=True)
-
-# Chromatic Seeing only
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_perturb_GG_CS.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_perturb_SG_CS.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_perturb_GM_CS.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --noDCR --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_perturb_SM_CS.dat"
-subprocess.call(cmd, shell=True)
-
-# Both
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 --outfile output/r2fix_perturb_GG_both.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --outfile output/r2fix_perturb_SG_both.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 --moffat --outfile output/r2fix_perturb_GM_both.dat"
-subprocess.call(cmd, shell=True)
-cmd = "python ring_vs_z.py --perturb --stamp_size 21 --PSF_r2 0.42 --gal_r2 0.27 -n 4.0 --moffat --outfile output/r2fix_perturb_SM_both.dat"
-subprocess.call(cmd, shell=True)
+for size_mode in size_modes:
+    for physics_mode in physics_modes:
+        for profile_mode in profile_modes:
+            for correction_mode in correction_modes:
+                cmd = "python ring_vs_z.py --stamp_size {}".format(stamp_size)
+                cmd += ' '+profile_mode[0]
+                cmd += ' '+physics_mode[0]
+                cmd += ' '+correction_mode[0]
+                cmd += ' '+size_mode[0]
+                outfilename = "output/ring_vs_z_"
+                outfilename += profile_mode[1]+'_'
+                outfilename += physics_mode[1]+'_'
+                outfilename += correction_mode[1]+'_'
+                outfilename += size_mode[1]+'.dat'
+                cmd += " --outfile {}".format(outfilename)
+                if os.path.isfile(outfilename):
+                    continue
+                print cmd
+                subprocess.call(cmd, shell=True)
