@@ -11,9 +11,6 @@ import matplotlib as mpl
 
 import multiprocessing as mp
 
-import _mypath
-import chroma
-
 def parallactic_zenith_angles(HA, dec):
     # latitude = -(30.0 + 14.0/60 + 26.7/3600) * np.pi / 180.0
     # coslat = np.cos(-latitude)
@@ -365,8 +362,6 @@ def angle_dist(cat, fieldID, framenum=None, hardcopy=False):
 
 def epoch_variance(cat):
     good = lensing_visits(cat)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
     dec_edges = np.arange(-66.0, 6.0, 1.0) * np.pi/180
     decs = (dec_edges[1:] + dec_edges[:-1])*0.5 * 180/np.pi
     dxs = []
@@ -381,6 +376,8 @@ def epoch_variance(cat):
         dxs.append(np.mean((x0-centroid[0])**2))
         dys.append(np.mean((y0-centroid[1])**2))
         dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     ax.plot(decs, dxs, color="red", label=r"$\langle(\Delta x)^2\rangle_\mathrm{epochs}$")
     ax.plot(decs, dys, color="blue", label=r"$\langle(\Delta y)^2\rangle_\mathrm{epochs}$")
     ax.plot(decs, dxys, color="green", label=r"$\langle(\Delta x)(\Delta y)\rangle_\mathrm{epochs}$")
@@ -388,6 +385,39 @@ def epoch_variance(cat):
     ax.set_xlabel('Declination (deg)')
     ax.set_ylabel('Misregistration second moments (arcsec$^2$)')
     plt.savefig('output/epoch_variance.png', dpi=220)
+
+def epoch_variance_bias(cat):
+    good = lensing_visits(cat)
+    dec_edges = np.arange(-66.0, 6.0, 1.0) * np.pi/180
+    decs = (dec_edges[1:] + dec_edges[:-1])*0.5 * 180/np.pi
+    dxs = []
+    dys = []
+    dxys = []
+    ms = []
+    c1s = []
+    c2s = []
+    for i in range(len(dec_edges)-1):
+        w = (cat["fieldDec"] > dec_edges[i]) & (cat["fieldDec"] < dec_edges[i+1]) & good
+        mean_zenith = np.mean(cat[w]["z_a"])
+        x0 = np.tan(mean_zenith)*np.sin(cat[w]["q"])
+        y0 = np.tan(mean_zenith)*np.cos(cat[w]["q"])
+        centroid = (np.mean(x0), np.mean(y0))
+        dxs.append(np.mean((x0-centroid[0])**2))
+        dys.append(np.mean((y0-centroid[1])**2))
+        dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
+        ms.append((-dxs[-1]-dys[-1])/(0.5**2))
+        c1s.append((dxs[-1]-dys[-1])/(0.5**2))
+        c2s.append((dxys[-1])/(0.5**2))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(decs, ms, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
+    ax.plot(decs, c1s, color="blue", label=r"$c_1 / (\Delta \bar{R}_{45})^2$")
+    ax.plot(decs, c2s, color="green", label=r"$c_2 / (\Delta \bar{R}_{45})^2$")
+    ax.legend()
+    ax.set_xlabel('Declination (deg)')
+    ax.set_ylabel(r"Shear calibration bias / ($\Delta \bar{R}_{45})^2$ (arcsec$^{-2}$)")
+    plt.savefig('output/epoch_variance_bias.png', dpi=220)
+
 
 def make_movie_frames(cat, start=0):
     s=list(set(cat["fieldID"]))
