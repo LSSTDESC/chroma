@@ -35,6 +35,21 @@ class LSTSQEllipMeasurer(EllipMeasurer):
         @returns    Flattened residuals for lmfit.minimize()
         """
         image = self.galtool.get_image(param)
+
+        # # sanity check
+        # lmfit.report_errors(param)
+        # import matplotlib.pyplot as plt
+        # fig = plt.figure()
+        # ax1 = fig.add_subplot(311)
+        # ax1.imshow(target_image.array)
+        # ax2 = fig.add_subplot(312)
+        # ax2.imshow(image.array)
+        # ax3 = fig.add_subplot(313)
+        # ax3.imshow((target_image-image).array)
+        # print np.min(target_image.array), np.max(target_image.array)
+        # print np.min(image.array), np.max(image.array)
+        # plt.show()
+
         return (image.array - target_image.array).flatten()
 
     def __call__(self, target_image, init_param):
@@ -57,9 +72,15 @@ class LSTSQEllipMeasurer(EllipMeasurer):
                                                            oversample=self.oversample,
                                                            center=True)
             self.hdulist.append(fits.ImageHDU(fit_image_uncvl.array, name='FITUC'))
-        g = result.params['g'].value
-        phi = result.params['phi'].value
-        return g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+        if 'g' in result.params:
+            g = result.params['g'].value
+            phi = result.params['phi'].value
+            return g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+        elif 'g_1' in result.params:
+            g = result.params['g_1'].value
+            phi = result.params['phi_1'].value
+            return g * complex(np.cos(2.0 * phi), np.sin(2.0 * phi))
+
 
 class HSMEllipMeasurer(EllipMeasurer):
     """ Use the Hirata-Seljak-Mandelbaum regaussianization PSF correction algorithm to estimate
