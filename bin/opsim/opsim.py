@@ -411,13 +411,13 @@ def epoch_variance_bias(cat):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(decs, ms, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
-    ax.plot(decs, c1s, color="blue", label=r"$c_1 / (\Delta \bar{R}_{45})^2$")
-    ax.plot(decs, c2s, color="green", label=r"$c_2 / (\Delta \bar{R}_{45})^2$")
+    ax.plot(decs, c1s, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$")
+    ax.plot(decs, c2s, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$")
     ax.legend()
     ax.set_xlabel('Declination (deg)')
     ax.set_ylabel(r"Shear calibration bias / ($\Delta \bar{R}_{45})^2$ (arcsec$^{-2}$)")
-    plt.savefig('output/epoch_variance_bias.png', dpi=220)
-
+    ax.set_ylim(-1.0, 1.0)
+    plt.savefig('output/misregistration_bias.png', dpi=220)
 
 def make_movie_frames(cat, start=0):
     s=list(set(cat["fieldID"]))
