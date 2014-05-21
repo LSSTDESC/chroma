@@ -70,7 +70,7 @@ def component_Sersic_r2(ns, weights, hlrs):
     """
     t = np.array(weights).sum()
     ws = [w / t for w in weights]
-    r2s = [Sersic_r2_over_hlr(n) * r_e for n, r_e in zip(ns, r_es)]
+    r2s = [Sersic_r2_over_hlr(n) * hlr for n, hlr in zip(ns, hlrs)]
     return np.sqrt(reduce(lambda x,y:x+y, [r2**2 * w for r2, w in zip(r2s, ws)]))
 
 def apply_shear(c_ellip, c_gamma):
