@@ -175,6 +175,43 @@ class GalTool(object):
         fwhm = np.sqrt(4.0/np.pi * ahm)
         return fwhm, fwhm * err/ahm * 0.5
 
+    def compute_PSF_AHM(self, oversample=4):
+        ''' Compute the area above half maximum of the PSF.
+        '''
+        original_offset = self.offset
+        original_scale = self.pixel_scale
+        ahms = []
+        for i in range(10):
+            itry = 0
+            while itry < 10:
+                xdither = np.random.uniform(-0.5, 0.5, 1)[0]
+                ydither = np.random.uniform(-0.5, 0.5, 1)[0]
+                rescale = np.random.uniform(0.9, 1.1, 1)[0]
+                self.offset = (xdither, ydither)
+                self.pixel_scale = original_scale * rescale
+                try:
+                    im = self.get_PSF_image(oversample=oversample)
+                except RuntimeError:
+                    itry += 1
+                else:
+                    break
+            if itry >= 10:
+                raise RuntimeError("Unable to create image to estimate AHM")
+            if isinstance(im, list):
+                im = sum(im)
+            mx = im.array.max()
+            ahms.append(self.pixel_scale**2 * (im.array > mx/2.0).sum() / oversample**2)
+        self.offset = original_offset
+        self.pixel_scale = original_scale
+        return np.mean(ahms), np.std(ahms)/np.sqrt(len(ahms))
+
+    def compute_PSF_FWHM(self, oversample=4):
+        ''' Compute FWHM of the PSF.
+        '''
+        ahm, err = self.compute_PSF_AHM(oversample=oversample)
+        fwhm = np.sqrt(4.0/np.pi * ahm)
+        return fwhm, fwhm * err/ahm * 0.5
+
     def compute_HLA(self, gparam, oversample=4, flux=None):
         ''' Compute the half-light-area of the PSF-convolved galaxy image.
         I.e., the area of the contour containing half the image light.
@@ -461,7 +498,7 @@ class DoubleSersicTool(GalTool):
     def use_effective_PSF(self):
         ''' Integrate chromatic PSF over wavelength to yield effective PSFs.  GalSim is doing
         this internally anyway, but we do this explicitly here so that it happens only once, instead
-        of every time a .drawImage command is executed.
+        of every time a .drawImage() command is executed.
         '''
         for s in self.sersictools:
             s.use_effective_PSF()
