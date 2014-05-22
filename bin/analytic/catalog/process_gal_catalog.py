@@ -1,6 +1,9 @@
 """Process galaxy catalog produced by make_catalogs.py to add columns for DCR biases, chromatic
 seeing biases, and chromatic diffraction limit biases.  This script requires that the LSST CatSim
-SED files are downloaded and that the environment variable $CAT_SHARE_DATA points to them.
+SED files are downloaded and that either the environment variable $CAT_SHARE_DATA (for older versions
+of the LSST DM stack) or SIMS_SED_LIBRARY_DIR (for the current version of the stack) points to them.
+Note that you might need to source the `loadLSST.sh` file and run `setup sims_sed_library` to get
+these paths to work for the current version of the lsst stack.
 
 Chromatic biases include:
   Rbar - centroid shift due to differential chromatic refraction.
@@ -35,7 +38,12 @@ def file_len(fname):
     return i + 1
 
 def composite_spectrum(gal, norm_bandpass):
-    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    if 'CAT_SHARE_DATA' in os.environ:
+        SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
+        SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
+    else:
+        raise ValueError("Cannot find CatSim SED files.")
     if gal['sedPathBulge'] != 'None':
         bulge_SED = chroma.SampledSED(SED_dir+gal['sedPathBulge'])
         bulge_SED = bulge_SED.createWithMagnitude(norm_bandpass, gal['magNormBulge'])

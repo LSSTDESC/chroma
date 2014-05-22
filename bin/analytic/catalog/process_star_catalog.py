@@ -1,6 +1,9 @@
 """Process star catalog produced by make_catalogs.py to add columns for DCR biases, chromatic
 seeing biases, and chromatic diffraction limit biases.  This script requires that the LSST CatSim
-SED files are downloaded and that the environment variable $CAT_SHARE_DATA points to them.
+SED files are downloaded and that either the environment variable $CAT_SHARE_DATA (for older versions
+of the LSST DM stack) or SIMS_SED_LIBRARY_DIR (for the current version of the stack) points to them.
+Note that you might need to source the `loadLSST.sh` file and run `setup sims_sed_library` to get
+these paths to work for the current version of the lsst stack.
 
 Chromatic biases include:
   Rbar - centroid shift due to differential chromatic refraction.
@@ -35,7 +38,13 @@ def file_len(fname):
     return i + 1
 
 def stellar_spectrum(star, norm_bandpass):
-    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    if 'CAT_SHARE_DATA' in os.environ:
+        SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
+        SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
+    else:
+        raise ValueError("Cannot find CatSim SED files.")
+    SED_dir = os.environ['HOME'] + '/lsst/DarwinX86/sims_sed_library/2014.04.23/'
     SED = chroma.SampledSED(SED_dir+star['sedFilePath'])
     SED = SED.createWithMagnitude(norm_bandpass, star['magNorm'])
     SED = SED.createExtincted(A_v=star['galacticAv'])
@@ -155,7 +164,7 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
     return data
 
 def runme():
-    junk = process_star_file('output/star_catalog.dat', nmax=25, debug=True)
+    junk = process_star_file('output/msstar_catalog.dat', nmax=25, debug=True)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
