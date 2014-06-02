@@ -67,10 +67,9 @@ def one_ring_test(args):
     #----------------------------------------------------------------------------------------------
 
     # There are several command-line options to set the size of the PSF.  By default, the size is
-    # set such that the FWHM statistic is 0.7 arcseconds.  To change this, use the --PSF_FWHM
-    # option.
-    # To set the PSF size using the second-moment squared radius instead, use --PSF_r2
-    # Note that it is an error to specify both --PSF_FWHM and --PSF_r2.
+    # set such that the FWHM is 0.7 arcseconds.  To change this, use the --PSF_FWHM option.
+    # To set the PSF size using the (square root of the) second-moment squared radius instead, use
+    # --PSF_r2.  Note that it is an error to specify both --PSF_FWHM and --PSF_r2.
 
     # If it exists, convert PSF_r2 to PSF_FWHM using the details of the PSF profile.
     # If it doesn't exist, then convert PSF_FWHM into PSF_r2.
@@ -98,7 +97,7 @@ def one_ring_test(args):
         monochromaticPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
     else:
         monochromaticPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
-    # Shear to add ellipticity, if requested.
+    # If requested, add PSF ellipticity.
     monochromaticPSF = monochromaticPSF.shear(
             g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
     # Turn monochromatic PSF into a chromatic PSF by specifying the wavelength-dependence, either
@@ -155,8 +154,8 @@ def one_ring_test(args):
     #                  sqrt(4/pi * area-above-half-maximum).
     # --gal_HLR - set the half-light radius of the pre-convolution galaxy.  Technically, this is
     #             the half-light-radius of the circularized galaxy.
-    # --gal_r2 - set the second-moment squared radius of the pre-convolution galaxy.  This also
-    #            refers to the circularized size.
+    # --gal_r2 - set the (square root of the) second-moment squared radius of the pre-convolution
+    #            galaxy. This also refers to the circularized size.
     if args.gal_convFWHM is not None:
         gparam = target_tool.set_FWHM(gparam, args.gal_convFWHM)
     elif args.gal_HLR is not None:

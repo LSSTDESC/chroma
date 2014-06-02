@@ -31,9 +31,15 @@ def one_composite_ring_test(args):
     else:
         logger.setLevel(logging.DEBUG)
 
+    #----------------------------------------------------------------------------------------------
+    # Defaults                                                                                    #
+    #----------------------------------------------------------------------------------------------
+
+    # We set default values depending whether or not the --voigt command-line option is set.  The
+    # --voigt option is intended to reproduce the fiducial model in the Voigt++12 paper discussing
+    # shear biases for galaxies with color-gradients, observed with Euclid.
     if args.voigt:
         # Can't override following when --voigt is set.
-        args.compstar = True
         args.noDCR = True
         # These you can override, but defaults are set for Voigt++12 comparison.
         if args.filter is None:
@@ -86,24 +92,23 @@ def one_composite_ring_test(args):
     # load filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
 
-    # load and redshift galaxy component SEDs
+    # load and redshift bulge and disk SEDs
     bulge_SED = chroma.SED(args.datadir+args.bulgespec, flux_type="flambda")
     bulge_SED = bulge_SED.atRedshift(args.redshift)
     disk_SED = chroma.SED(args.datadir+args.diskspec, flux_type="flambda")
     disk_SED = disk_SED.atRedshift(args.redshift)
 
-    # normalize SEDs to 1.0, let gparams handle the actual relative fluxes of
+    # normalize SEDs to 1.0, let gparams below handle the actual relative fluxes of
     # the bulge and disk components
     bulge_SED = bulge_SED.withFlux(1.0, bandpass)
     disk_SED = disk_SED.withFlux(1.0, bandpass)
 
     # load stellar SED
-    # compstar means pretend that the star from which the effective PFS is measured has an SED
-    # consisting of the flux-weighted average SED of the galaxy bulge and disk.
-    if args.compstar:
+    # By default, create stellar spectrum as flux-weighted average SED of galaxy bulge and disk.
+    # Though, if specified, override with input filename.
+    if args.starspec is None:
         star_SED = args.bulge_frac*bulge_SED + (1.0-args.bulge_frac)*disk_SED
     else:
-        # otherwise, specify a stellar SED from a file.
         star_SED = chroma.SED(args.datadir+args.starspec, flux_type="flambda")
     star_SED = star_SED.withFlux(1.0, bandpass)
 
@@ -124,31 +129,46 @@ def one_composite_ring_test(args):
     # PSF setup                                                                                   #
     #----------------------------------------------------------------------------------------------
 
-    # By default, set the PSF size from the args.PSF_FWHM argument.
-    # Override this if args.PSF_r2 is explicitly set
+    # There are several command-line options to set the size of the PSF.  By default, the size is
+    # set such that the FWHM is 0.7 arcseconds at the filter effective wavelength, or if the --voigt
+    # option is used, such that FWHM = 1.4 pixels at wavelength of 520.0 nm. To change this, use the
+    # --PSF_FWHM option.
+    # To set the PSF size using the second-moment squared radius instead, use --PSF_r2
+    # Note that it is an error to specify both --PSF_FWHM and --PSF_r2.
+
+    # If it exists, convert PSF_r2 to PSF_FWHM using the details of the PSF profile.
+    # If it doesn't exist, then convert PSF_FWHM into PSF_r2.
     if args.PSF_r2 is not None:
         if args.moffat:
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(
                 2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
         elif args.kolmogorov:
-            # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov
-            # profile?
-            args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+            raise ValueError("Kolmogorov profile not implemented yet!")
         else: # default is Gaussian
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+    else:
+        if args.moffat:
+            args.PSF_r2 = args.PSF_FWHM * np.sqrt(
+                2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+        elif args.kolmogorov:
+            raise ValueError("Kolmogorov profile not implemented yet!")
+        else: # default is Gaussian
+            args.PSF_r2 = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
-    # Define the PSF
+    # Create circularly-symmetric, monochromatic, PSF with requested profile.
     if args.moffat:
         circularPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     elif args.kolmogorov:
         circularPSF = galsim.Kolmogorov(lam_over_r0=args.PSF_FWHM/0.976)
     else:
         circularPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
-    # add PSF ellipticity, but keep a circular PSF around for setting the galaxy/PSF size
-    # ratio below.
+    # If requested, add PSF ellipticity, but keep circularized PSF around for later.
     monochromaticPSF = circularPSF.shear(
             g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
-    if not args.noDCR: # add DCR if not explicitly suppressed
+    # Turn monochromatic PSF into a chromatic PSF by specifying the wavelength-dependence, either
+    # with the ChromaticAtmosphere function (which implements chromatic seeing and differential
+    # chromatic refraction (DCR), or with wavelength-dependent power-law dilation if no DCR.
+    if not args.noDCR:
         PSF = galsim.ChromaticAtmosphere(monochromaticPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle*galsim.degrees,
                                          parallactic_angle=args.parallactic_angle*galsim.degrees,
@@ -157,22 +177,11 @@ def one_composite_ring_test(args):
                                          zenith_angle=args.zenith_angle*galsim.degrees,
                                          parallactic_angle=args.parallactic_angle*galsim.degrees,
                                          alpha=args.alpha)
-    else: # otherwise just include a powerlaw wavelength dependent FWHM
+    else:
         PSF = galsim.ChromaticObject(monochromaticPSF)
         PSF = PSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
         circularPSF = galsim.ChromaticObject(circularPSF)
         circularPSF = circularPSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
-
-    # Calculate sqrt(r^2) for the PSF.
-    # Ignoring corrections due to non-zero PSF ellipticity.
-    if args.moffat:
-        r2_PSF = args.PSF_FWHM * np.sqrt(
-            2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-    elif args.kolmogorov:
-        # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov profile?
-        r2_PSF = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
-    else: # default is Gaussian
-        r2_PSF = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
     #----------------------------------------------------------------------------------------------
     # Galaxy setup                                                                                #
@@ -180,13 +189,17 @@ def one_composite_ring_test(args):
 
     # Now create some galtools, which are objects that know how to draw images given some
     # parameters, thus bridging GalSim and lmfit.
+
+    # We use image offsets to investigate subpixel dithers, since using GalSim shifts would have
+    # the effect of also changing the intended meaning of shears and rotations, since these are
+    # defined with respect to the galaxy origin.
     offset = (args.image_x0, args.image_y0)
     # The target_tool will be used to generate "true" images of the simulated galaxy, by which I
     # mean that the PSF is actually derived from the galactic SEDs (a different effective PSF for
     # the bulge and for the disk).  Note that we also have to supply some bookkeeping arguments
     # defining the image size, scale, and offset.  The galaxy SED and filter bandpass arguments
-    # come last, since they are optional.  If not specified, then the assumption is that PSF is a
-    # GalSim.GSObject, and not a GalSim.ChromaticObject, and thus that the SED and bandpass are not
+    # come last, since they are optional.  If not specified, then the assumption is that PSFs are
+    # GalSim.GSObjects, and not GalSim.ChromaticObjects, and thus that the SED and bandpass are not
     # needed to draw the PSF-convolved image.
     target_tool = chroma.DoubleSersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                           bulge_SED, disk_SED, bandpass)
@@ -194,9 +207,7 @@ def one_composite_ring_test(args):
                                           star_SED, star_SED, bandpass)
     # The fit_tool is basically the same as the target_tool, except that we assert a different --
     # incorrect -- SED to investigate the effect of deriving the PSF model from a nearby star with
-    # a different SED than the galaxy.  When investigating color gradients, it is also interesting
-    # to assert the *composite* bulge + disk SED, which may be the only SED inferable from
-    # unresolved photometry.
+    # a different SED than the galaxy.
     fit_tool = chroma.DoubleSersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                        star_SED, star_SED, bandpass)
     # By default, we compress the wavelength-dependent PSFs into effective PSFs by integrating
@@ -207,12 +218,20 @@ def one_composite_ring_test(args):
         target_tool.use_effective_PSF()
         fit_tool.use_effective_PSF()
 
-    # Initialize galaxy
+    # Now build up requested attributes of the galaxy.
     gparam = target_tool.default_galaxy()
     gparam['n_1'].value = args.bulge_n
     gparam['n_2'].value = args.disk_n
     gparam['flux_1'].value = args.bulge_frac
     gparam['flux_2'].value = 1.0 - args.bulge_frac
+    # There are a few ways to set the size of the galaxy:
+    # --bulge_HLR, --disk_HLR - set the half-light-radii of the bulge and disk components.  These
+    #                           are the pre-PSF-convolution and circularized radii.
+    # --bulge_r2, --disk_r2 - set the (square root of the) second-moment squared radii of the bulge
+    #                         and disk.
+    # --FWHM_ratio - set the ratio of the PSF-convolved galaxy full-width-half-maximum to
+    #                PSF FWHM.  This is done empirically by iteratively drawing images.  The
+    #                ratio of bulge and disk half-light-radii are held fixed during this process.
     if args.bulge_HLR is not None:
         gparam['hlr_1'].value = args.bulge_HLR
     else:
@@ -224,14 +243,14 @@ def one_composite_ring_test(args):
     if args.FWHM_ratio is not None:
         integrated_PSF_FWHM = circ_tool.compute_PSF_FWHM(oversample=16)[0]
         gparam = circ_tool.set_FWHM(gparam, args.FWHM_ratio * integrated_PSF_FWHM)
-
+    # Once the size is set, can set the ellipticity.
     gparam['g_1'].value = args.gal_ellip
     gparam['g_2'].value = args.gal_ellip
 
-    args.gal_r2 = target_tool.get_uncvl_r2(gparam)
-    gal_fwhm, gal_fwhm_err = target_tool.compute_FWHM(gparam)
+    #----------------------------------------------------------------------------------------------
+    # Echo Configuration Options                                                                  #
+    #----------------------------------------------------------------------------------------------
 
-    # Print out configuration details for this run
     logger.debug('')
     logger.debug('General settings')
     logger.debug('----------------')
@@ -249,7 +268,7 @@ def one_composite_ring_test(args):
     logger.debug('Bulge SED: {}'.format(args.bulgespec))
     logger.debug('Disk SED: {}'.format(args.diskspec))
     logger.debug('Galaxy redshift: {}'.format(args.redshift))
-    if args.compstar:
+    if args.starspec is None:
         logger.debug('Star SED: composite bulge + disk spectrum')
     else:
         logger.debug('Star SED: {}'.format(args.starspec))
@@ -270,7 +289,7 @@ def one_composite_ring_test(args):
     logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
     if args.FWHM_ratio is not None:
         logger.debug('PSF integrated FWHM: {}'.format(integrated_PSF_FWHM))
-    logger.debug('PSF sqrt(r^2): {}'.format(r2_PSF))
+    logger.debug('PSF sqrt(r^2): {}'.format(args.PSF_r2))
     logger.debug('PSF alpha: {}'.format(args.alpha))
 
     if not args.noDCR:
@@ -287,19 +306,15 @@ def one_composite_ring_test(args):
     logger.debug('Disk Sersic index: {}'.format(args.disk_n))
     logger.debug('Galaxy ellipticity: {}'.format(args.gal_ellip))
 
-    # # If a diagnostic FITS file is requested, then set this up here, and write the images of the
-    # # PSFs to the output FITS file.
-    hdulist = None
-    # if args.diagnostic is not None:
-    #     hdulist = fits.HDUList()
-    #     hdulist.append(fits.ImageHDU(target_tool.get_PSF_image(oversample=4).array, name='GALPSF'))
-    #     hdulist.append(fits.ImageHDU(fit_tool.get_PSF_image(oversample=4).array, name='STARPSF'))
+    #----------------------------------------------------------------------------------------------
+    # Ring Test                                                                                   #
+    #----------------------------------------------------------------------------------------------
 
     # The chroma.measure_shear_calib() function requires several input function arguments that we
     # haven't defined yet.  The first of these is target_image_generator, which takes input
     # arguments `gamma` (shear) and `beta` (angle around ring in radians) and produces the
     # appropriate galsim.Image
-    gen_target_image = chroma.TargetImageGenerator(gparam, target_tool, hdulist=hdulist)
+    gen_target_image = chroma.TargetImageGenerator(gparam, target_tool)
 
     # The second function is get_ring_params, which has the same arguments as gen_target_image,
     # but just returns initial guesses for the lmfit parameters needed by measurer.
@@ -313,18 +328,7 @@ def one_composite_ring_test(args):
     if args.hsm:
         measurer = chroma.HSMEllipMeasurer(fit_tool)
     else:
-        measurer = chroma.LSTSQEllipMeasurer(fit_tool, hdulist=hdulist)
-
-    # Sanity check.  How different are the initial guess image and the target image?
-    # im1 = gen_target_image(0.0, 0.0)
-    # im2 = chroma.TargetImageGenerator(gparam, fit_tool)(0.0, 0.0)
-    # import matplotlib.pyplot as plt
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(211)
-    # ax1.imshow(im1.array)
-    # ax2 = fig.add_subplot(212)
-    # ax2.imshow(im2.array)
-    # plt.show()
+        measurer = chroma.LSTSQEllipMeasurer(fit_tool)
 
     # Finally, we pass these functions to measure_shear_calib, along with the number of angles
     # around the ring we want to test at, and a gparam describing the galaxy we're testing.  This
@@ -332,15 +336,9 @@ def one_composite_ring_test(args):
     m, c = chroma.measure_shear_calib(gparam, gen_target_image, get_ring_params, measurer,
                                       nring=args.nring)
 
-    # # Close the diagnostic FITS file if it was opened above.
-    # if args.diagnostic is not None:
-    #     path, base = os.path.split(args.diagnostic)
-    #     if path is not '':
-    #         if not os.path.isdir(path):
-    #             os.mkdir(path)
-    #     hdulist.writeto(args.diagnostic, clobber=True)
-
-    # And print the results!
+    #----------------------------------------------------------------------------------------------
+    # Results!                                                                                    #
+    #----------------------------------------------------------------------------------------------
 
     logger.info('')
     logger.info('Shear Calibration Results')
@@ -360,10 +358,9 @@ if __name__ == '__main__':
     parser.add_argument("--datadir", default="../../data/",
                         help="directory to find SED and filter files.")
     fitspec = parser.add_mutually_exclusive_group()
-    fitspec.add_argument("--starspec", default="SEDs/ukg5v.ascii",
-                         help="stellar spectrum to use when fitting (Default 'SEDs/ukg5v.ascii')")
-    fitspec.add_argument("--compstar", action="store_true",
-                         help="Use composite galaxy spectrum as 'star' spectrum.")
+    fitspec.add_argument("--starspec",
+                         help="stellar spectrum to use when fitting (Default use composite"
+                              +" bulge+disk spectrum)")
     parser.add_argument("--bulgespec", default="SEDs/CWW_E_ext.ascii",
                         help="bulge spectrum of true galaxy (Default 'SEDs/CWW_E_ext.ascii')")
     parser.add_argument("--diskspec", default="SEDs/CWW_Sbc_ext.ascii",
@@ -418,12 +415,12 @@ if __name__ == '__main__':
     bulge_size.add_argument("--bulge_r2", type=float, default=0.27,
                             help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
     bulge_size.add_argument("--bulge_HLR", type=float,
-                            help="Override gal_r2 by setting galaxy half-light-radius.")
+                            help="Override bulge_r2 by setting half-light-radius.")
     disk_size = parser.add_mutually_exclusive_group()
     disk_size.add_argument("--disk_r2", type=float, default=0.27,
                             help="Set galaxy second moment radius sqrt(r^2) in arcsec (Default 0.27)")
     disk_size.add_argument("--disk_HLR", type=float,
-                            help="Override gal_r2 by setting galaxy half-light-radius.")
+                            help="Override disk_r2 by setting half-light-radius.")
     parser.add_argument("--FWHM_ratio", type=float,
                         help="ratio of (circular) PSF convolved galaxy FWHM to PSF FWHM.")
     parser.add_argument("--gal_ellip", type=float,
