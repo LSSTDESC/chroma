@@ -98,9 +98,12 @@ def one_composite_ring_test(args):
     disk_SED = disk_SED.withFlux(1.0, bandpass)
 
     # load stellar SED
+    # compstar means pretend that the star from which the effective PFS is measured has an SED
+    # consisting of the flux-weighted average SED of the galaxy bulge and disk.
     if args.compstar:
         star_SED = args.bulge_frac*bulge_SED + (1.0-args.bulge_frac)*disk_SED
     else:
+        # otherwise, specify a stellar SED from a file.
         star_SED = chroma.SED(args.datadir+args.starspec, flux_type="flambda")
     star_SED = star_SED.withFlux(1.0, bandpass)
 
@@ -115,7 +118,7 @@ def one_composite_ring_test(args):
     if args.PSF_wave is None:
         PSF_wave = bandpass.effective_wavelength
     else:
-        PSF_wave = args.PSF_wave
+        PSF_wave = float(args.PSF_wave)
 
     #----------------------------------------------------------------------------------------------
     # PSF setup                                                                                   #
@@ -150,9 +153,15 @@ def one_composite_ring_test(args):
                                          zenith_angle=args.zenith_angle*galsim.degrees,
                                          parallactic_angle=args.parallactic_angle*galsim.degrees,
                                          alpha=args.alpha)
+        circularPSF = galsim.ChromaticAtmosphere(circularPSF, base_wavelength=PSF_wave,
+                                         zenith_angle=args.zenith_angle*galsim.degrees,
+                                         parallactic_angle=args.parallactic_angle*galsim.degrees,
+                                         alpha=args.alpha)
     else: # otherwise just include a powerlaw wavelength dependent FWHM
         PSF = galsim.ChromaticObject(monochromaticPSF)
         PSF = PSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
+        circularPSF = galsim.ChromaticObject(circularPSF)
+        circularPSF = circularPSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
 
     # Calculate sqrt(r^2) for the PSF.
     # Ignoring corrections due to non-zero PSF ellipticity.
@@ -182,7 +191,7 @@ def one_composite_ring_test(args):
     target_tool = chroma.DoubleSersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                           bulge_SED, disk_SED, bandpass)
     circ_tool = chroma.DoubleSersicTool(circularPSF, args.stamp_size, args.pixel_scale, offset,
-                                          bulge_SED, disk_SED, bandpass)
+                                          star_SED, star_SED, bandpass)
     # The fit_tool is basically the same as the target_tool, except that we assert a different --
     # incorrect -- SED to investigate the effect of deriving the PSF model from a nearby star with
     # a different SED than the galaxy.  When investigating color gradients, it is also interesting
@@ -213,8 +222,9 @@ def one_composite_ring_test(args):
     else:
         gparam = target_tool.set_uncvl_r2(gparam, args.disk_r2)
     if args.FWHM_ratio is not None:
-        integrated_PSF_FWHM = circ_tool.compute_PSF_FWHM()[0]
+        integrated_PSF_FWHM = circ_tool.compute_PSF_FWHM(oversample=16)[0]
         gparam = circ_tool.set_FWHM(gparam, args.FWHM_ratio * integrated_PSF_FWHM)
+
     gparam['g_1'].value = args.gal_ellip
     gparam['g_2'].value = args.gal_ellip
 
@@ -234,7 +244,6 @@ def one_composite_ring_test(args):
     logger.debug('----------------')
     logger.debug('Data directory: {}'.format(args.datadir))
     logger.debug('Filter: {}'.format(args.filter))
-    logger.debug('Filter effective wavelength: {}'.format(PSF_wave))
     logger.debug('Thinning with relative error: {}'.format(args.thin))
     logger.debug('Bulge fraction: {}'.format(args.bulge_frac))
     logger.debug('Bulge SED: {}'.format(args.bulgespec))
@@ -257,7 +266,10 @@ def one_composite_ring_test(args):
         logger.debug('---------------------')
     logger.debug('PSF phi: {} degrees'.format(args.PSF_phi))
     logger.debug('PSF ellip: {}'.format(args.PSF_ellip))
+    logger.debug('PSF size wavelength: {} nm'.format(PSF_wave))
     logger.debug('PSF FWHM: {} arcsec'.format(args.PSF_FWHM))
+    if args.FWHM_ratio is not None:
+        logger.debug('PSF integrated FWHM: {}'.format(integrated_PSF_FWHM))
     logger.debug('PSF sqrt(r^2): {}'.format(r2_PSF))
     logger.debug('PSF alpha: {}'.format(args.alpha))
 
@@ -353,9 +365,9 @@ if __name__ == '__main__':
     fitspec.add_argument("--compstar", action="store_true",
                          help="Use composite galaxy spectrum as 'star' spectrum.")
     parser.add_argument("--bulgespec", default="SEDs/CWW_E_ext.ascii",
-                        help="bulge spectrum of true galaxy (Default 'SEDs/CWW_E_ext.ascii' )")
+                        help="bulge spectrum of true galaxy (Default 'SEDs/CWW_E_ext.ascii')")
     parser.add_argument("--diskspec", default="SEDs/CWW_Sbc_ext.ascii",
-                        help="bulge spectrum of true galaxy (Default 'SEDs/CWW_Sbc_ext.ascii)")
+                        help="bulge spectrum of true galaxy (Default 'SEDs/CWW_Sbc_ext.ascii')")
     parser.add_argument("-f", "--filter", type=str,
                         help="filter for simulation (Default 'filters/LSST_r.dat')")
 
@@ -387,9 +399,9 @@ if __name__ == '__main__':
                           help="Set FWHM of PSF in arcsec (Default 0.7).")
     PSF_size.add_argument("--PSF_r2", type=float,
                           help="Override PSF_FWHM with second moment radius sqrt(r^2).")
-    PSF_size.add_argument("--PSF_wave", type=float,
-                          help="Wavelength (in nm) at which to set PSF size. "
-                          +"(Default: filter effective wavelength.")
+    parser.add_argument("--PSF_wave", type=float,
+                        help="Wavelength (in nm) at which to set PSF size. "
+                        +"(Default: filter effective wavelength.")
     parser.add_argument("--PSF_phi", type=float, default=0.0,
                         help="Set position angle of PSF in degrees (Default 0.0).")
     parser.add_argument("--PSF_ellip", type=float,
