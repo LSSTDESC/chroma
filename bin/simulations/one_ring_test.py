@@ -34,6 +34,10 @@ def one_ring_test(args):
     else:
         logger.setLevel(logging.DEBUG)
 
+    #----------------------------------------------------------------------------------------------
+    # Spectra setup                                                                               #
+    #----------------------------------------------------------------------------------------------
+
     # load filter bandpass
     bandpass = chroma.Bandpass(args.datadir+args.filter)
 
@@ -44,6 +48,11 @@ def one_ring_test(args):
     # load stellar SED
     star_SED = chroma.SED(args.datadir+args.starspec)
 
+    # scale SEDs. This probably isn't strictly required, but in general I think it's good to work
+    # with numbers near one.
+    gal_SED = gal_SED.withFlux(1.0, bandpass)
+    star_SED = star_SED.withFlux(1.0, bandpass)
+
     # Thin bandpass and spectra if requested
     if args.thin is not None:
         gal_SED = gal_SED.thin(args.thin)
@@ -53,62 +62,74 @@ def one_ring_test(args):
     # Use effective wavelength to set FWHM
     PSF_wave = bandpass.effective_wavelength
 
-    # scale SEDs. This probably isn't strictly required, but in general I think it's good to work
-    # with numbers near one.
-    gal_SED = gal_SED.withFlux(1.0, bandpass)
-    star_SED = star_SED.withFlux(1.0, bandpass)
+    #----------------------------------------------------------------------------------------------
+    # PSF setup                                                                                   #
+    #----------------------------------------------------------------------------------------------
 
-    # By default, set the PSF size from the args.PSF_FWHM argument.
-    # Override this if args.PSF_r2 is explicitly set
+    # There are several command-line options to set the size of the PSF.  By default, the size is
+    # set such that the FWHM statistic is 0.7 arcseconds.  To change this, use the --PSF_FWHM
+    # option.
+    # To set the PSF size using the second-moment squared radius instead, use --PSF_r2
+    # Note that it is an error to specify both --PSF_FWHM and --PSF_r2.
+
+    # If it exists, convert PSF_r2 to PSF_FWHM using the details of the PSF profile.
+    # If it doesn't exist, then convert PSF_FWHM into PSF_r2.
     if args.PSF_r2 is not None:
         if args.moffat:
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(
                 2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
         elif args.kolmogorov:
-            # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov
-            # profile?
-            args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+            raise ValueError("Kolmogorov profile not implemented yet!")
         else: # default is Gaussian
             args.PSF_FWHM = args.PSF_r2 / np.sqrt(2.0/np.log(256.0))
+    else:
+        if args.moffat:
+            args.PSF_r2 = args.PSF_FWHM * np.sqrt(
+                2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
+        elif args.kolmogorov:
+            raise ValueError("Kolmogorov profile not implemented yet!")
+        else: # default is Gaussian
+            args.PSF_r2 = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
 
-    # Define the PSF
+    # Create circularly-symmetric, monochromatic, PSF with requested profile.
     if args.moffat:
         monochromaticPSF = galsim.Moffat(fwhm=args.PSF_FWHM, beta=args.PSF_beta)
     elif args.kolmogorov:
         monochromaticPSF = galsim.Kolmogorov(lam_over_r0 = args.PSF_FWHM / 0.976)
     else:
         monochromaticPSF = galsim.Gaussian(fwhm=args.PSF_FWHM)
+    # Shear to add ellipticity, if requested.
     monochromaticPSF = monochromaticPSF.shear(
             g=args.PSF_ellip, beta=args.PSF_phi * galsim.degrees)
-    if not args.noDCR: # add DCR if not explicitly suppressed
+    # Turn monochromatic PSF into a chromatic PSF by specifying the wavelength-dependence, either
+    # with the ChromaticAtmosphere function (which implements chromatic seeing and differential
+    # chromatic refraction (DCR), or with wavelength-dependent power-law dilation if no DCR.
+    if not args.noDCR:
         PSF = galsim.ChromaticAtmosphere(monochromaticPSF, base_wavelength=PSF_wave,
                                          zenith_angle=args.zenith_angle * galsim.degrees,
                                          parallactic_angle=args.parallactic_angle * galsim.degrees,
                                          alpha=args.alpha)
-    else: # otherwise just include a powerlaw wavelength dependent FWHM
+    else:
         PSF = galsim.ChromaticObject(monochromaticPSF)
         PSF = PSF.dilate(lambda w:(w/PSF_wave)**args.alpha)
 
-    # Calculate sqrt(r^2) for the PSF.
-    # Ignoring corrections due to non-zero PSF ellipticity.
-    if args.moffat:
-        r2_PSF = args.PSF_FWHM * np.sqrt(
-            2.0 / (8.0*(2.0**(1.0/args.PSF_beta)-1.0)*(args.PSF_beta-2.0)))
-    elif args.kolmogorov:
-        # This line is wrong!!!  What is the relation b/n FWHM and r^2 for a Kolmogorov profile?
-        r2_PSF = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
-    else: # default is Gaussian
-        r2_PSF = args.PSF_FWHM * np.sqrt(2.0/np.log(256.0))
+    #----------------------------------------------------------------------------------------------
+    # Galaxy setup                                                                                #
+    #----------------------------------------------------------------------------------------------
 
     # Now create some galtools, which are objects that know how to draw images given some
     # parameters, thus bridging GalSim and lmfit.
+
+    # We use image offsets to investigate subpixel dithers, since using GalSim shifts would have
+    # the effect of also changing the intended meaning of shears and rotations, since these are
+    # defined with respect to the galaxy origin.
     offset = (args.image_x0, args.image_y0)
     # The target_tool will be used to generate "true" images of the simulated galaxy, by which I
-    # mean that the PSF is actually derived from the galactic PSF.  Note that we also have to
-    # supply some bookkeeping arguments defining the image size, scale, and offset.  The galaxy
-    # SED and filter bandpass arguments come last, since they are optional.  If not specified, then
-    # the assumption is that PSF is a GalSim.GSObject, and not a GalSim.ChromaticObject, and thus
-    # that the SED and bandpass are not needed to draw the PSF-convolved image.
+    # mean that the PSF is derived from the galactic SED.  Note that we also have to supply some
+    # bookkeeping arguments defining the image size, scale, and offset.  The galaxy SED and filter
+    # bandpass arguments come last, since they are optional.  If not specified, then the assumption
+    # is that PSF is a GalSim.GSObject, and not a GalSim.ChromaticObject, and thus that the SED and
+    # bandpass are not needed to draw the PSF-convolved image.
     target_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                     gal_SED, bandpass)
     # The fit_tool is basically the same as the target_tool, except that we assert a different --
@@ -116,7 +137,6 @@ def one_ring_test(args):
     # a different SED than the galaxy.
     fit_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
                                  star_SED, bandpass)
-
     # By default, we compress the wavelength-dependent PSFs into effective PSFs by integrating
     # them against the bandpass throughput over wavelength.  This is much faster than letting
     # GalSim do the wavelength integration every time you draw a target or candidate fit image.
@@ -124,10 +144,19 @@ def one_ring_test(args):
         target_tool.use_effective_PSF()
         fit_tool.use_effective_PSF()
 
-    # Initialize galaxy
+    # Now build up requested attributes of the galaxy.
     gparam = target_tool.default_galaxy()
     gparam['n'].value = args.sersic_n
     gparam['g'].value = args.gal_ellip
+    # There are a few ways to set the size of the galaxy:
+    # --gal_convFWHM - set the FWHM of the PSF-convolved galaxy.  This is done empirically by
+    #                  iteratively drawing the PSF-convolved image, and thus includes subtleties
+    #                  such as galaxy and PSF ellipticities.  FWHM in this case is taken as
+    #                  sqrt(4/pi * area-above-half-maximum).
+    # --gal_HLR - set the half-light radius of the pre-convolution galaxy.  Technically, this is
+    #             the half-light-radius of the circularized galaxy.
+    # --gal_r2 - set the second-moment squared radius of the pre-convolution galaxy.  This also
+    #            refers to the circularized size.
     if args.gal_convFWHM is not None:
         gparam = target_tool.set_FWHM(gparam, args.gal_convFWHM)
     elif args.gal_HLR is not None:
@@ -137,13 +166,17 @@ def one_ring_test(args):
     args.gal_r2 = target_tool.get_uncvl_r2(gparam)
     gal_fwhm, gal_fwhm_err = target_tool.compute_FWHM(gparam)
 
-    # Estimate the shear bias due to effective PSF differences analytically.  The details to these
-    # maths are in the paper (Meyers & Burchat 2014).
+    #----------------------------------------------------------------------------------------------
+    # Analytic bias estimates                                                                     #
+    #----------------------------------------------------------------------------------------------
+
+    # The details to these maths are in the paper (Meyers & Burchat 2014).
 
     # First calculate \Delta V
     if not args.noDCR:
         dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
         dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
+        # radians -> arcseconds
         Vstar = dmom_DCR1[1] * (3600 * 180 / np.pi)**2
         Vgal = dmom_DCR2[1] * (3600 * 180 / np.pi)**2
     else:
@@ -160,9 +193,8 @@ def one_ring_test(args):
         dr2r2 = 0.0
         r2r2 = 1.0
 
-    # The maths here are explained in detail in the paper: (Meyers & Burchat 2014).
     # chromatic seeing correction
-    dI_seeing = np.matrix(np.identity(2), dtype=float) * r2_PSF**2/2.0 * dr2r2
+    dI_seeing = np.matrix(np.identity(2), dtype=float) * args.PSF_r2**2/2.0 * dr2r2
     # DCR correction.
     dI_DCR = np.matrix(np.zeros((2,2), dtype=float))
     dI_DCR[1,1] = dV
@@ -177,6 +209,10 @@ def one_ring_test(args):
     c1 = (dI[0,0] - dI[1,1]) / (2.0 * args.gal_r2**2)
     c2 = dI[0,1] / args.gal_r2**2
 
+    #----------------------------------------------------------------------------------------------
+    # Perturbative correction                                                                     #
+    #----------------------------------------------------------------------------------------------
+
     # If requested, apply the perturbative type PSF chromatic correction described in
     # Meyers & Burchat (2014) to the fitting tool.  If this works, then the m&c values
     # that come out of this script should be small, or at least much smaller than when
@@ -185,7 +221,10 @@ def one_ring_test(args):
         fit_tool.apply_perturbative_correction(r2r2, Vstar, Vgal,
                                                args.parallactic_angle * galsim.degrees)
 
-    # Print out configuration details for this run
+    #----------------------------------------------------------------------------------------------
+    # Echo Configuration Options                                                                  #
+    #----------------------------------------------------------------------------------------------
+
     logger.debug("")
     logger.debug("General settings")
     logger.debug("----------------")
@@ -223,7 +262,7 @@ def one_ring_test(args):
     logger.debug("PSF phi: {} degrees".format(args.PSF_phi))
     logger.debug("PSF ellip: {}".format(args.PSF_ellip))
     logger.debug("PSF FWHM: {} arcsec".format(args.PSF_FWHM))
-    logger.debug("PSF sqrt(r^2): {}".format(r2_PSF))
+    logger.debug("PSF sqrt(r^2): {}".format(args.PSF_r2))
     logger.debug("PSF alpha: {}".format(args.alpha))
 
     if not args.noDCR:
@@ -242,6 +281,10 @@ def one_ring_test(args):
     logger.debug("Galaxy HLR: {:6.3f} arcsec".format(gparam["hlr"].value))
     logger.debug("Galaxy PSF-convolved FWHM: {:6.3f} +/- {:6.3f} arcsec".format(
         gal_fwhm, gal_fwhm_err))
+
+    #----------------------------------------------------------------------------------------------
+    # Ring Test                                                                                   #
+    #----------------------------------------------------------------------------------------------
 
     # If a diagnostic FITS file is requested, then set this up here, and write the images of the
     # PSFs to the output FITS file.
@@ -285,7 +328,9 @@ def one_ring_test(args):
                 os.mkdir(path)
         hdulist.writeto(args.diagnostic, clobber=True)
 
-    # And print the results!
+    #----------------------------------------------------------------------------------------------
+    # Results!                                                                                    #
+    #----------------------------------------------------------------------------------------------
 
     logger.info("")
     logger.info("Shear Calibration Results")
@@ -375,7 +420,7 @@ if __name__ == "__main__":
 
     # Physics arguments
     parser.add_argument("--alpha", type=float, default=-0.2,
-                        help="Power law index for chromatic seeing (Default: -0.2)")
+                        help="Power-law index for chromatic seeing (Default: -0.2)")
     parser.add_argument("--noDCR", action="store_true",
                         help="Exclude differential chromatic refraction (DCR) in PSF."
                         +" (Default: include DCR)")
