@@ -6,20 +6,18 @@ import numpy as np
 correction_modes = [("noCorr"),    # no correction
                     ("Perturb")]   # perturbative correction
 
-size_modes = [("FWHMHLR", r"(PSF$_\mathrm{FWHM}$ and Gal$_\mathrm{HLR}$ fixed)"), # hold FWHM_psf and HLR_gal fixed
-              ("r2r2", r"PSF and gal $r^2$ fixed"),                               # hold r2_psf and r2_gal fixed
-              ("FWHMFWHM", r"PSF and convolved gal FWHM fixed")]              # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
+size_modes = [("FWHMHLR", r"(FWHM$_\mathrm{PSF}$ and HLR$_\mathrm{gal}$ fixed)"), # hold FWHM_psf and HLR_gal fixed
+              ("r2r2", r"$r^2_\mathrm{PSF}$ and $r^2_\mathrm{gal}$ fixed"),       # hold r2_psf and r2_gal fixed
+              ("FWHMFWHM", r"PSF and convolved gal FWHM fixed")]                  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
 
 physics_modes = [("both", "DCR and chromatic seeing"),  # don"t turn anything off
                  ("DCR", "DCR only"),                   # turn off chromatic seeing,
-                 ("CS", "Chromatic seeing only")]      # turn off DCR
+                 ("CS", "Chromatic seeing only")]       # turn off DCR
 
 profile_modes = [("GG", "Gaussian gal, Gaussian PSF", "blue"),   # Gaussian gal, Gaussian PSF
                  ("DG", "DeV gal, Gaussian PSF", "red"),         # DeV galaxy, Gaussian PSF
                  ("GM", "Gaussian gal, Moffat PSF", "magenta"),  # Gaussian galaxy, Moffat PSF
                  ("DM", "DeV gal, Moffat PSF", "green")]         # DeV galaxy, Moffat PSF
-
-stamp_size = 21
 
 for size_mode in size_modes:
     for physics_mode in physics_modes:
