@@ -115,16 +115,16 @@ class GalTool(object):
         im = galsim.ImageD(stamp_size, stamp_size, scale=pixel_scale)
         gal = self._gparam_to_galsim(gparam)
         if center:
-            centroid = gal.centroid()
+            centroid = gal.centroid(self.bandpass)
             gal = gal.shift(-centroid)
         if ring_beta is not None:
             gal = gal.rotate(ring_beta / 2.0 * galsim.radians)
         if ring_shear is not None:
             gal = gal.shear(ring_shear)
-        if isinstance(final, galsim.ChromaticObject):
-            final.drawImage(self.bandpass, image=im, offset=self.offset)
-        elif isinstance(final, galsim.GSObject):
-            final.drawImage(image=im, offset=self.offset)
+        if isinstance(gal, galsim.ChromaticObject):
+            gal.drawImage(self.bandpass, image=im, offset=self.offset)
+        elif isinstance(gal, galsim.GSObject):
+            gal.drawImage(image=im, offset=self.offset)
         else:
             raise ValueError("Don't recognize galaxy object type in GalTool.")
         return im

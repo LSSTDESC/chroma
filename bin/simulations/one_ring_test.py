@@ -119,6 +119,10 @@ def one_ring_test(args):
     # Now create some galtools, which are objects that know how to draw images given some
     # parameters, thus bridging GalSim and lmfit.
 
+    gsparams = galsim.GSParams()
+    if args.maximum_fft_size is not None:
+        gsparams.maximum_fft_size = args.maximum_fft_size
+
     # We use image offsets to investigate subpixel dithers, since using GalSim shifts would have
     # the effect of also changing the intended meaning of shears and rotations, since these are
     # defined with respect to the galaxy origin.
@@ -130,12 +134,12 @@ def one_ring_test(args):
     # is that PSF is a GalSim.GSObject, and not a GalSim.ChromaticObject, and thus that the SED and
     # bandpass are not needed to draw the PSF-convolved image.
     target_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
-                                    gal_SED, bandpass)
+                                    gal_SED, bandpass, gsparams=gsparams)
     # The fit_tool is basically the same as the target_tool, except that we assert a different --
     # incorrect --  SED to investigate the effect of deriving the PSF model from a nearby star with
     # a different SED than the galaxy.
     fit_tool = chroma.SersicTool(PSF, args.stamp_size, args.pixel_scale, offset,
-                                 star_SED, bandpass)
+                                 star_SED, bandpass, gsparams=gsparams)
     # By default, we compress the wavelength-dependent PSFs into effective PSFs by integrating
     # them against the bandpass throughput over wavelength.  This is much faster than letting
     # GalSim do the wavelength integration every time you draw a target or candidate fit image.
@@ -433,6 +437,8 @@ if __name__ == "__main__":
                         help="Use PerturbFastChromaticSersicTool to estimate ellipticity")
     parser.add_argument("--quiet", action="store_true",
                         help="Don't print settings")
+    parser.add_argument("--maximum_fft_size", type=int,
+                        help="Maximum FFT GalSim is willing to do.")
 
     # and run the program...
     args = parser.parse_args()
