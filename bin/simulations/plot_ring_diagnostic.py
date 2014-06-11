@@ -16,6 +16,8 @@ except:
 import _mypath
 import chroma
 
+fontsize = 15
+
 def symlogtransform(vmin, vmax, linthresh, linscale):
     """Assumes that minimum of domain is negative, maximum of domain is positive,
     and therefore that vmin < 0, vmax > 0.
@@ -81,13 +83,14 @@ def symlogTicksAndLabels(vmin, vmax, linthresh, linscale):
     labels += ['+1e{}'.format(i) for i in range(int(llinthresh)+1, int(lvmax)+1)]
     return ticks, labels
 
-
 def plot_ring_diagnostic(args):
     cmap_resid = chroma.bipolar.bipolar(n=1./3)
     cmap_flux = cm.Blues_r
 
     # load data
     hdulist = fits.open(args.infile)
+    # I'm obviously assuming something very specific about the size of the postage stamps here...
+    # What was it?!
     gal_PSF_overim = np.abs(hdulist[0].data[28:96,28:96].T)
     star_PSF_overim = np.abs(hdulist[1].data[28:96,28:96].T)
 
@@ -128,8 +131,8 @@ def plot_ring_diagnostic(args):
         ax.get_yaxis().set_ticks(np.arange(4, 68, 12))
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.set_ylabel('truth', size=18)
-        title = ax.set_title('model', size=18)
+        ax.set_ylabel('(a)\ntruth', size=fontsize)
+        title = ax.set_title('(i)\nmodel', size=fontsize)
 
         ax = f.add_subplot(342)
         image = np.log10(gal_PSF_overim/gal_PSF_overim.max())
@@ -141,7 +144,7 @@ def plot_ring_diagnostic(args):
         ax.get_yaxis().set_ticks(np.arange(4, 68, 12))
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.set_title('PSF', size=18)
+        ax.set_title('(ii)\nPSF$_\mathrm{eff}$', size=fontsize)
 
         ax = f.add_subplot(343)
         image = np.log10(overim/overim.max())
@@ -153,7 +156,7 @@ def plot_ring_diagnostic(args):
         ax.get_yaxis().set_ticks(np.arange(4, 68, 12))
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.set_title('image', size=18)
+        ax.set_title('(iii)\nimage', size=fontsize)
 
         ax = f.add_subplot(344)
         image = np.log10(im/im.max())
@@ -161,9 +164,9 @@ def plot_ring_diagnostic(args):
         ax.contour(image, levels=levels, colors='k', linestyles='solid')
         ax.get_xaxis().set_ticks([])
         ax.get_yaxis().set_ticks([])
-        ax.set_title('pixelized', size=18)
+        ax.set_title('(iv)\npixelized', size=fontsize)
 
-        # second row = truth
+        # second row = fit
         vmin = -4
         vmax = 0
 
@@ -177,7 +180,7 @@ def plot_ring_diagnostic(args):
         ax.get_yaxis().set_ticks(np.arange(4, 68, 12))
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        ax.set_ylabel('fit', size=18)
+        ax.set_ylabel('(b)\nfit', size=fontsize)
 
         ax = f.add_subplot(346)
         image = np.log10(star_PSF_overim/gal_PSF_overim.max())
@@ -219,7 +222,7 @@ def plot_ring_diagnostic(args):
                        ax=ax, cmap=cmap_resid)
         ax.get_xaxis().set_ticks([])
         ax.get_yaxis().set_ticks([])
-        ax.set_ylabel('truth - fit', size=18)
+        ax.set_ylabel('(c)\ntruth - fit', size=fontsize)
 
         ax = f.add_subplot(3,4,11)
         symlog10imshow((overim - fit_overim)/overim.max(), vmin, vmax, linthresh, linscale,
@@ -233,27 +236,25 @@ def plot_ring_diagnostic(args):
         ax.get_xaxis().set_ticks([])
         ax.get_yaxis().set_ticks([])
 
-        f.subplots_adjust(hspace = 0.1, wspace=0.0, right=0.8, bottom=0.175, left=0.075)
+        f.subplots_adjust(hspace = 0.1, wspace=0.0, right=0.8, bottom=0.175, left=0.08, top=0.88)
 
         #manually adjust ticks and labels
         ticks = [-4, -3, -2, -1, 0]
-        labels = ['1e-4', '1e-3', '1e-2', '1e-1', '1']
+        labels = [r'$10^{-4}$', r'$10^{-3}$', r'$10^{-2}$', r'$10^{-1}$', r'1']
         cbar_flux_ax = f.add_axes([0.84, 0.43, 0.04, 0.47])
         cbar = plt.colorbar(flux_img, cax=cbar_flux_ax, cmap=cmap_flux, ticks=ticks)
-        cbar.ax.set_yticklabels(labels, fontsize=18)
+        cbar.ax.set_yticklabels(labels, fontsize=fontsize)
 
         # ticks, labels = symlogTicksAndLabels(vmin, vmax, linthresh, linscale)
         # manual override
-        labels = ['-1e-2', '-1e-4', '-1e-6', '+1e-6', '+1e-4', '+1e-2']
+        labels = [r'$-10^{-2}$', r'$-10^{-4}$', r'$-10^{-6}$',
+                  r'$+10^{-6}$', r'$+10^{-4}$', r'$+10^{-2}$']
         ticks = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
         cbar_resid_ax = f.add_axes([0.09, 0.11, 0.697, 0.04])
         cbar_resid = plt.colorbar(resid_img, cax=cbar_resid_ax, cmap=cmap_resid, ticks=ticks,
                                   orientation='horizontal')
-        cbar_resid.ax.set_xticklabels(labels, fontsize=18)
-
-        # cbar = plt.colorbar(img, cax=cbar_ax, orientation='horizontal', cmap=cmap_resid,
-        #                     ticks=ticks)
+        cbar_resid.ax.set_xticklabels(labels, fontsize=fontsize)
 
         dir_, file_ = os.path.split(args.outprefix)
         if dir_ != '':
