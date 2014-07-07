@@ -365,8 +365,8 @@ if __name__ == '__main__':
                         help="Use PerturbFastChromaticSersicTool to estimate ellipticity")
     parser.add_argument('--quiet', action='store_true',
                         help="Don't print settings")
-    parser.add_argument('--outfile', default='output/ring_vs_n.dat',
-                        help="output filename.  (Default: 'output/ring_vs_n.dat')")
+    parser.add_argument('--outfile', default='output/ring_vs_z.dat',
+                        help="output filename.  (Default: 'output/ring_vs_z.dat')")
 
     # and run the program...
     args = parser.parse_args()
