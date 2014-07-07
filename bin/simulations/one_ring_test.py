@@ -39,14 +39,14 @@ def one_ring_test(args):
     #----------------------------------------------------------------------------------------------
 
     # load filter bandpass
-    bandpass = chroma.Bandpass(args.datadir+args.filter)
+    bandpass = galsim.Bandpass(args.datadir+args.filter)
 
     # load and redshift galaxy SED
-    gal_SED = chroma.SED(args.datadir+args.galspec, flux_type="flambda")
+    gal_SED = galsim.SED(args.datadir+args.galspec, flux_type="flambda")
     gal_SED = gal_SED.atRedshift(args.redshift)
 
     # load stellar SED
-    star_SED = chroma.SED(args.datadir+args.starspec)
+    star_SED = galsim.SED(args.datadir+args.starspec)
 
     # scale SEDs. This probably isn't strictly required, but in general I think it's good to work
     # with numbers near one.
@@ -177,19 +177,21 @@ def one_ring_test(args):
 
     # First calculate \Delta V
     if not args.noDCR:
-        dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
-        dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
+        dmom_DCR1 = star_SED.calculateDCRMomentShifts(bandpass,
+                                                      zenith_angle=args.zenith_angle * galsim.degrees)
+        dmom_DCR2 = gal_SED.calculateDCRMomentShifts(bandpass,
+                                                     zenith_angle=args.zenith_angle * galsim.degrees)
         # radians -> arcseconds
-        Vstar = dmom_DCR1[1] * (3600 * 180 / np.pi)**2
-        Vgal = dmom_DCR2[1] * (3600 * 180 / np.pi)**2
+        Vstar = (dmom_DCR1[1] * (3600 * 180 / np.pi)**2)[1,1]
+        Vgal = (dmom_DCR2[1] * (3600 * 180 / np.pi)**2)[1,1]
     else:
         Vstar = 0.0
         Vgal = 0.0
     dV = Vgal - Vstar
     # Second calculate \Delta r^2 / r^2
     if args.alpha != 0.0:
-        seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
-        seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha)
+        seeing1 = star_SED.calculateSeeingMomentRatio(bandpass, alpha=args.alpha)
+        seeing2 = gal_SED.calculateSeeingMomentRatio(bandpass, alpha=args.alpha)
         dr2r2 = (seeing2 - seeing1)/seeing1
         r2r2 = seeing2/seeing1
     else:
