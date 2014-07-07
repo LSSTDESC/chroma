@@ -69,6 +69,12 @@ for size_mode in size_modes:
                     ax2.plot(z, c1a, color=profile_mode[2])
                     ax2.plot(z, c2a, color=profile_mode[2])
 
+                if correction_mode == 'Perturb':
+                    m1r *= 10
+                    m2r *= 10
+                    c1r *= 10
+                    c2r *= 10
+
                 ax1.scatter(z, m1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
                 ax1.scatter(z, m2r, color="None", marker='x', edgecolor=profile_mode[2])
                 ax2.scatter(z, c1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
