@@ -396,18 +396,18 @@ def epoch_variance_bias(cat):
     ms = []
     c1s = []
     c2s = []
+    rsquared_gal = 0.36**2
     for i in range(len(dec_edges)-1):
         w = (cat["fieldDec"] > dec_edges[i]) & (cat["fieldDec"] < dec_edges[i+1]) & good
-        mean_zenith = np.mean(cat[w]["z_a"])
-        x0 = np.tan(mean_zenith)*np.sin(cat[w]["q"])
-        y0 = np.tan(mean_zenith)*np.cos(cat[w]["q"])
+        x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
+        y0 = np.tan(cat[w]['z_a'])*np.cos(cat[w]["q"])
         centroid = (np.mean(x0), np.mean(y0))
         dxs.append(np.mean((x0-centroid[0])**2))
         dys.append(np.mean((y0-centroid[1])**2))
         dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
-        ms.append((-dxs[-1]-dys[-1])/(0.5**2))
-        c1s.append((dxs[-1]-dys[-1])/(0.5**2))
-        c2s.append((dxys[-1])/(0.5**2))
+        ms.append((-dxs[-1]-dys[-1])/rsquared_gal)
+        c1s.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
+        c2s.append((dxys[-1])/rsquared_gal)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(decs, ms, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
@@ -416,8 +416,78 @@ def epoch_variance_bias(cat):
     ax.legend()
     ax.set_xlabel('Declination (deg)')
     ax.set_ylabel(r"Shear calibration bias / ($\Delta \bar{R}_{45})^2$ (arcsec$^{-2}$)")
-    ax.set_ylim(-1.0, 1.0)
+    ax.set_ylim(-2.0, 1.0)
     plt.savefig('output/misregistration_bias.png', dpi=220)
+
+def epoch_variance_bias_fields(cat):
+    good = lensing_visits(cat)
+    dxs = []
+    dys = []
+    dxys = []
+    ms = []
+    c1s = []
+    c2s = []
+    decs = []
+    fields = np.unique(cat['fieldID'])
+    rsquared_gal = 0.36**2
+    for field in fields:
+        print field
+        w = (cat['fieldID'] == field) & good
+        if w.sum() < 100: continue
+        x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
+        y0 = np.tan(cat[w]['z_a'])*np.cos(cat[w]["q"])
+        centroid = (np.mean(x0), np.mean(y0))
+        dxs.append(np.mean((x0-centroid[0])**2))
+        dys.append(np.mean((y0-centroid[1])**2))
+        dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
+        ms.append((-dxs[-1]-dys[-1])/rsquared_gal)
+        c1s.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
+        c2s.append((dxys[-1])/rsquared_gal)
+        decs.append(cat[w]['fieldDec'][0] * 180/np.pi)
+    fig = plt.figure(figsize=(7,5))
+    ax = fig.add_subplot(111)
+    ax.scatter(decs, ms, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, c1s, s=5, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, c2s, s=5, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$")
+    ax.plot(decs, [0]*len(decs), color='black')
+    ax.legend()
+    ax.set_xlabel('Declination (deg)')
+    ax.set_ylabel(r"Shear calibration bias / ($\Delta \bar{R}_{45})^2$ (arcsec$^{-2}$)")
+    ax.set_ylim(-2.5, 2.0)
+    ax.set_xlim(-70, 10)
+    fig.tight_layout()
+    plt.savefig('output/misregistration_bias_fields.png', dpi=220)
+
+def epoch_variance_field(cat, field):
+    good = lensing_visits(cat)
+    w = (cat['fieldID'] == field) & good
+    x = np.tan(cat[w]['z_a']) * np.sin(cat[w]['q'])
+    y = np.tan(cat[w]['z_a']) * np.cos(cat[w]['q'])
+    centroid = (np.mean(x), np.mean(y))
+    dx = np.mean((x-centroid[0])**2)
+    dy = np.mean((y-centroid[1])**2)
+    dxy = np.mean((x-centroid[0])*(y-centroid[1]))
+    fig = plt.figure(figsize=(7, 5))
+    ax = fig.add_subplot(111)
+    ax.scatter(x, y, s=5)
+    ax.scatter(centroid[0], centroid[1], marker='x', color='red')
+    ax.set_xlabel(r"$\Delta \alpha / (\Delta \bar{R}_{45}\,\cos\delta)$")
+    ax.set_ylabel(r"$\Delta \delta / \Delta \bar{R}_{45}$")
+    ax.text(0.5, 0.9, r"$\delta$ = {:5.3f}$^\circ$".format(cat[w]['fieldDec'][0] * 180/np.pi),
+            transform=ax.transAxes)
+    ax.text(0.5, 0.84, r"$\alpha$ = {:5.3f}$^\circ$".format(cat[w]['fieldRA'][0] * 180/np.pi),
+            transform=ax.transAxes)
+    ax.text(0.5, 0.78, r"$\langle(\Delta\alpha/\cos \delta)^2\rangle/\bar{R}_{45}^2$ = "+
+                       "{:5.3f}".format(dx),
+                       transform=ax.transAxes)
+    ax.text(0.5, 0.72, r"$\langle(\Delta\delta)^2\rangle/\bar{R}_{45}^2$ = "+
+                       "{:5.3f}".format(dy),
+                       transform=ax.transAxes)
+    ax.text(0.5, 0.66, r"$\langle(\Delta\alpha/\cos \delta) (\Delta \delta)\rangle/\bar{R}_{45}^2$ = "+
+                       "{:5.3f}".format(dxy),
+                       transform=ax.transAxes)
+    fig.tight_layout()
+    plt.savefig('output/epoch_variance_field{}.png'.format(field), dpi=220)
 
 def make_movie_frames(cat, start=0):
     s=list(set(cat["fieldID"]))
