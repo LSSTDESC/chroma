@@ -471,19 +471,19 @@ def epoch_variance_field(cat, field):
     ax = fig.add_subplot(111)
     ax.scatter(x, y, s=5)
     ax.scatter(centroid[0], centroid[1], marker='x', color='red')
-    ax.set_xlabel(r"$\Delta \alpha / (\Delta \bar{R}_{45}\,\cos\delta)$")
+    ax.set_xlabel(r"$\cos\delta\, \Delta \alpha / \Delta \bar{R}_{45}$")
     ax.set_ylabel(r"$\Delta \delta / \Delta \bar{R}_{45}$")
     ax.text(0.5, 0.9, r"$\delta$ = {:5.3f}$^\circ$".format(cat[w]['fieldDec'][0] * 180/np.pi),
             transform=ax.transAxes)
     ax.text(0.5, 0.84, r"$\alpha$ = {:5.3f}$^\circ$".format(cat[w]['fieldRA'][0] * 180/np.pi),
             transform=ax.transAxes)
-    ax.text(0.5, 0.78, r"$\langle(\Delta\alpha/\cos \delta)^2\rangle/\bar{R}_{45}^2$ = "+
+    ax.text(0.5, 0.78, r"$\langle(\cos \delta\, \Delta\alpha)^2\rangle/\bar{R}_{45}^2$ = "+
                        "{:5.3f}".format(dx),
                        transform=ax.transAxes)
     ax.text(0.5, 0.72, r"$\langle(\Delta\delta)^2\rangle/\bar{R}_{45}^2$ = "+
                        "{:5.3f}".format(dy),
                        transform=ax.transAxes)
-    ax.text(0.5, 0.66, r"$\langle(\Delta\alpha/\cos \delta) (\Delta \delta)\rangle/\bar{R}_{45}^2$ = "+
+    ax.text(0.5, 0.66, r"$\langle(\cos \delta\, \Delta\alpha) (\Delta \delta)\rangle/\bar{R}_{45}^2$ = "+
                        "{:5.3f}".format(dxy),
                        transform=ax.transAxes)
     fig.tight_layout()
