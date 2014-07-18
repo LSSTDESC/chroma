@@ -15,9 +15,9 @@ physics_modes = [("both", "DCR and chromatic seeing"),  # don"t turn anything of
                  ("CS", "Chromatic seeing only")]       # turn off DCR
 
 profile_modes = [("GG", "Gaussian gal, Gaussian PSF", "blue"),   # Gaussian gal, Gaussian PSF
-                 ("DG", "DeV gal, Gaussian PSF", "red"),         # DeV galaxy, Gaussian PSF
+                 ("DG", "deV gal, Gaussian PSF", "red"),         # deV galaxy, Gaussian PSF
                  ("GM", "Gaussian gal, Moffat PSF", "magenta"),  # Gaussian galaxy, Moffat PSF
-                 ("DM", "DeV gal, Moffat PSF", "green")]         # DeV galaxy, Moffat PSF
+                 ("DM", "deV gal, Moffat PSF", "green")]         # deV galaxy, Moffat PSF
 
 for size_mode in size_modes:
     for physics_mode in physics_modes:
@@ -74,6 +74,8 @@ for size_mode in size_modes:
                     m2r *= 10
                     c1r *= 10
                     c2r *= 10
+                    ax2.text(0.05, 0.085, r"Curves: Analytic (no corrections)")
+                    ax2.text(0.05, 0.072, r"Symbols: 10$\times$ ring test (with corrections)")
 
                 ax1.scatter(z, m1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
                 ax1.scatter(z, m2r, color="None", marker='x', edgecolor=profile_mode[2])
