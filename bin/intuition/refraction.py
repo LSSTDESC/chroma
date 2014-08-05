@@ -109,7 +109,7 @@ def chromatic_biases_700():
         # filters are stored in two columns: wavelength (nm), and throughput
         fdata = chroma.SampledBandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
         fwave, throughput = fdata.interp.x, fdata.interp.y
-        ax.fill_between(fwave, throughput * 1.5 - 0.5, -0.5, color=colors[i], alpha=0.3)
+        ax.fill_between(fwave, throughput * 2.0 - 0.5, -0.5, color=colors[i], alpha=0.3)
     # Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
     ax2 = ax.twinx()
     ys = (waves/700.0)**(-2./5)
@@ -119,6 +119,13 @@ def chromatic_biases_700():
     ax2.set_xlim(300, 1100)
     ax2.set_ylim(0.8, 1.4)
     ax2.set_ylabel('Relative $r^2_\mathrm{PSF}$', fontsize=18)
+
+    ax.text(350.0, -0.4, 'u', fontsize=18)
+    ax.text(460.0, -0.4, 'g', fontsize=18)
+    ax.text(618.0, -0.4, 'r', fontsize=18)
+    ax.text(750.0, -0.4, 'i', fontsize=18)
+    ax.text(867.0, -0.4, 'z', fontsize=18)
+    ax.text(967.0, -0.4, 'y', fontsize=18)
 
     for label in ax.get_xticklabels():
         label.set_fontsize(18)
