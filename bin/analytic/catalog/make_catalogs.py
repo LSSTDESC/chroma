@@ -11,7 +11,7 @@ import warnings
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels
-import lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.photUtils.EBV import EBVmixin
 
 import numpy
 
