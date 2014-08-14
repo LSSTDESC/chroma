@@ -8,9 +8,11 @@ import os
 from argparse import ArgumentParser
 import warnings
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.coordUtils import compound
+from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+import lsst.sims.catUtils.baseCatalogModels
+import lsst.sims.photUtils.EBV import EBVmixin
+
 import numpy
 
 #First define the catalogs to output.  Since they have different columns
@@ -24,13 +26,13 @@ import numpy
 #>>> dbobj = DBObject.from_objid('galaxyTile') #or any other defined object type
 #>>> dbobj.show_mapped_columns()
 
-class ExampleGalaxyCatalog(InstanceCatalog):
+class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin):
     comment_char = ''
     catalog_type = 'example_galaxy_catalog'
     column_outputs = ['galtileid', 'objectId', 'raJ2000', 'decJ2000', 'redshift',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab', 'sedPathBulge',
                       'sedPathDisk', 'sedPathAgn', 'magNormBulge', 'magNormDisk', 'magNormAgn',
-                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk']
+                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk', 'EBV']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees}
 
@@ -54,12 +56,12 @@ class ExampleGalaxyCatalog(InstanceCatalog):
                              for k in self.column_by_name('sedFilenameAgn')],
                              dtype=(str, 64)))
 
-class ExampleStarCatalog(InstanceCatalog):
+class ExampleStarCatalog(InstanceCatalog, EBVmixin):
     comment_char = ''
     catalog_type = 'example_star_catalog'
     column_outputs = ['objectId', 'raJ2000', 'decJ2000', 'magNorm',
                       'umag', 'gmag', 'rmag', 'imag', 'zmag', 'ymag', 'sedFilepath',
-                      'galacticAv']
+                      'galacticAv', 'EBV']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees}
 
@@ -84,7 +86,6 @@ if __name__ == "__main__":
 
     if not args.verbose:
         warnings.simplefilter("ignore")
-
     #Get the observation data.  This is ra, dec, and radius in degrees
     #You'll notice that the galaxies come back in a circular aperture and the
     #stars come back in a RA/Dec box.  Sorry about that bug.  I'll have it fixed
