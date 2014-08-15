@@ -11,7 +11,7 @@ import warnings
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels
-from lsst.sims.photUtils.EBV import EBVmixin
+# from lsst.sims.photUtils.EBV import EBVmixin
 
 import numpy
 
@@ -26,13 +26,16 @@ import numpy
 #>>> dbobj = DBObject.from_objid('galaxyTile') #or any other defined object type
 #>>> dbobj.show_mapped_columns()
 
-class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin):
+# class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin):
+class ExampleGalaxyCatalog(InstanceCatalog):
     comment_char = ''
     catalog_type = 'example_galaxy_catalog'
     column_outputs = ['galtileid', 'objectId', 'raJ2000', 'decJ2000', 'redshift',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab', 'sedPathBulge',
                       'sedPathDisk', 'sedPathAgn', 'magNormBulge', 'magNormDisk', 'magNormAgn',
-                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk', 'EBV']
+                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk']
+                      # 'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk',
+                      # 'glon', 'glat', 'EBV']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees}
 
@@ -56,12 +59,12 @@ class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin):
                              for k in self.column_by_name('sedFilenameAgn')],
                              dtype=(str, 64)))
 
-class ExampleStarCatalog(InstanceCatalog, EBVmixin):
+class ExampleStarCatalog(InstanceCatalog):
     comment_char = ''
     catalog_type = 'example_star_catalog'
     column_outputs = ['objectId', 'raJ2000', 'decJ2000', 'magNorm',
                       'umag', 'gmag', 'rmag', 'imag', 'zmag', 'ymag', 'sedFilepath',
-                      'galacticAv', 'EBV']
+                      'galacticAv']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees}
 
@@ -112,7 +115,7 @@ if __name__ == "__main__":
     cat.write_catalog(filename, chunk_size=100000)
 
     #Same as above but for main sequence stars.
-    dbobj = DBObject.from_objid('msstars')
+    dbobj = DBObject.from_objid('allstars')
     constraint = "imag < 22 and imag > 16"
     filetype = 'example_star_catalog'
     print "Getting star catalog"
