@@ -121,35 +121,5 @@ if __name__ == "__main__":
     print "Getting star catalog"
     cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
     print "Writing star catalog"
-    filename = "output/msstar_catalog.dat"
+    filename = "output/stars_catalog.dat"
     cat.write_catalog(filename, chunk_size=100000)
-
-    # #Same as above but for white dwarf stars.
-    # dbobj = DBObject.from_objid('wdstars')
-    # constraint = "imag < 22 and imag > 16"
-    # filetype = 'example_star_catalog'
-    # print "Getting star catalog"
-    # cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
-    # print "Writing star catalog"
-    # filename = "output/wdstar_catalog.dat"
-    # cat.write_catalog(filename, chunk_size=100000)
-
-    # #Same as above but for RR Lyrae stars.
-    # dbobj = DBObject.from_objid('rrlys')
-    # constraint = "imag < 22 and imag > 16"
-    # filetype = 'example_star_catalog'
-    # print "Getting star catalog"
-    # cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
-    # print "Writing star catalog"
-    # filename = "output/rrlys_catalog.dat"
-    # cat.write_catalog(filename, chunk_size=100000)
-
-    # #Same as above but for Blue Horizontal Branch stars.
-    # dbobj = DBObject.from_objid('bhbs')
-    # constraint = "imag < 22 and imag > 16"
-    # filetype = 'example_star_catalog'
-    # print "Getting star catalog"
-    # cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
-    # print "Writing star catalog"
-    # filename = "output/bhbs_catalog.dat"
-    # cat.write_catalog(filename, chunk_size=100000)
