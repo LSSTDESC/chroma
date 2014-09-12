@@ -1,0 +1,21 @@
+Figure 1)
+  Generated from CHROMA_DIR/bin/intuition/refraction.py
+  Output to CHROMA_DIR/bin/intuition/output/chromatic_biases_700.png
+
+Figure 2)
+  Generated from CHROMA_DIR/bin/intuition/where_the_photons_land.py
+  Output to CHROMA_DIR/bin/intuition/output/photon_landings.png
+
+Figure 3)
+  Requires CatSim catalog.
+
+Download CatSim catalog:
+  Load lsst framework: (maybe don't need all of these... not sure.)
+    source ~/lsst/loadLSST.sh
+    setup afw
+    setup sims_catalogs_generation
+    setup sims_catalogs_measures
+    setup matplotlib
+    setup sims_maf
+    setup sims_catUtils
+  Run CHROMA_DIR/bin/analytic/catalogs/make_catalogs.py
