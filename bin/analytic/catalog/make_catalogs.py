@@ -11,7 +11,8 @@ import warnings
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels
-# from lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.photUtils.EBV import EBVmixin
+from lsst.sims.coordUtils import AstrometryBase
 
 import numpy
 
@@ -26,16 +27,16 @@ import numpy
 #>>> dbobj = DBObject.from_objid('galaxyTile') #or any other defined object type
 #>>> dbobj.show_mapped_columns()
 
-# class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin):
-class ExampleGalaxyCatalog(InstanceCatalog):
+class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin, AstrometryBase):
+# class ExampleGalaxyCatalog(InstanceCatalog):
     comment_char = ''
     catalog_type = 'example_galaxy_catalog'
     column_outputs = ['galtileid', 'objectId', 'raJ2000', 'decJ2000', 'redshift',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab', 'sedPathBulge',
                       'sedPathDisk', 'sedPathAgn', 'magNormBulge', 'magNormDisk', 'magNormAgn',
-                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk']
-                      # 'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk',
-                      # 'glon', 'glat', 'EBV']
+                      # 'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk']
+                      'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk',
+                      'glon', 'glat', 'EBV']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees}
 
