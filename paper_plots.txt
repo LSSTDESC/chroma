@@ -6,10 +6,12 @@ Figure 2)
   Generated from CHROMA_DIR/bin/intuition/where_the_photons_land.py
   Output to CHROMA_DIR/bin/intuition/output/photon_landings.png
 
-Figure 3)
-  Requires CatSim catalog.
+Figure 3-8)
+  Requires processed CatSim catalog.
+  Figures generated from CHROMA_DIR/bin/analytic/catalogs/paper_plots.py
+  Output to CHROMA_DIR/bin/analytic/catalogs/output/d*png
 
-Download CatSim catalog:
+Download and process CatSim catalog:
   Load lsst framework: (maybe don't need all of these... not sure.)
     source ~/lsst/loadLSST.sh
     setup afw
