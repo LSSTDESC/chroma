@@ -19,3 +19,7 @@ Download CatSim catalog:
     setup sims_maf
     setup sims_catUtils
   Run CHROMA_DIR/bin/analytic/catalogs/make_catalogs.py
+  Run CHROMA_DIR/bin/analytic/catalogs/process_gal_catalog.py
+  Run CHROMA_DIR/bin/analytic/catalogs/process_star_catalog.py
+  Run CHROMA_DIR/bin/analytic/catalogs/gal_ML.py
+  Run CHROMA_DIR/bin/analytic/catalogs/star_ML.py
