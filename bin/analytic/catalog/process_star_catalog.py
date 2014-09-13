@@ -164,7 +164,7 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
     return data
 
 def runme():
-    junk = process_star_file('output/msstar_catalog.dat', nmax=25, debug=True)
+    junk = process_star_file('output/stars_catalog.dat', nmax=25, debug=True)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -172,8 +172,8 @@ if __name__ == '__main__':
                         help="maximum number of stars to process")
     parser.add_argument('--outfile', default = 'output/star_data.pkl',
                         help="output filename (Default: output/star_data.pkl)")
-    parser.add_argument('--infile', default = 'output/star_catalog.dat',
-                        help="input filename (Default: output/star_catalog.dat)")
+    parser.add_argument('--infile', default = 'output/stars_catalog.dat',
+                        help="input filename (Default: output/stars_catalog.dat)")
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
