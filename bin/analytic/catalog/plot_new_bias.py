@@ -20,7 +20,7 @@ fontsize = 16
 
 # hardcode some requirements, order is [DES, LSST]
 m = np.r_[0.008, 0.003]
-c = np.sqrt(2 * m * 4e-4) # 4e-4 is integrated shear power
+c = np.sqrt(2 * m * 4e-4) # 4e-4 is shear variance
 r2gal = np.r_[0.51, 0.36]**2
 r2psf = np.r_[0.8, 0.7]**2
 epsf = 0.05 # is this a good assumption for LSST/DES?
@@ -99,9 +99,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     @param corrected  Flag to plot photometric residuals instead of shift relative to G5v star
     @param kwargs     Other arguments to pass to the scatter plot
     """
-    # Normalize to the centroid shift of a G5v star.
-    table = cPickle.load(open(star_table))
-    bias0 = table[table['star_type'] == 'ukg5v'][bias][band][0]
 
     f = plt.figure(figsize=(8, 6))
     # scatter plot
@@ -120,8 +117,8 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         rms_ax.fill_between(xlim, [0]*2, [dRbar_rms[1]]*2, color='#777777', zorder=2)
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
-        stardata = (stars[bias][band] - bias0) * 180/np.pi * 3600
-        galdata = (gals[bias][band] - bias0) * 180/np.pi * 3600
+        stardata = stars[bias][band] * 180/np.pi * 3600
+        galdata = gals[bias][band] * 180/np.pi * 3600
         norm = np.mean(stardata)
         stardata -= norm
         galdata -= norm
@@ -135,9 +132,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * 180/np.pi * 3600
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * 180/np.pi * 3600
-            norm = np.mean(stardata)
-            stardata -= norm
-            galdata -= norm
+            #norm = np.mean(stardata)
+            #stardata -= norm
+            #galdata -= norm
             ylabel = '$\delta(\Delta \overline{\mathrm{R}})$ (arcsec)'
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
@@ -145,8 +142,8 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         ax.fill_between(xlim, [-dV_mean[1]]*2, [dV_mean[1]]*2, color='#777777', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dV_rms[0]]*2, color='#999999', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dV_rms[1]]*2, color='#777777', zorder=2)
-        stardata = (stars[bias][band] - bias0) * (180/np.pi * 3600)**2
-        galdata = (gals[bias][band] - bias0) * (180/np.pi * 3600)**2
+        stardata = stars[bias][band] * (180/np.pi * 3600)**2
+        galdata = gals[bias][band] * (180/np.pi * 3600)**2
         rms_bands = dV_rms
         norm = np.mean(stardata)
         stardata -= norm
@@ -160,9 +157,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
-            norm = np.mean(stardata)
-            stardata -= norm
-            galdata -= norm
             ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
     elif bias == 'S_m02':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
@@ -170,12 +164,11 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         ax.fill_between(xlim, [-dS_m02_mean[1]]*2, [dS_m02_mean[1]]*2, color='#777777', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dS_m02_rms[0]]*2, color='#999999', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dS_m02_rms[1]]*2, color='#777777', zorder=2)
-        stardata = (stars[bias][band] - bias0) / bias0
-        galdata = (gals[bias][band] - bias0) / bias0
-        rms_bands = dS_m02_rms
-        norm = np.mean(stardata)
-        stardata -= norm
-        galdata -= norm
+        stardata = stars[bias][band]
+        galdata = gals[bias][band]
+        starmean = np.mean(stardata)
+        stardata = (stardata - starmean)/starmean
+        galdata = (galdata - starmean)/starmean
         ylim = set_range(np.concatenate([stardata, galdata]))
         # make sure to plot at least the entire LSST region
         if ylim[0] > -dS_m02_mean[1]*1.2:
@@ -185,43 +178,34 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            norm = np.mean(stardata)
-            stardata -= norm
-            galdata -= norm
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p06':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim, [-dS_p06_mean]*2, [dS_p06_mean]*2, color='#777777', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dS_p06_rms]*2, color='#777777', zorder=2)
-        stardata = (stars[bias][band] - bias0) / bias0
-        galdata = (gals[bias][band] - bias0) / bias0
-        norm = np.mean(stardata)
-        stardata -= norm
-        galdata -= norm
+        stardata = stars[bias][band]
+        galdata = gals[bias][band]
+        starmean = np.mean(stardata)
+        stardata = (stardata - starmean)/starmean
+        galdata = (galdata - starmean)/starmean
         ylim = set_range(np.concatenate([stardata, galdata]))
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            norm = np.mean(stardata)
-            stardata -= norm
-            galdata -= norm
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p10':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim, [-dS_p10_mean]*2, [dS_p10_mean]*2, color='#777777', zorder=2)
         rms_ax.fill_between(xlim, [0]*2, [dS_p10_rms]*2, color='#777777', zorder=2)
-        stardata = (stars[bias][band] - bias0) / bias0
-        galdata = (gals[bias][band] - bias0) / bias0
+        stardata = stars[bias][band]
+        galdata = gals[bias][band]
+        starmean = np.mean(stardata)
+        stardata = (stardata - starmean)/starmean
+        galdata = (galdata - starmean)/starmean
         ylim = set_range(np.concatenate([stardata, galdata]))
-        norm = np.mean(stardata)
-        stardata -= norm
-        galdata -= norm
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            norm = np.mean(stardata)
-            stardata -= norm
-            galdata -= norm
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     else:
         raise ValueError("Unknown chromatic bias in plot_bias")
@@ -236,8 +220,12 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # running mean and RMS:
     nbins = int(len(galdata)**0.4)
     xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
-    means = [np.mean(galdata[(gals.redshift > xbins[i]) & (gals.redshift < xbins[i+1])]) for i in range(nbins)]
-    rmses = [np.std(galdata[(gals.redshift > xbins[i]) & (gals.redshift < xbins[i+1])]) for i in range(nbins)]
+    means = [np.mean(galdata[(gals.redshift > xbins[i])
+                             & (gals.redshift < xbins[i+1])])
+                             for i in range(nbins)]
+    rmses = [np.sqrt(np.mean(galdata[(gals.redshift > xbins[i])
+                                     & (gals.redshift < xbins[i+1])]**2))
+                                     for i in range(nbins)]
     zs = 0.5*(xbins[1:] + xbins[:-1])
     ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
 
