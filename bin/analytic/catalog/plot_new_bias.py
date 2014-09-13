@@ -21,19 +21,21 @@ fontsize = 16
 # hardcode some requirements, order is [DES, LSST]
 m = np.r_[0.008, 0.003]
 c = np.sqrt(2 * m * 4e-4) # 4e-4 is shear variance
-r2gal = np.r_[0.51, 0.36]**2
-r2psf = np.r_[0.8, 0.7]**2
+r2gal = np.r_[0.6, 0.4]**2 # after some toiling with the CatSim DB
+r2psf = np.r_[0.8, 0.7]**2 # from Science Book and DES summary document
 epsf = 0.05 # is this a good assumption for LSST/DES?
 
 dV_mean = m * r2gal
 dV_rms = c * 2 * r2gal
-dRbar_mean = np.sqrt(dV_mean)
-dRbar_rms = np.sqrt(dV_rms)
+dRbar_mean = np.sqrt(dV_mean) # This needs to be rethought
+dRbar_rms = np.sqrt(dV_rms) # This too
 dS_m02_mean = m * r2gal / r2psf
 dS_m02_rms = m * r2gal / r2psf / epsf
+dRbarSqr_mean = m / 1.5 # The 1.5 depends on the value of r2gal and should be recomputed
+dRbarSqr_rms = c / 1.0 # The 1.0 depends on the value of r2gal and should be recomputed
 
 m_Euclid = 0.001
-r2gal_Euclid = 0.23**2
+r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
 epsf_Euclid = 0.1 # is this a good assumption for Euclid?
 dS_p06_mean = m_Euclid * r2gal_Euclid / r2psf_Euclid
@@ -83,6 +85,7 @@ def set_range(x):
 def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwargs):
     """Produce a plot of a chromatic bias, which is one of:
        `Rbar`  - centroid shift due to differential chromatic refraction
+       `RbarSqr`  - Square of centroid shift due to differential chromatic refraction
        `V`     - second moment shift due to differential chromatic refraction
        `S_m02` - difference in r^2 due to FWHM \propto \lambda^{-0.2}, as per chromatic seeing
        `S_p06` - difference in r^2 due to FWHM \propto \lambda^{+0.6}, as per Euclid
@@ -132,10 +135,35 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * 180/np.pi * 3600
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * 180/np.pi * 3600
-            #norm = np.mean(stardata)
-            #stardata -= norm
-            #galdata -= norm
             ylabel = '$\delta(\Delta \overline{\mathrm{R}})$ (arcsec)'
+    elif bias == 'RbarSqr':
+        ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
+        ax.fill_between(xlim, [-dRbarSqr_mean[0]]*2, [dRbarSqr_mean[0]]*2, color='#999999', zorder=2)
+        ax.fill_between(xlim, [-dRbarSqr_mean[1]]*2, [dRbarSqr_mean[1]]*2, color='#777777', zorder=2)
+        rms_ax.fill_between(xlim, [0]*2, [dRbarSqr_rms[0]]*2, color='#999999', zorder=2)
+        rms_ax.fill_between(xlim, [0]*2, [dRbarSqr_rms[1]]*2, color='#777777', zorder=2)
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
+        stardata = stars['Rbar'][band] * 180/np.pi * 3600
+        galdata = gals['Rbar'][band] * 180/np.pi * 3600
+        norm = np.mean(stardata)
+        stardata -= norm
+        galdata -= norm
+        stardata **= 2
+        galdata **= 2
+        ylim = set_range(np.concatenate([stardata, galdata]))
+        # make sure to plot at least the entire LSST region
+        if ylim[0] > -dRbarSqr_mean[1]*1.2:
+            ylim[0] = -dRbarSqr_mean[1]*1.2
+        if ylim[1] < dRbarSqr_mean[1]*1.2:
+            ylim[1] = dRbarSqr_mean[1]*1.2
+        # then replace with corrected measurements if requested
+        if corrected:
+            stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
+            galdata = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
+            stardata **= 2
+            galdata **= 2
+            ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
         ax.fill_between(xlim, [-dV_mean[0]]*2, [dV_mean[0]]*2, color='#999999', zorder=2)
