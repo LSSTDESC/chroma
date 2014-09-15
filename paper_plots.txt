@@ -6,7 +6,26 @@ Figure 2)
   Generated from CHROMA_DIR/bin/intuition/where_the_photons_land.py
   Output to CHROMA_DIR/bin/intuition/output/photon_landings.png
 
-Figure 3-8)
+Figure 3)
+  Requires OpSim output.
+  Download http://opsimcvs.tuc.noao.edu/runs/opsim3.61_a/output_opsim3_61.dat.gz and place into
+  CHROMA_DIR/bin/opsim/indata/
+  From ipython in CHROMA/bin/opsim directory:
+    import opsim
+    cat = opsim.opsim_parse()
+    opsim.savecat(cat) # for faster loading with cat = opsim.loadcat() in the future.
+    opsim.epoch_variance_field(cat, 1950) # part (a)
+  Output to epoch_variance_field1950.png
+
+Figure 4)
+  Requires OpSim output.
+  From ipython in CHROMA/bin/opsim directory:
+    import opsim
+    cat = opsim.loadcat() # load previously cached catalog
+    opsim.epoch_variance_bias_fields(cat) # part (b)
+  Output to misregistration_bias_fields.png
+
+Figure 5-10)
   Requires processed CatSim catalog.
   Figures generated from CHROMA_DIR/bin/analytic/catalogs/paper_plots.py
   Output to CHROMA_DIR/bin/analytic/catalogs/output/d*png
@@ -25,16 +44,3 @@ Download and process CatSim catalog:
   Run CHROMA_DIR/bin/analytic/catalogs/process_star_catalog.py
   Run CHROMA_DIR/bin/analytic/catalogs/gal_ML.py
   Run CHROMA_DIR/bin/analytic/catalogs/star_ML.py
-
-Figure 15)
-  Requires OpSim output.
-  Download http://opsimcvs.tuc.noao.edu/runs/opsim3.61_a/output_opsim3_61.dat.gz and place into
-  CHROMA_DIR/bin/opsim/indata/
-  From ipython in CHROMA/bin/opsim directory:
-    import opsim
-    cat = opsim.opsim_parse()
-    opsim.savecat(cat) # for faster loading with cat = opsim.loadcat() in the future.
-    opsim.epoch_variance_bias_fields(cat) # part (b)
-    opsim.epoch_variance_field(cat, 1950) # part (a)
-  Output to misregistration_bias_fields.png
-  Output to epoch_variance_field1950.png
