@@ -31,8 +31,8 @@ dRbar_mean = np.sqrt(dV_mean) # This needs to be rethought
 dRbar_rms = np.sqrt(dV_rms) # This too
 dS_m02_mean = m * r2gal / r2psf
 dS_m02_rms = m * r2gal / r2psf / epsf
-dRbarSqr_mean = m / 1.5 # The 1.5 depends on the value of r2gal and should be recomputed
-dRbarSqr_rms = c / 1.0 # The 1.0 depends on the value of r2gal and should be recomputed
+dRbarSqr_mean = m / 1.0 # The 1.0 comes from OpSim results + r2gal = (0.4")^2
+dRbarSqr_rms = c / 0.5 # The 0.5 comes from OpSim results + r2gal = (0.4")^2
 
 m_Euclid = 0.001
 r2gal_Euclid = 0.23**2 # where did I get this from?
