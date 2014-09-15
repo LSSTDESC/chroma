@@ -3,6 +3,9 @@ import os
 import gzip
 import glob
 
+import _mypath
+import chroma
+
 import numpy as np
 
 import astropy.utils.console
@@ -89,6 +92,9 @@ def opsim_parse():
 
 def loadcat():
     return np.load("indata/opsim.npy")
+
+def savecat(cat):
+    np.save("indata/opsim.npy", cat)
 
 def lensing_visits(cat):
     r_cond = cat["filter"] == "r"
@@ -396,7 +402,7 @@ def epoch_variance_bias(cat):
     ms = []
     c1s = []
     c2s = []
-    rsquared_gal = 0.36**2
+    rsquared_gal = 0.4**2
     for i in range(len(dec_edges)-1):
         w = (cat["fieldDec"] > dec_edges[i]) & (cat["fieldDec"] < dec_edges[i+1]) & good
         x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
@@ -429,21 +435,22 @@ def epoch_variance_bias_fields(cat):
     c2s = []
     decs = []
     fields = np.unique(cat['fieldID'])
-    rsquared_gal = 0.36**2
-    for field in fields:
-        print field
-        w = (cat['fieldID'] == field) & good
-        if w.sum() < 100: continue
-        x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
-        y0 = np.tan(cat[w]['z_a'])*np.cos(cat[w]["q"])
-        centroid = (np.mean(x0), np.mean(y0))
-        dxs.append(np.mean((x0-centroid[0])**2))
-        dys.append(np.mean((y0-centroid[1])**2))
-        dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
-        ms.append((-dxs[-1]-dys[-1])/rsquared_gal)
-        c1s.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
-        c2s.append((dxys[-1])/rsquared_gal)
-        decs.append(cat[w]['fieldDec'][0] * 180/np.pi)
+    rsquared_gal = 0.4**2
+    with chroma.ProgressBar(len(fields)) as bar:
+        for field in fields:
+            bar.update()
+            w = (cat['fieldID'] == field) & good
+            if w.sum() < 100: continue
+            x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
+            y0 = np.tan(cat[w]['z_a'])*np.cos(cat[w]["q"])
+            centroid = (np.mean(x0), np.mean(y0))
+            dxs.append(np.mean((x0-centroid[0])**2))
+            dys.append(np.mean((y0-centroid[1])**2))
+            dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
+            ms.append((-dxs[-1]-dys[-1])/rsquared_gal)
+            c1s.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
+            c2s.append((dxys[-1])/rsquared_gal)
+            decs.append(cat[w]['fieldDec'][0] * 180/np.pi)
     fig = plt.figure(figsize=(7,5))
     ax = fig.add_subplot(111)
     ax.scatter(decs, ms, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
@@ -456,6 +463,8 @@ def epoch_variance_bias_fields(cat):
     ax.set_ylim(-2.5, 2.0)
     ax.set_xlim(-70, 10)
     fig.tight_layout()
+    if not os.path.isdir('output'):
+        os.mkdir('output')
     plt.savefig('output/misregistration_bias_fields.png', dpi=220)
 
 def epoch_variance_field(cat, field):
@@ -487,6 +496,8 @@ def epoch_variance_field(cat, field):
                        "{:5.3f}".format(dxy),
                        transform=ax.transAxes)
     fig.tight_layout()
+    if not os.path.isdir('output'):
+        os.mkdir('output')
     plt.savefig('output/epoch_variance_field{}.png'.format(field), dpi=220)
 
 def make_movie_frames(cat, start=0):
