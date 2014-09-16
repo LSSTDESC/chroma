@@ -54,6 +54,8 @@ def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
     width = bin_edges[1] - bin_edges[0]
     x = np.ravel(zip(bin_edges[:-1], bin_edges[:-1]+width))
     y = np.ravel(zip(hist_n, hist_n))
+    x = np.concatenate([[x[0]],x])
+    y = np.concatenate([[0],y])
     if histtype == 'step':
         if orientation == 'vertical':
             plt.plot(x, y, **kwargs)
@@ -153,10 +155,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         galdata **= 2
         ylim = set_range(np.concatenate([stardata, galdata]))
         # make sure to plot at least the entire LSST region
-        if ylim[0] > -dRbarSqr_mean[1]*1.2:
-            ylim[0] = -dRbarSqr_mean[1]*1.2
         if ylim[1] < dRbarSqr_mean[1]*1.2:
             ylim[1] = dRbarSqr_mean[1]*1.2
+        ylim[0] = 0.0
         # then replace with corrected measurements if requested
         if corrected:
             stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
