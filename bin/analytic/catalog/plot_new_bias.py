@@ -164,8 +164,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         if corrected:
             stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
             galdata = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
-            stardata **= 2
-            galdata **= 2
+            # d((DR)^2) = 2 DR d(DR)
+            stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
+            galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
             ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
