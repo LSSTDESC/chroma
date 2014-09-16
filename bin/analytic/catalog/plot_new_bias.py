@@ -12,36 +12,40 @@ import matplotlib.pyplot as plt
 # Specify the locations of three different plot elements.
 hist_axes_range = [0.17, 0.12, 0.09, 0.7]
 scatter_axes_range = [0.26, 0.12, 0.70, 0.7]
-rms_axes_range = [0.26, 0.82, 0.70, 0.1]
+var_axes_range = [0.26, 0.82, 0.70, 0.1]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 data_dir = '../../../data/'
 star_table = '../../analytic/output/stars.pkl'
 fontsize = 16
 
 # hardcode some requirements, order is [DES, LSST]
-m = np.r_[0.008, 0.003]
-c = np.sqrt(2 * m * 4e-4) # 4e-4 is shear variance
-r2gal = np.r_[0.6, 0.4]**2 # after some toiling with the CatSim DB
-r2psf = np.r_[0.8, 0.7]**2 # from Science Book and DES summary document
-epsf = 0.05 # is this a good assumption for LSST/DES?
+r2sqr_gal = np.r_[0.6, 0.4]**2
+r2sqr_PSF = np.r_[0.8, 0.7]**2
 
-dV_mean = m * r2gal
-dV_rms = c * 2 * r2gal
-dRbar_mean = np.sqrt(dV_mean) # This needs to be rethought
-dRbar_rms = np.sqrt(dV_rms) # This too
-dS_m02_mean = m * r2gal / r2psf
-dS_m02_rms = m * r2gal / r2psf / epsf
-dRbarSqr_mean = m / 1.0 # The 1.0 comes from OpSim results + r2gal = (0.4")^2
-dRbarSqr_rms = c / 0.5 # The 0.5 comes from OpSim results + r2gal = (0.4")^2
+mean_m_req = np.r_[0.008, 0.003]
+shear_var = 4.e-4
+var_c_req = mean_m_req * 2 * shear_var
+
+psf_ellip = 0.05
+
+mean_DeltaRbarSqr_req = mean_m_req * 1.0
+var_DeltaRbarSqr_req = var_c_req * 0.5**2
+
+mean_DeltaV_req = r2sqr_gal * mean_m_req
+var_DeltaV_req = r2sqr_gal**2 * var_c_req
+
+mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
+var_dS_m02_req = var_c_req * (r2sqr_gal / r2sqr_PSF * 2.0 / psf_ellip)**2
 
 m_Euclid = 0.001
+c_Euclid = m_Euclid * 2 * shear_var
 r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
 epsf_Euclid = 0.1 # is this a good assumption for Euclid?
-dS_p06_mean = m_Euclid * r2gal_Euclid / r2psf_Euclid
-dS_p06_rms = m_Euclid * r2gal_Euclid / r2psf_Euclid / epsf_Euclid
-dS_p10_mean = m_Euclid * r2gal_Euclid / r2psf_Euclid
-dS_p10_rms = m_Euclid * r2gal_Euclid / r2psf_Euclid / epsf_Euclid
+mean_dS_p06_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
+var_dS_p06_req = c_Euclid * (r2gal_Euclid / r2psf_Euclid * 2.0 / epsf_Euclid)**2
+mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
+var_dS_p10_req = c_Euclid * (r2gal_Euclid / r2psf_Euclid * 2.0 / epsf_Euclid)**2
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, **kwargs):
@@ -111,15 +115,11 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     xlim = (-0.1, 2.5)
     ax.set_xlim(xlim)
 
-    # create rms axis so can draw requirement bars
-    rms_ax = f.add_axes(rms_axes_range)
+    # create variance axis so can draw requirement bars
+    var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
     if bias == 'Rbar':
         ylabel = '$\Delta \overline{\mathrm{R}}$ (arcsec)'
-        ax.fill_between(xlim, [-dRbar_mean[0]]*2, [dRbar_mean[0]]*2, color='#999999', zorder=2)
-        ax.fill_between(xlim, [-dRbar_mean[1]]*2, [dRbar_mean[1]]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dRbar_rms[0]]*2, color='#999999', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dRbar_rms[1]]*2, color='#777777', zorder=2)
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
         stardata = stars[bias][band] * 180/np.pi * 3600
@@ -128,11 +128,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         stardata -= norm
         galdata -= norm
         ylim = set_range(np.concatenate([stardata, galdata]))
-        # make sure to plot at least the entire LSST region
-        if ylim[0] > -dRbar_mean[1]*1.2:
-            ylim[0] = -dRbar_mean[1]*1.2
-        if ylim[1] < dRbar_mean[1]*1.2:
-            ylim[1] = dRbar_mean[1]*1.2
         # then replace with corrected measurements if requested
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * 180/np.pi * 3600
@@ -140,10 +135,17 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ylabel = '$\delta(\Delta \overline{\mathrm{R}})$ (arcsec)'
     elif bias == 'RbarSqr':
         ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
-        ax.fill_between(xlim, [-dRbarSqr_mean[0]]*2, [dRbarSqr_mean[0]]*2, color='#999999', zorder=2)
-        ax.fill_between(xlim, [-dRbarSqr_mean[1]]*2, [dRbarSqr_mean[1]]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dRbarSqr_rms[0]]*2, color='#999999', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dRbarSqr_rms[1]]*2, color='#777777', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_DeltaRbarSqr_req[0]]*2,
+                        [mean_DeltaRbarSqr_req[0]]*2,
+                        color='#999999', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_DeltaRbarSqr_req[1]]*2,
+                        [mean_DeltaRbarSqr_req[1]]*2,
+                        color='#777777', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_DeltaRbarSqr_req[0]]*2, color='#999999', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_DeltaRbarSqr_req[1]]*2, color='#777777', zorder=2)
+        var_ylim = [0, 1.2*var_DeltaRbarSqr_req[0]]
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
         stardata = stars['Rbar'][band] * 180/np.pi * 3600
@@ -155,8 +157,8 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         galdata **= 2
         ylim = set_range(np.concatenate([stardata, galdata]))
         # make sure to plot at least the entire LSST region
-        if ylim[1] < dRbarSqr_mean[1]*1.2:
-            ylim[1] = dRbarSqr_mean[1]*1.2
+        if ylim[1] < mean_DeltaRbarSqr_req[1]*1.2:
+            ylim[1] = mean_DeltaRbarSqr_req[1]*1.2
         ylim[0] = 0.0
         # then replace with corrected measurements if requested
         if corrected:
@@ -167,32 +169,45 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
-        ax.fill_between(xlim, [-dV_mean[0]]*2, [dV_mean[0]]*2, color='#999999', zorder=2)
-        ax.fill_between(xlim, [-dV_mean[1]]*2, [dV_mean[1]]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dV_rms[0]]*2, color='#999999', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dV_rms[1]]*2, color='#777777', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_DeltaV_req[0]]*2,
+                        [mean_DeltaV_req[0]]*2,
+                        color='#999999', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_DeltaV_req[1]]*2,
+                        [mean_DeltaV_req[1]]*2,
+                        color='#777777', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_DeltaV_req[0]]*2, color='#999999', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_DeltaV_req[1]]*2, color='#777777', zorder=2)
+        var_ylim = [0, 1.2*var_DeltaV_req[0]]
         stardata = stars[bias][band] * (180/np.pi * 3600)**2
         galdata = gals[bias][band] * (180/np.pi * 3600)**2
-        rms_bands = dV_rms
         norm = np.mean(stardata)
         stardata -= norm
         galdata -= norm
         ylim = set_range(np.concatenate([stardata, galdata]))
         # make sure to plot at least the entire LSST region
-        if ylim[0] > -dV_mean[1]*1.2:
-            ylim[0] = -dV_mean[1]*1.2
-        if ylim[1] < dV_mean[1]*1.2:
-            ylim[1] = dV_mean[1]*1.2
+        if ylim[0] > -mean_DeltaV_req[1]*1.2:
+            ylim[0] = -mean_DeltaV_req[1]*1.2
+        if ylim[1] < mean_DeltaV_req[1]*1.2:
+            ylim[1] = mean_DeltaV_req[1]*1.2
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
             ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
     elif bias == 'S_m02':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
-        ax.fill_between(xlim, [-dS_m02_mean[0]]*2, [dS_m02_mean[0]]*2, color='#999999', zorder=2)
-        ax.fill_between(xlim, [-dS_m02_mean[1]]*2, [dS_m02_mean[1]]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dS_m02_rms[0]]*2, color='#999999', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dS_m02_rms[1]]*2, color='#777777', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_dS_m02_req[0]]*2,
+                        [mean_dS_m02_req[0]]*2,
+                        color='#999999', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_dS_m02_req[1]]*2,
+                        [mean_dS_m02_req[1]]*2,
+                        color='#777777', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_dS_m02_req[0]]*2, color='#999999', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_dS_m02_req[1]]*2, color='#777777', zorder=2)
+        var_ylim = [0, 1.2*var_dS_m02_req[0]]
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -200,18 +215,22 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         galdata = (galdata - starmean)/starmean
         ylim = set_range(np.concatenate([stardata, galdata]))
         # make sure to plot at least the entire LSST region
-        if ylim[0] > -dS_m02_mean[1]*1.2:
-            ylim[0] = -dS_m02_mean[1]*1.2
-        if ylim[1] < dS_m02_mean[1]*1.2:
-            ylim[1] = dS_m02_mean[1]*1.2
+        if ylim[0] > -mean_dS_m02_req[1]*1.2:
+            ylim[0] = -mean_dS_m02_req[1]*1.2
+        if ylim[1] < mean_dS_m02_req[1]*1.2:
+            ylim[1] = mean_dS_m02_req[1]*1.2
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p06':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
-        ax.fill_between(xlim, [-dS_p06_mean]*2, [dS_p06_mean]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dS_p06_rms]*2, color='#777777', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_dS_p06_req]*2,
+                        [mean_dS_p06_req]*2,
+                        color='#777777', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_dS_p06_req]*2, color='#777777', zorder=2)
+        var_ylim = [0, 1.2*var_dS_p06_req[0]]
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -224,8 +243,12 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p10':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
-        ax.fill_between(xlim, [-dS_p10_mean]*2, [dS_p10_mean]*2, color='#777777', zorder=2)
-        rms_ax.fill_between(xlim, [0]*2, [dS_p10_rms]*2, color='#777777', zorder=2)
+        ax.fill_between(xlim,
+                        [-mean_dS_p10_req]*2,
+                        [mean_dS_p10_req]*2,
+                        color='#777777', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [var_dS_p10_req]*2, color='#777777', zorder=2)
+        var_ylim = [0, 1.2*var_dS_p10_req[0]]
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -246,15 +269,15 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     im = ax.scatter(gals.redshift, galdata, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
     ax.set_xlabel('redshift', fontsize=fontsize)
 
-    # running mean and RMS:
+    # running mean and variance:
     nbins = int(len(galdata)**0.4)
     xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
     means = [np.mean(galdata[(gals.redshift > xbins[i])
                              & (gals.redshift < xbins[i+1])])
                              for i in range(nbins)]
-    rmses = [np.sqrt(np.mean(galdata[(gals.redshift > xbins[i])
-                                     & (gals.redshift < xbins[i+1])]**2))
-                                     for i in range(nbins)]
+    _vars = [np.var(galdata[(gals.redshift > xbins[i])
+                            & (gals.redshift < xbins[i+1])])
+                            for i in range(nbins)]
     zs = 0.5*(xbins[1:] + xbins[:-1])
     ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
 
@@ -296,12 +319,13 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(fontsize)
 
-    # rms axis
-    rms_ax.set_xlim(ax.get_xlim())
-    rms_ax.xaxis.set_ticklabels([])
-    rms_ax.set_ylabel('RMS')
-    rms_ax.yaxis.set_ticklabels([])
-    rms_ax.plot(zs, rmses, color='blue', linewidth=2)
+    # variance axis
+    var_ax.set_xlim(ax.get_xlim())
+    var_ax.set_ylim(var_ylim)
+    var_ax.xaxis.set_ticklabels([])
+    var_ax.set_ylabel('Var')
+    var_ax.yaxis.set_ticklabels([])
+    var_ax.plot(zs, _vars, color='blue', linewidth=2)
 
     f.savefig(outfile, dpi=220)
 
