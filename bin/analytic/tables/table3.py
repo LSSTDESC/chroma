@@ -7,7 +7,6 @@ r2sqr_PSF = np.r_[0.8, 0.7]**2
 mean_m_req = np.r_[0.008, 0.003]
 shear_var = 4.e-4
 var_c_req = mean_m_req * 2 * shear_var
-print var_c_req
 
 psf_ellip = 0.05
 
