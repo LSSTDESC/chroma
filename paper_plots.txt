@@ -25,22 +25,37 @@ Figure 4)
     opsim.epoch_variance_bias_fields(cat) # part (b)
   Output to misregistration_bias_fields.png
 
-Figure 5-10)
+Figures 5-10)
   Requires processed CatSim catalog.
+  Download and process CatSim catalog:
+    Load lsst framework: (maybe don't need all of these... not sure.)
+      source ~/lsst/loadLSST.sh
+      setup afw
+      setup sims_catalogs_generation
+      setup sims_catalogs_measures
+      setup matplotlib
+      setup sims_maf
+      setup sims_catUtils
+    Run CHROMA_DIR/bin/analytic/catalogs/make_catalogs.py
+    Run CHROMA_DIR/bin/analytic/catalogs/process_gal_catalog.py
+    Run CHROMA_DIR/bin/analytic/catalogs/process_star_catalog.py
+    Run CHROMA_DIR/bin/analytic/catalogs/gal_ML.py
+    Run CHROMA_DIR/bin/analytic/catalogs/star_ML.py
   Figures generated from CHROMA_DIR/bin/analytic/catalogs/paper_plots.py
   Output to CHROMA_DIR/bin/analytic/catalogs/output/d*png
 
-Download and process CatSim catalog:
-  Load lsst framework: (maybe don't need all of these... not sure.)
-    source ~/lsst/loadLSST.sh
-    setup afw
-    setup sims_catalogs_generation
-    setup sims_catalogs_measures
-    setup matplotlib
-    setup sims_maf
-    setup sims_catUtils
-  Run CHROMA_DIR/bin/analytic/catalogs/make_catalogs.py
-  Run CHROMA_DIR/bin/analytic/catalogs/process_gal_catalog.py
-  Run CHROMA_DIR/bin/analytic/catalogs/process_star_catalog.py
-  Run CHROMA_DIR/bin/analytic/catalogs/gal_ML.py
-  Run CHROMA_DIR/bin/analytic/catalogs/star_ML.py
+Figures 11-14, 16)
+  Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
+  Then create plots with CHROMA_DIR/bin/simulations/plot_vs_z.py
+  Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_DCR_noCorr_r2r2.png
+  Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_CS_noCorr_r2r2.png
+  Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_noCorr_r2r2.png
+  Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_noCorr_FWHMHLR.png
+  Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_Perturb_FWHMHLR.png
+
+Figure 15)
+  First generate data. From CHROMA_DIR/bin/simulations/ run:
+  $ python one_ring_test.py --redshift 0.6 --zenith_angle 60 --gal_r2 0.3 -n4 --moffat --maximum_fft_size 16384 --diagnostic output/d.fits
+  Next make the plot.
+  $ python plot_ring_diagnostic.py output/d.fits
+  The paper plot is CHROMA_DIR/bin/simulations/output/ring_diagnostic-g1-0.0-g2-0.0-beta1.0471975512.png
