@@ -86,3 +86,4 @@ for i, s in enumerate(spectra):
 
 fig.subplots_adjust(hspace=0.23, wspace=0.32, bottom=0.12, right=0.92, top=0.92)
 plt.savefig('output/photon_landings.png', dpi=220)
+plt.savefig('output/photon_landings.pdf')

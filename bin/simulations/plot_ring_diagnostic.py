@@ -262,6 +262,7 @@ def plot_ring_diagnostic(args):
                 os.mkdir(dir_)
         plt.savefig(args.outprefix+'-g1-{}-g2-{}-beta{}.png'.format(g1, g2, beta),
                     dpi=220)
+        plt.savefig(args.outprefix+'-g1-{}-g2-{}-beta{}.pdf'.format(g1, g2, beta))
 
 
 if __name__ == '__main__':

@@ -466,6 +466,7 @@ def epoch_variance_bias_fields(cat):
     if not os.path.isdir('output'):
         os.mkdir('output')
     plt.savefig('output/misregistration_bias_fields.png', dpi=220)
+    plt.savefig('output/misregistration_bias_fields.pdf')
 
 def epoch_variance_field(cat, field):
     good = lensing_visits(cat)
@@ -478,27 +479,38 @@ def epoch_variance_field(cat, field):
     dxy = np.mean((x-centroid[0])*(y-centroid[1]))
     fig = plt.figure(figsize=(7, 5))
     ax = fig.add_subplot(111)
-    ax.scatter(x, y, s=5)
+    ax.scatter(x, y, s=5, alpha=0.5)
     ax.scatter(centroid[0], centroid[1], marker='x', color='red', s=80)
-    ax.set_xlabel(r"$\cos\delta\, \Delta \alpha / \Delta \bar{R}_{45}$", fontsize=16)
-    ax.set_ylabel(r"$\Delta \delta / \Delta \bar{R}_{45}$", fontsize=16)
-    ax.text(0.35, 0.9, r"$\delta$ = {:5.3f}$^\circ$".format(cat[w]['fieldDec'][0] * 180/np.pi),
+    ax.set_xlabel(r"$\tan z_a \sin q\,(=\,(\cos\delta)\, \Delta \alpha / \Delta \bar{R}_{45})$",
+                  fontsize=16)
+    ax.set_ylabel(r"$\tan z_a \cos q\,(=\,\Delta \delta / \Delta \bar{R}_{45})$", fontsize=16)
+    ax.text(0.8, 0.9, r"$\delta$ = {:3.1f}$^\circ$".format(cat[w]['fieldDec'][0] * 180/np.pi),
             transform=ax.transAxes, fontsize=14)
-    ax.text(0.35, 0.83, r"$\alpha$ = {:5.3f}$^\circ$".format(cat[w]['fieldRA'][0] * 180/np.pi),
+    ax.text(0.8, 0.83, r"$\alpha$ = {:3.1f}$^\circ$".format(cat[w]['fieldRA'][0] * 180/np.pi),
             transform=ax.transAxes, fontsize=14)
-    ax.text(0.35, 0.76, r"$\langle(\Delta\cos \delta\, \Delta\alpha)^2\rangle/(\Delta \bar{R}_{45})^2$ = "+
-                       "{:5.3f}".format(dx),
-                       transform=ax.transAxes, fontsize=14)
-    ax.text(0.35, 0.69, r"$\langle(\Delta\Delta\delta)^2\rangle/(\Delta \bar{R}_{45})^2$ = "+
-                       "{:5.3f}".format(dy),
-                       transform=ax.transAxes, fontsize=14)
-    ax.text(0.35, 0.62, r"$\langle(\Delta\cos \delta\, \Delta\alpha) (\Delta\Delta \delta)\rangle/(\Delta\bar{R}_{45})^2$ = "+
-                       "{:5.3f}".format(dxy),
-                       transform=ax.transAxes, fontsize=14)
+    # ax.text(0.4, 0.76, r"$\langle(\tan z_a \sin q)^2\rangle_\mathrm{epochs}$ = "+
+    #                    "{:5.3f}".format(dx),
+    #                    transform=ax.transAxes, fontsize=14)
+    # ax.text(0.4, 0.69, r"$\langle(\tan z_a \cos q)^2\rangle_\mathrm{epochs}$ = "+
+    #                    "{:5.3f}".format(dy),
+    #                    transform=ax.transAxes, fontsize=14)
+    # ax.text(0.4, 0.62, r"$\langle(\tan z_a \sin q)(\tan z_a \cos q)\rangle_\mathrm{epochs}$ = "+
+    #                    "{:5.3f}".format(dxy),
+    #                    transform=ax.transAxes, fontsize=14)
+    # ax.text(0.3, 0.76, r"$\langle(\Delta\cos \delta\, \Delta\alpha)^2\rangle_\mathrm{epochs}/(\Delta \bar{R}_{45})^2$ = "+
+    #                    "{:5.3f}".format(dx),
+    #                    transform=ax.transAxes, fontsize=14)
+    # ax.text(0.3, 0.69, r"$\langle(\Delta\Delta\delta)^2\rangle_\mathrm{epochs}/(\Delta \bar{R}_{45})^2$ = "+
+    #                    "{:5.3f}".format(dy),
+    #                    transform=ax.transAxes, fontsize=14)
+    # ax.text(0.3, 0.62, r"$\langle(\Delta\cos \delta\, \Delta\alpha) (\Delta\Delta \delta)\rangle_\mathrm{epochs}/(\Delta\bar{R}_{45})^2$ = "+
+    #                    "{:5.3f}".format(dxy),
+    #                    transform=ax.transAxes, fontsize=14)
     fig.tight_layout()
     if not os.path.isdir('output'):
         os.mkdir('output')
     plt.savefig('output/epoch_variance_field{}.png'.format(field), dpi=220)
+    plt.savefig('output/epoch_variance_field{}.pdf'.format(field))
 
 def make_movie_frames(cat, start=0):
     s=list(set(cat["fieldID"]))

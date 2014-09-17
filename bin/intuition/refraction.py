@@ -137,6 +137,7 @@ def chromatic_biases_700():
     if not os.path.isdir('output/'):
         os.mkdir('output/')
     fig.savefig('output/chromatic_biases_700.png', dpi=220)
+    fig.savefig('output/chromatic_biases_700.pdf')
 
 if __name__ == '__main__':
     refraction_vs_zenith()

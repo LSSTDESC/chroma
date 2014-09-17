@@ -292,6 +292,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     for label in ax.get_xticklabels():
         label.set_fontsize(fontsize)
 
+    # label which band we're dealing with
+    ax.text(0.83, 0.93, band.replace('LSST_','')+' band', transform=ax.transAxes,
+            fontsize=fontsize)
+
     # star histogram
     hist_ax = f.add_axes(hist_axes_range)
     hist_with_peak(stardata, bins=200, range=ylim, orientation='horizontal',

@@ -44,7 +44,7 @@ for size_mode in size_modes:
             outfilename = "output/ring_vs_z_"
             outfilename += physics_mode[0]+'_'
             outfilename += correction_mode+'_'
-            outfilename += size_mode[0]+".png"
+            outfilename += size_mode[0]+".pdf"
 
             for profile_mode in profile_modes:
                 infilename = "output/ring_vs_z_"

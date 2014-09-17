@@ -12,6 +12,6 @@ for band in bands:
             cmd += ' '+typ
             cmd += " --band LSST_{}".format(band)
             cmd += ' '+corr[0]
-            cmd += " --outfile output/d{}_{}_LSST_{}.png".format(typ, corr[1], band)
+            cmd += " --outfile output/d{}_{}_LSST_{}.pdf".format(typ, corr[1], band)
             print cmd
             subprocess.call(cmd, shell=True)
