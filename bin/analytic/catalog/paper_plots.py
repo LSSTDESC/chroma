@@ -1,7 +1,7 @@
 import subprocess
 
 bands = ['r', 'i']
-types = ['RbarSqr', 'V', 'S_m02']
+types = ['LnRbarSqr', 'V', 'S_m02']
 corrs = [('', 'few'),
          ('--corrected','corrected')]
 

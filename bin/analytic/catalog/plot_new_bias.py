@@ -48,15 +48,22 @@ mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
 var_dS_p10_req = c_Euclid * (r2gal_Euclid / r2psf_Euclid * 2.0 / epsf_Euclid)**2
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
-                   histtype=None, **kwargs):
+                   histtype=None, log=False, **kwargs):
     """Plot a histogram normalized to unit peak.
     """
     if ax is None:
         ax = plt.gca()
+    if log:
+        x = np.log(x)
+        range = [np.log(r) for r in range]
     hist, bin_edges = np.histogram(x, bins=bins, range=range)
+    if log:
+        bin_edges = [np.exp(b) for b in bin_edges]
+        width = bin_edges
+    else:
+        width = bin_edges[1] - bin_edges[0]
     hist_n = hist * 1.0/hist.max()
-    width = bin_edges[1] - bin_edges[0]
-    x = np.ravel(zip(bin_edges[:-1], bin_edges[:-1]+width))
+    x = np.ravel(zip(bin_edges[:-1], bin_edges[1:]))
     y = np.ravel(zip(hist_n, hist_n))
     x = np.concatenate([[x[0]],x])
     y = np.concatenate([[0],y])
@@ -170,6 +177,45 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
             galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
             ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
+    elif bias == 'LnRbarSqr':
+        ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
+        ax.fill_between(xlim,
+                        [1.e-7]*2,
+                        [mean_DeltaRbarSqr_req[0]]*2,
+                        color='#999999', zorder=2)
+        ax.fill_between(xlim,
+                        [1.e-7]*2,
+                        [mean_DeltaRbarSqr_req[1]]*2,
+                        color='#777777', zorder=2)
+        ax.set_yscale('log')
+
+        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[0])]*2,
+                            color='#999999', zorder=2)
+        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[1])]*2,
+                            color='#777777', zorder=2)
+        var_ylim = [0, 1.2*np.sqrt(var_DeltaRbarSqr_req[0])]
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
+        stardata = stars['Rbar'][band] * 180/np.pi * 3600
+        galdata = gals['Rbar'][band] * 180/np.pi * 3600
+        norm = np.mean(stardata)
+        stardata -= norm
+        galdata -= norm
+        stardata **= 2
+        galdata **= 2
+        ylim = set_range(np.concatenate([stardata, galdata]))
+        # make sure to plot at least the entire LSST region
+        if ylim[1] < mean_DeltaRbarSqr_req[1]*10:
+            ylim[1] = mean_DeltaRbarSqr_req[1]*10
+        ylim[0] = 1.e-7
+        # then replace with corrected measurements if requested
+        if corrected:
+            stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
+            galdata = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
+            # d((DR)^2) = 2 DR d(DR)
+            stardata = np.abs(2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata)
+            galdata = np.abs(2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata)
+            ylabel = r'$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)'
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
         ax.fill_between(xlim,
@@ -295,7 +341,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     #     ax.set_title('filter = {}'.format(band), fontsize=fontsize)
     ax.yaxis.set_ticklabels([])
     ax.set_ylim(ylim)
-    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#AAAAAA', zorder=1)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB', zorder=1)
     for label in ax.get_xticklabels():
         label.set_fontsize(fontsize)
 
@@ -305,8 +351,12 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
 
     # star histogram
     hist_ax = f.add_axes(hist_axes_range)
+    log = False
+    if bias == 'LnRbarSqr':
+        hist_ax.set_yscale('log')
+        log = True
     hist_with_peak(stardata, bins=200, range=ylim, orientation='horizontal',
-                   histtype='stepfilled', color='blue')
+                   histtype='stepfilled', log=log, color='blue')
     hist_ax.xaxis.set_ticklabels([])
     hist_ax.set_ylim(ylim)
     xlim = hist_ax.get_xlim()
@@ -315,11 +365,11 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     hist_ax.set_ylabel(ylabel, fontsize=fontsize)
     # gal histogram
     hist_with_peak(galdata, bins=200, range=ylim, orientation='horizontal',
-                   histtype='step', color='red')
-    hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.08,
-                 'stars', fontsize=fontsize, color='blue')
-    hist_ax.text(xlim[0] + (xlim[1]-xlim[0])*0.2, ylim[1] - (ylim[1]-ylim[0])*0.16,
-                 'gals', fontsize=fontsize, color='red')
+                   histtype='step', log=log, color='red')
+    hist_ax.text(0.1, 0.93,
+                 "stars", fontsize=fontsize, color='blue', transform=hist_ax.transAxes)
+    hist_ax.text(0.1, 0.88,
+                 "gals", fontsize=fontsize, color='red', transform=hist_ax.transAxes)
     for label in hist_ax.get_yticklabels():
         label.set_fontsize(fontsize)
 
@@ -334,6 +384,8 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # variance axis
     var_ax.set_xlim(ax.get_xlim())
     var_ax.set_ylim(var_ylim)
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
+                        color='#BBBBBB', zorder=1)
     var_ax.xaxis.set_ticklabels([])
     var_ax.set_ylabel('$\sqrt{\mathrm{Var}}$')
     var_ax.yaxis.set_ticklabels([])
