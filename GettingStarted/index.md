@@ -44,15 +44,15 @@ Directory Structure
 The primary directory structure of chroma is the following:
 
 {% highlight yaml %}
-   - bin/
-     - bin/analytic/
-       - bin/analytic/machine_learning/
-     - bin/intuition/
-     - bin/simulations/
-   - chroma/
-   - data/
-     - data/SEDs/
-     - data/filters/
+- bin/
+  - bin/analytic/
+    - bin/analytic/catalog/
+  - bin/intuition/
+  - bin/simulations/
+-  chroma/
+-  data/
+  - data/SEDs/
+  - data/filters/
 {% endhighlight %}
 
 (There are additional directories lurking, but the above are the ones that are most interesting and
@@ -72,6 +72,9 @@ The chroma/ directory contains a few useful library modules:
            biases.
 - sampled.py - Code that implements simple SED and Bandpass classes defined by samples in
                wavelength.
+- target.py - Code to generate ring test target images.
+- measure.py - Code to measure target image parameters.
+- extinction.py - Code stolen from the astropy.specutils library to implement dust extinction.
 
 Scripts that produce output reside in the bin/ directory.  We will go through the various bin/
 scripts under the results tab above.
