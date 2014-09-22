@@ -27,16 +27,16 @@ As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric
     # chromatic seeing to the fiducial PSF.
     psf = galsim.ChromaticAtmosphere(psf_500, 500, zenith_angle=30*galsim.degrees)
 
-    # Convolve everything together, don't forget to convolve in a pixel!
-    final = galsim.Convolve(galaxy, psf, galsim.Pixel(0.2))
+    # Convolve galaxy profile and PSF together.
+    final = galsim.Convolve(galaxy, psf)
 
     # Need a filter bandpass to draw through.
     bandpass = galsim.Bandpass('rband.dat')
     # Draw the image!
-    image = final.draw(bandpass)
+    image = final.drawImage(bandpass)
 {% endhighlight %}
 
-For Euclid, the PSF is chromatic due to the diffraction limit.  If this were the only contribution to the PSF, then the chromatic effect would be \\({\scriptsize \mathrm{FWHM} \propto \lambda}\\).  When combined with telescope jitter and the modulation transfer function from the CCD, however, the Euclid PSF will actually scale approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\).  This effect is also convenient to implement in GalSim:
+For Euclid, the PSF is chromatic primarily due to the diffraction limit.  If this were the only contribution to the PSF, then the chromatic effect would be \\({\scriptsize \mathrm{FWHM} \propto \lambda}\\).  When combined with telescope jitter and the modulation transfer function from the CCD, however, the Euclid PSF will actually scale approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\).  This effect is also convenient to implement in GalSim:
 
 {% highlight python %}
     # Again, we'll apply a wavelength dependent transformation to a
@@ -46,6 +46,6 @@ For Euclid, the PSF is chromatic due to the diffraction limit.  If this were the
     lam_over_diam = central_wavelength / aperture_diam * galsim.radians / galsim.arcsec
     psf_750 = galsim.Airy(lam_over_diam=lam_over_diam)
     # galsim.ChromaticObject chromaticizes the fiducial PSF so that
-    # .createDilated() can accept a function of wavelength as its argument.
-    psf_Euclid = galsim.ChromaticObject(psf_750).createDilated(lambda w: (w/750)**0.6)
+    # .dilate() can accept a function of wavelength as its argument.
+    psf_Euclid = galsim.ChromaticObject(psf_750).dilate(lambda w: (w/750)**0.6)
 {% endhighlight %}
