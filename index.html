@@ -5,11 +5,11 @@ overview: true
 ---
 
 <p class="line">
-  LSST will measure the shapes of some billion galaxies to constrain cosmic shear and dark energy.  With this unprecedented statistical precision, a deep understanding of potential systematic biases will be required.  In this LSST DESC repository, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of galaxies with different spectral energy distributions (SEDs) than the stars.
+  LSST will measure the shapes of billions of galaxies to increase our understanding of dark energy by mapping distortions in shapes due to cosmic shear.  With this unprecedented statistical precision, a deep understanding of potential systematic biases will be required.  In this LSST DESC repository, we investigate biases originating from two chromatic effects in the atmosphere: (i) differential chromatic refraction (DCR) and (ii) wavelength dependence of seeing.  These biases arise when using the point spread function (PSF) measured with stars to estimate the shapes of galaxies with different spectral energy distributions (SEDs) than the stars.
 </p>
 <figure>
   <img src="{{ site.url }}/img/chromatic_biases.png" height=400/>
-  <figcaption>Figure 1. Chromatic refraction and chromatic seeing.</figcaption>
+  <figcaption>Figure 1. Wavelength dependence of differential chromatic refraction (thin colored curves and left scale) and chromatic seeing (thick black curve and right scale) across the six LSST filter bands (color regions) and the expected wavelength coverage of Euclid (shaded rectangle).</figcaption>
 </figure>
 <p>
 <h3> Differential Chromatic Refraction </h3>
@@ -19,7 +19,7 @@ atmosphere than are redder photons (Figure 1).  For example, at a zenith angle o
 will be approximately the median for LSST, a photon at the blue end of the r filter will land about
 0.15 arcseconds closer to the zenith than a photon at the red end of the r filter, or about 25% of
 the PSF FWHM.  This leads to both an SED-dependent shift in PSF centroid and SED-dependent
-contraction of the PSF in the zenith direction.  These effects can be quantified in terms of the
+stretching of the PSF in the zenith direction.  These effects can be quantified in terms of the
 shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\) and \(V\),
 respectively.
 </p>
@@ -41,7 +41,8 @@ It is common to characterize such biases in terms of the additive and multiplica
 calibration parameters \(m\) and \(c\), defined by
 \[\hat{\gamma_i} = (1+m_i)\gamma_i + c_i.\]
 where \(\hat{\gamma_i}\) is the shear estimator and the true shear is \(\gamma_i\).
-In these terms, the bias from differential chromatic refraction can be written
+With the "1" direction oriented towards the zenith, the bias from differential chromatic refraction
+can be written
 \[m_1^{DCR} = m_2^{DCR} = \frac{- \Delta V}{r^2_{gal}} \]
 \[c_1^{DCR} = \frac{- \Delta V}{2r^2_{gal}} \]
 \[c_2^{DCR} = 0.\]
