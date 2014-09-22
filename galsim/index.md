@@ -36,14 +36,14 @@ As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric
     image = final.draw(bandpass)
 {% endhighlight %}
 
-A Euclid-like PSF that scales approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\) is also convenient to implement:
+For Euclid, the PSF is chromatic due to the diffraction limit.  If this were the only contribution to the PSF, then the chromatic effect would be \\({\scriptsize \mathrm{FWHM} \propto \lambda}\\).  When combined with telescope jitter and the modulation transfer function from the CCD, however, the Euclid PSF will actually scale approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\).  This effect is also convenient to implement in GalSim:
 
 {% highlight python %}
     # Again, we'll apply a wavelength dependent transformation to a
     # monochromatic fiducial PSF.
     aperture_diameter = 1.2 # meters
     central_wavelength = 750e-9 # meters
-    lam_over_diam = central_wavelength / aperture_diam * (3600 * 180/3.1415) # rad -> arcsec
+    lam_over_diam = central_wavelength / aperture_diam * galsim.radians / galsim.arcsec
     psf_750 = galsim.Airy(lam_over_diam=lam_over_diam)
     # galsim.ChromaticObject chromaticizes the fiducial PSF so that
     # .createDilated() can accept a function of wavelength as its argument.
