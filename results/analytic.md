@@ -52,5 +52,4 @@ Euclid-like $$\mathrm{FWHM} \propto \lambda^{+0.6}$$ relationship for the Euclid
 
 <img src="{{site.url}}/img/S_p06.Euclid_350.png" width="650">
 
-Clearly the biases on PSF shape and size due to chromatic effects exceed the requirements for
-these surveys.
+Except for PSF centroid (first moment) shifts, each of the above chromatic PSF shape or size biases either saturates or exceeds the systematic error budget of DES, LSST, and Euclid.

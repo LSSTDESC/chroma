@@ -21,18 +21,13 @@ output/S_p06_Euclid_350_vs_LSST_r-LSST_i.png
 output/S_m02_LSST_r_vs_LSST_r-LSST_i.png
 {% endhighlight %}
 
-Let's look at the DCR centroid shift plot:
+Let's look at the chromatic seeing plot for LSST $$r$$-band:
 
-<img src="{{site.url}}/img/Rbar_LSST_r_vs_LSST_r-LSST_i.png" width="650">
+<img src="{{site.url}}/img/S_m02_LSST_r_vs_LSST_r-LSST_i.png" width="650">
 
 In the top panel, the same chromatic biases as on the previous page are being plotted on the
 y-axis, but the x-axis has been replaced with the LSST _r_ - _i_ color.  Clearly there is a
-correlation.
-
-Let's look at the DCR second moment shifts now:
-
-<img src="{{site.url}}/img/V_LSST_r_vs_LSST_r-LSST_i.png" width="650">
-
-The correlation here is much weaker, and the residuals are not small enough to meet LSST
-requirements.  Presumably, if we used the information in all six photometric bands we could do
-better still.  We will investigate this possibility shortly.
+correlation.  Using just the _r_ - _i_ color to make a correction, we get the bottom panel.
+The lines and star symbols here are much closer to landing within the requirement box than without
+a correction.  Presumably, if we used all six photometric bands we could do better still.  We will
+investigate this possibility shortly.
