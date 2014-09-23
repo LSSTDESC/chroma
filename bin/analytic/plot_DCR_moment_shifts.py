@@ -13,6 +13,7 @@ except:
 import matplotlib.pyplot as plt
 
 def plot_DCR_moment_shifts(filter_name):
+    print "Plotting {}-band first moment shift".format(filter_name)
     stars = cPickle.load(open('output/stars.pkl'))
     gals = cPickle.load(open('output/galaxies.pkl'))
 
@@ -59,8 +60,10 @@ def plot_DCR_moment_shifts(filter_name):
     ax1.legend(prop={"size":9})
 
     # plot bars showing LSST/DES requirements
-    ax1.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
-    ax1.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
+    LSST_Rbar_req = np.sqrt(3e-3)
+    DES_Rbar_req = np.sqrt(8e-3)
+    ax1.fill_between(xlim, [-DES_Rbar_req]*2, [DES_Rbar_req]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-LSST_Rbar_req]*2, [LSST_Rbar_req]*2, color='#AAAAAA', zorder=2)
 
     f.tight_layout()
     f.savefig('output/Rbar.{}.png'.format(filter_name), dpi=220)
@@ -68,6 +71,7 @@ def plot_DCR_moment_shifts(filter_name):
     #-------------------------------#
     # Differences in second moments #
     #-------------------------------#
+    print "Plotting {}-band second moment shift".format(filter_name)
 
     f = plt.figure(figsize=(8,6))
     ax1 = plt.subplot(111)
@@ -94,8 +98,10 @@ def plot_DCR_moment_shifts(filter_name):
         ax1.plot(zs, dV, c=gal_color, label=gal_name)
     ax1.legend(prop={"size":9})
 
-    ax1.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
-    ax1.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
+    LSST_V_req = 4.8e-4
+    DES_V_req = 2.9e-3
+    ax1.fill_between(xlim, [-DES_V_req]*2, [DES_V_req]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-LSST_V_req]*2, [LSST_V_req]*2, color='#AAAAAA', zorder=2)
 
     f.tight_layout()
     f.savefig('output/V.{}.png'.format(filter_name), dpi=220)
