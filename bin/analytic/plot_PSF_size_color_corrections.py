@@ -103,14 +103,19 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
     ax1.set_xlim(xlim)
     if alpha == -0.2:
         alpha_str = 'S_m02'
-        ax1.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#DDDDDD', zorder=2)
-        ax1.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#AAAAAA', zorder=2)
-        ax2.fill_between(xlim, [-0.0025]*2, [0.0025]*2, color='#DDDDDD', zorder=2)
-        ax2.fill_between(xlim, [-0.0004]*2, [0.0004]*2, color='#AAAAAA', zorder=2)
+        DES_size_req = 4.5e-3
+        LSST_size_req = 9.8e-4
+        ax1.fill_between(xlim, [-DES_size_req]*2, [DES_size_req]*2, color='#DDDDDD', zorder=2)
+        ax1.fill_between(xlim, [-LSST_size_req]*2, [LSST_size_req]*2, color='#AAAAAA', zorder=2)
+        ax2.fill_between(xlim, [-DES_size_req]*2, [DES_size_req]*2, color='#DDDDDD', zorder=2)
+        ax2.fill_between(xlim, [-LSST_size_req]*2, [LSST_size_req]*2, color='#AAAAAA', zorder=2)
+        ax1.set_ylim(-0.02, 0.01)
+        ax2.set_ylim(-0.02, 0.02)
     elif alpha == 0.6:
         alpha_str = 'S_p06'
-        ax1.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#AAAAAA', zorder=2)
-        ax2.fill_between(xlim, [-0.002]*2, [0.002]*2, color='#AAAAAA', zorder=2)
+        Euclid_size_req = 0.001
+        ax1.fill_between(xlim, [-Euclid_size_req]*2, [Euclid_size_req]*2, color='#AAAAAA', zorder=2)
+        ax2.fill_between(xlim, [-Euclid_size_req]*2, [Euclid_size_req]*2, color='#AAAAAA', zorder=2)
     elif alpha == 1.0:
         alpha_str = 'S_p10'
 

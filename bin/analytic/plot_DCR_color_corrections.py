@@ -98,12 +98,14 @@ def DCR_color_correction(shape_filter, color_filters):
     f.tight_layout()
 
     xlim = ax2.get_xlim()
+    LSST_Rbar_req = np.sqrt(3e-3)
+    DES_Rbar_req = np.sqrt(8e-3)
     ax1.set_xlim(xlim)
     ax2.set_xlim(xlim)
-    ax1.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
-    ax1.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
-    ax2.fill_between(xlim, [-0.025]*2, [0.025]*2, color='#DDDDDD', zorder=2)
-    ax2.fill_between(xlim, [-0.01]*2, [0.01]*2, color='#AAAAAA', zorder=2)
+    ax1.fill_between(xlim, [-DES_Rbar_req]*2, [DES_Rbar_req]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-LSST_Rbar_req]*2, [LSST_Rbar_req]*2, color='#AAAAAA', zorder=2)
+    ax2.fill_between(xlim, [-DES_Rbar_req]*2, [DES_Rbar_req]*2, color='#DDDDDD', zorder=2)
+    ax2.fill_between(xlim, [-LSST_Rbar_req]*2, [LSST_Rbar_req]*2, color='#AAAAAA', zorder=2)
 
 
     f.savefig('output/Rbar_{}_vs_{}-{}.png'.format(shape_filter,
@@ -136,13 +138,16 @@ def DCR_color_correction(shape_filter, color_filters):
     f.tight_layout()
 
     xlim = ax2.get_xlim()
+    LSST_V_req = 4.8e-4
+    DES_V_req = 2.9e-3
     ax1.set_xlim(xlim)
     ax2.set_xlim(xlim)
-    ax1.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
-    ax1.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
-    ax2.fill_between(xlim, [-0.0006]*2, [0.0006]*2, color='#DDDDDD', zorder=2)
-    ax2.fill_between(xlim, [-0.0001]*2, [0.0001]*2, color='#AAAAAA', zorder=2)
-
+    ax1.fill_between(xlim, [-DES_V_req]*2, [DES_V_req]*2, color='#DDDDDD', zorder=2)
+    ax1.fill_between(xlim, [-LSST_V_req]*2, [LSST_V_req]*2, color='#AAAAAA', zorder=2)
+    ax2.fill_between(xlim, [-DES_V_req]*2, [DES_V_req]*2, color='#DDDDDD', zorder=2)
+    ax2.fill_between(xlim, [-LSST_V_req]*2, [LSST_V_req]*2, color='#AAAAAA', zorder=2)
+    ax1.set_ylim(-0.01, 0.01)
+    ax2.set_ylim(-0.01, 0.01)
     f.savefig('output/V_{}_vs_{}-{}.png'.format(shape_filter,
                                                 color_filters[0],
                                                 color_filters[1]), dpi=220)
