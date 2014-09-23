@@ -36,7 +36,7 @@ As an example, a simulation of a bulge+disk galaxy convolved with an atmospheric
     image = final.drawImage(bandpass)
 {% endhighlight %}
 
-For Euclid, the PSF is chromatic primarily due to the diffraction limit.  If this were the only contribution to the PSF, then the chromatic effect would be \\({\scriptsize \mathrm{FWHM} \propto \lambda}\\).  When combined with telescope jitter and the modulation transfer function from the CCD, however, the Euclid PSF will actually scale approximately like \\({\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}\\).  This effect is also convenient to implement in GalSim:
+For Euclid, the PSF is chromatic primarily due to the diffraction limit.  If this were the only contribution to the PSF, then the chromatic effect would be $${\scriptsize \mathrm{FWHM} \propto \lambda}$$.  When combined with telescope jitter and the modulation transfer function from the CCD, however, the Euclid PSF will actually scale approximately like $${\scriptsize \mathrm{FWHM} \propto \lambda^{0.6}}$$.  This effect is also convenient to implement in GalSim:
 
 {% highlight python %}
     # Again, we'll apply a wavelength dependent transformation to a

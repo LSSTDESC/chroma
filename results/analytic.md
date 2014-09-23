@@ -45,9 +45,8 @@ Similarly, the `V*png` figures show the DCR second moment shifts relative to a G
 
 <img src="{{site.url}}/img/V.LSST_r.png" width="650">
 
-Finally, the `S*png` figures show the shift in PSF size, quantified as
-\\(\\Delta r^2_{PSF}/r^2_{PSF}\\), due to chromatic seeing for the LSST filters, and due to a
-Euclid-like \\(FWHM \\propto \\lambda^{+0.6}\\) relationship for the Euclid_350 filter.
+Finally, the `S*png` figures show the shift in PSF size, quantified as $$\Delta r^2_\mathrm{PSF} / r^2_\mathrm{PSF} $$, due to chromatic seeing for the LSST filters, and due to a
+Euclid-like $$\mathrm{FWHM} \propto \lambda^{+0.6}$$ relationship for the Euclid_350 filter.
 
 <img src="{{site.url}}/img/S_m02.LSST_r.png" width="650">
 

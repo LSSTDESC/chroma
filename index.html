@@ -16,22 +16,23 @@ overview: true
 <p>
 DCR is the effect that bluer photons are bent slightly more toward the zenith when entering the
 atmosphere than are redder photons (Figure 1).  For example, at a zenith angle of 35 degrees, which
-will be approximately the median for LSST, a photon at the blue end of the r filter will land about
-0.15 arcseconds closer to the zenith than a photon at the red end of the r filter, or about 25% of
-the PSF FWHM.  This leads to both an SED-dependent shift in PSF centroid and SED-dependent
-stretching of the PSF in the zenith direction.  These effects can be quantified in terms of the
-shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\) and \(V\),
-respectively.
+will be approximately the median for LSST, a photon at the blue end of the \(r\) filter will land
+about 0.15 arcseconds closer to the zenith than a photon at the red end of the \(r\) filter, or
+about 25% of the PSF FWHM.  This leads to both an SED-dependent shift in PSF centroid and
+SED-dependent stretching of the PSF in the zenith direction.  These effects can be quantified in
+terms of the shifts in the PSF zenith-direction first and second moments, denoted \(\bar{R}\) and
+\(V\), respectively.
 </p>
 
 <h3> Chromatic Seeing </h3>
 <p>
 Atmospheric turbulence smears out blue photons somewhat more than red photons, in the sense that
-the relationship between FWHM and wavelength goes like \(FWHM \propto \lambda^{-1/5}\).  This effect
-can be characterized as an SED-dependent shift in the second moment square radius \(r^2\), which is
-equal to the sum of the two second moments measured in perpendicular directions, and scales like
-\(\lambda^{-2/5}\) (see Figure 1).  As a consequence, the PSF at the blue end of the r filter is
-about 4.5% wider, or 9% larger in area, than the PSF at the red end of the r filter.
+the relationship between FWHM and wavelength goes like \(\mathrm{FWHM} \propto \lambda^{-1/5}\).
+This effect can be characterized as an SED-dependent shift in the second moment square radius
+\(r^2\), which is equal to the sum of the two second moments measured in perpendicular directions,
+and scales like \(\lambda^{-2/5}\) (see Figure 1).  As a consequence, the PSF at the blue end of
+the \(r\) filter is about 4.5% wider, or 9% larger in area, than the PSF at the red end of the
+\(r\) filter.
 </p>
 
 <h3>Induced shape calibration biases</h3>
@@ -43,15 +44,15 @@ calibration parameters \(m\) and \(c\), defined by
 where \(\hat{\gamma_i}\) is the shear estimator and the true shear is \(\gamma_i\).
 With the "1" direction oriented towards the zenith, the bias from differential chromatic refraction
 can be written
-\[m_1^{DCR} = m_2^{DCR} = \frac{- \Delta V}{r^2_{gal}} \]
-\[c_1^{DCR} = \frac{- \Delta V}{2r^2_{gal}} \]
-\[c_2^{DCR} = 0.\]
-where \(\Delta V = V_{PSF, star} - V_{PSF, gal}\), and \(r^2_{gal}\) is the second moment square
-radius of the galaxy under consideration.
+\[m_1^\mathrm{DCR} = m_2^\mathrm{DCR} = \frac{- \Delta V}{r^2_\mathrm{gal}} \]
+\[c_1^\mathrm{DCR} = \frac{- \Delta V}{2r^2_\mathrm{gal}} \]
+\[c_2^\mathrm{DCR} = 0.\]
+where \(\Delta V = V_\mathrm{PSF, star} - V_\mathrm{PSF, gal}\), and \(r^2_\mathrm{gal}\) is the
+second moment squared radius of the galaxy under consideration.
 Similarly, the bias for chromatic seeing becomes
-\[m_1^{seeing} = m_2^{seeing} = \frac{-r^2_{psf}}{r^2_{gal}}\frac{\Delta r^2_{psf}}{r^2_{psf}}\]
-\[c_i^{seeing} = -\epsilon_i^{psf}\frac{r^2_{psf}}{r^2_{gal}}\frac{\Delta r^2_{psf}}{r^2_{psf}}.\]
-where \(\Delta r^2_{psf} = r^2_{PSF, star} - r^2_{PSF, gal}\) and \(\epsilon_i^{psf}\) is the
+\[m_1^\mathrm{seeing} = m_2^\mathrm{seeing} = \frac{-r^2_{PSF}}{r^2_\mathrm{gal}}\frac{\Delta r^2_\mathrm{PSF}}{r^2_\mathrm{PSF}}\]
+\[c_i^\mathrm{seeing} = -\epsilon_i^\mathrm{PSF}\frac{r^2_\mathrm{PSF}}{r^2_\mathrm{gal}}\frac{\Delta r^2_\mathrm{PSF}}{r^2_\mathrm{PSF}}.\]
+where \(\Delta r^2_\mathrm{PSF} = r^2_\mathrm{PSF, star} - r^2_\mathrm{PSF, gal}\) and \(\epsilon_i^\mathrm{PSF}\) is the
 (usually small) ellipticity of the PSF.
 
 For LSST, the requirements are approximately to keep \(|m|\) and \(|c|\) below 0.003 and 0.0015,
