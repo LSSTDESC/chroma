@@ -122,5 +122,5 @@ if __name__ == "__main__":
     print "Getting star catalog"
     cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
     print "Writing star catalog"
-    filename = "output/stars_catalog.dat"
+    filename = "output/star_catalog.dat"
     cat.write_catalog(filename, chunk_size=100000)
