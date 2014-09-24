@@ -269,7 +269,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         color='#777777', zorder=2)
         var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_dS_p06_req)]*2,
                             color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_dS_p06_req[0])]
+        var_ylim = [0, 1.2*np.sqrt(var_dS_p06_req)]
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -409,15 +409,15 @@ if __name__ == '__main__':
     else:
         if args.corrected:
             # LSST r-band
-            plot_bias(gals, stars, 'Rbar', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar_corrected_LSST_r.png', corrected=True, s=s)
+            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
+                      outfile='output/dLnRbarSqr_corrected_LSST_r.png', corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
                       outfile='output/dV_corrected_LSST_r.png', corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
                       outfile='output/dS_m02_corrected_LSST_r.png', corrected=True, s=s)
             # LSST i-band
-            plot_bias(gals, stars, 'Rbar', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar_corrected_LSST_i.png', corrected=True, s=s)
+            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
+                      outfile='output/dLnRbarSqr_corrected_LSST_i.png', corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
                       outfile='output/dV_corrected_LSST_i.png', corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
@@ -427,19 +427,19 @@ if __name__ == '__main__':
                       outfile='output/dS_p06_corrected_Euclid_350.png', corrected=True, s=s)
         else:
             # LSST r-band
-            plot_bias(gals, stars, 'Rbar', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar_LSST_r.png', s=s)
+            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
+                      outfile='output/dLnRbarSqr_few_LSST_r.png', s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_LSST_r.png', s=s)
+                      outfile='output/dV_few_LSST_r.png', s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_LSST_r.png', s=s)
+                      outfile='output/dS_m02_few_LSST_r.png', s=s)
             # LSST i-band
-            plot_bias(gals, stars, 'Rbar', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dRbar_LSST_i.png', s=s)
+            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
+                      outfile='output/dLnRbarSqr_few_LSST_i.png', s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_LSST_i.png', s=s)
+                      outfile='output/dV_few_LSST_i.png', s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_LSST_i.png', s=s)
+                      outfile='output/dS_m02_few_LSST_i.png', s=s)
             # Euclid 350nm band
             plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_p06_Euclid_350.png', s=s)
+                      outfile='output/dS_p06_few_Euclid_350.png', s=s)
