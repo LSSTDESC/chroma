@@ -8,7 +8,7 @@ corrs = [('', 'few'),
 for band in bands:
     for typ in types:
         for corr in corrs:
-            cmd = "python plot_new_bias.py"
+            cmd = "python plot_bias.py"
             cmd += ' '+typ
             cmd += " --band LSST_{}".format(band)
             cmd += ' '+corr[0]
