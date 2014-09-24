@@ -97,8 +97,8 @@ def set_range(x):
 
 def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwargs):
     """Produce a plot of a chromatic bias, which is one of:
-       `Rbar`  - centroid shift due to differential chromatic refraction
-       `RbarSqr`  - Square of centroid shift due to differential chromatic refraction
+       `RbarSqr` - Square of centroid shift due to differential chromatic refraction
+       `LnRbarSqr` - Use log plot for square of centroid shift due to differential chromatic refraction
        `V`     - second moment shift due to differential chromatic refraction
        `S_m02` - difference in r^2 due to FWHM \propto \lambda^{-0.2}, as per chromatic seeing
        `S_p06` - difference in r^2 due to FWHM \propto \lambda^{+0.6}, as per Euclid
@@ -125,22 +125,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # create variance axis so can draw requirement bars
     var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
-    if bias == 'Rbar':
-        ylabel = '$\Delta \overline{\mathrm{R}}$ (arcsec)'
-        # get *uncorrected* bias measurements in order to set ylimits, even if
-        # corrected measurements are requested for plot.
-        stardata = stars[bias][band] * 180/np.pi * 3600
-        galdata = gals[bias][band] * 180/np.pi * 3600
-        norm = np.mean(stardata)
-        stardata -= norm
-        galdata -= norm
-        ylim = set_range(np.concatenate([stardata, galdata]))
-        # then replace with corrected measurements if requested
-        if corrected:
-            stardata = (stars[bias][band] - stars['photo_'+bias][band]) * 180/np.pi * 3600
-            galdata = (gals[bias][band] - gals['photo_'+bias][band]) * 180/np.pi * 3600
-            ylabel = '$\delta(\Delta \overline{\mathrm{R}})$ (arcsec)'
-    elif bias == 'RbarSqr':
+    if bias == 'RbarSqr':
         ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
         ax.fill_between(xlim,
                         [-mean_DeltaRbarSqr_req[0]]*2,
