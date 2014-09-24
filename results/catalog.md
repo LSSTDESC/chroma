@@ -37,16 +37,18 @@ output/galaxy_catalog.dat
 output/star_catalog.dat
 {% endhighlight %}
 
+Note that access to the LSST CatSim database now requires your IP address to be on a white list.
+
 Let's take a look at the galaxy catalog file
 
 {% highlight bash %}
 $ head -n 3 output/galaxy_catalog.dat
-galtileid, objectId, raJ2000, decJ2000, redshift, u_ab, g_ab, r_ab, i_ab, z_ab, y_ab, sedPathBulge, sedPathDisk, sedPathAgn, magNormBulge, magNormDisk, magNormAgn, internalAvBulge, internalRvBulge, internalAvDisk, internalRvDisk
-222403644576, 222403644576, 199.44443756, -10.60410519, 0.61963493, 26.20507431, 26.12331772, 25.60255432, 25.20387077, 25.12633514, 25.05166245, None, galaxySED/Const.20E09.02Z.spec.gz, None, nan, 25.57798004, nan, 0.00000000, 3.09999990, 0.10000000, 3.09999990
-222402644496, 222402644496, 199.44398768, -10.60823399, 0.41881949, 28.69147873, 26.64548302, 25.21138763, 24.58403778, 24.24159241, 24.04888725, None, galaxySED/Inst.50E09.02Z.spec.gz, None, nan, 24.80845070, nan, 0.00000000, 3.09999990, 0.30000001, 3.09999990
+galtileid, objectId, raJ2000, decJ2000, redshift, u_ab, g_ab, r_ab, i_ab, z_ab, y_ab, sedPathBulge, sedPathDisk, sedPathAgn, magNormBulge, magNormDisk, magNormAgn, internalAvBulge, internalRvBulge, internalAvDisk, internalRvDisk, glon, glat, EBV
+222500350435, 222500350435, 199.56648010, -9.28911042, 0.87100780, 24.72078514, 24.37876129, 23.35155296, 22.37948418, 21.74126053, 21.46795082, galaxySED/Burst.32E09.02Z.spec.gz, galaxySED/Exp.40E09.04Z.spec.gz, None, 25.08109093, 21.86528015, nan, 0.30000001, 3.09999990, 0.40000001, 3.09999990, 5.47990054, 0.92513679, 0.03601249
+222501392641, 222501392641, 199.57937323, -9.29996667, 0.70250392, 26.08153725, 25.31512642, 24.57574654, 23.79152298, 23.51052094, 23.27629852, galaxySED/Inst.50E09.04Z.spec.gz, galaxySED/Const.50E09.04Z.spec.gz, None, 26.84174919, 23.30666924, nan, 0.10000000, 3.09999990, 0.80000001, 3.09999990, 5.48020956, 0.92491178, 0.03617451
 {% endhighlight %}
 
-The first line shows the names of each database column requested in `make_catalogs.py`, and each subsequent line holds one the entries for one galaxy.  The columns are:
+The first line shows the names of each database column requested in `make_catalogs.py`, and each subsequent line holds the values for one galaxy.  The columns are:
 
 - galtileid, objectID : These keep track of which galaxy we're looking at
 - raJ2000, decJ2000, redshift : Where the galaxy is located (in 3D)
@@ -55,6 +57,7 @@ The first line shows the names of each database column requested in `make_catalo
 - magNormBulge : The AB magnitude of the bulge component at 500nm rest-frame
 - internalAvBulge, internalRvBulge : The rest frame reddening of the bulge component
 - similar params for the disk component and possible AGN component
+- galactic latitude and longitude and Milky Way dust E(B-V)
 
 The stellar catalog has similar entries, although somewhat simpler since the stars are single
 component.
@@ -128,21 +131,21 @@ Notice that the default input files: `output/corrected_galaxy_data.pkl` and
 `output/corrected_star_data.pkl` don't exist yet.  This is because these are the files that will
 be created under the machine learning corrections step on the next page.  For now we can use the
 uncorrected catalog files by adding them manually as command line arguments.  For instance, to make
-a plot of the centroid shift bias in the _r_ band due to DCR, use:
+a plot of the squared centroid shift bias with a logarithmic axis in the _r_ band due to DCR, use:
 
 {% highlight bash %}
-$ python plot_bias.py Rbar --galfile output/galaxy_data.pkl \
-                           --starfile output/star_data.pkl  \
-                           --outfile output/dRbar.LSST_r.png
+$ python plot_bias.py LnRbarSqr --galfile output/galaxy_data.pkl \
+                                --starfile output/star_data.pkl  \
+                                --outfile output/dLnRbarSqr.LSST_r.png
 {% endhighlight %}
 
-<img src="{{site.url}}/img/dRbar.LSST_r.png" width="650">
+<img src="{{site.url}}/img/dLnRbarSqr.LSST_r.png" width="650">
 
 Each point of the scatter plot is one galaxy from the catalog.  The points are colored by their
-_r_ - _i_ color, which as we showed in the previous page is correlated with the centroid shift.  The
-histograms on the left show the distributions of centroid shifts for stars in blue, and the galaxies
-projected along the redshift axis in red.  The dark horizontal bars again show the requirements for
-DES and LSST.
+$$r$$ - $$i$$ color, with both very blue and very red objects having large squared centroid shifts.
+The histograms on the left show the distributions of squared centroid shifts for stars in blue, and
+the galaxies projected along the redshift axis in red.  The dark horizontal bars again show the
+requirements for DES and LSST.
 
 To quickly plot a number of interesting plots, we can use `plot_bias.py` with the option
  `--nominal_plots`.
@@ -161,9 +164,9 @@ Here are a few of the more interesting cases.
 The last plot here, for the Euclid telescope, is slightly misleading since we generated a catalog
 appropriate for LSST, and Euclid will be a much shallower survey.  However, the peak of the
 Euclid chromatic PSF bias is around redshift 1.0, where Euclid will still be quite sensitive.  Also
-notice that the symbol colors for this plot represent *LSST* _r_ - _i_ color.  The proposed Euclid
+notice that the symbol colors for this plot represent *LSST* $$r$$ - $$i$$ color.  The proposed Euclid
 footprint will overlap the LSST footprint by about 5000 square degrees.
 
-Notice also that while chromatic biases are clearly correlated with _r_ - _i_, they aren't perfectly
-correlated.  That is, for a given chromatic bias, or horizontal cut across the above scatter plots,
-more than one _r_ - _i_ color, or symbol color, occurs.
+Notice also that while chromatic biases are clearly correlated with $$r$$ - $$i$$, they aren't
+perfectly correlated.  That is, for a given chromatic bias, or horizontal cut across the above
+scatter plots, more than one $$r$$ - $$i$$ color, or symbol color, occurs.
