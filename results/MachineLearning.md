@@ -13,9 +13,8 @@ photometric data points.
 The scripts `star_ML.py` and `gal_ML.py` in the bin/analytic/catalogs/ directory are used for this
 purpose.  These scripts will apply a machine learning algorithm -- Support Vector Regression -- to
 learn the relationship in a catalog between LSST six-band photometry and chromatic biases.  (Other
-algorithms can easily be swapped in by modifying the scripts: the scikit-learn API is quite
-flexible.)
-
+machine learning algorithms can easily be swapped in by modifying the scripts: the scikit-learn API
+is quite flexible.)
 
 Let's look at the options for the `star_ML.py` script.
 
@@ -52,8 +51,10 @@ optional arguments:
 By default, the `output/star_data.pkl` file which we either created or downloaded on the previous
 pages is used for both training the algorithm and testing it.  In principle, however, you can train
 on one set of data and test on another set, which can be useful for estimating the robustness of the
-algorithm to uncertainties in the distribution of training objects.  Several more options control
-which and how many stars are used for testing and training.
+algorithm to uncertainties in the distribution of training objects.  I.e., you can train an one
+catalog, and then see if the results are still useful for predicting the biases in a completely
+different catalog. Several more options control which and how many stars are used for testing and
+training.
 
 The objects in the testing set are written to an output file which contains both the true
 spectroscopically-derived chromatic biases, and the chromatic biases predicted from photometry by
@@ -62,10 +63,11 @@ the machine learning algorithm.
 Finally, there are two options that control how the photometric data is used.  The `--use_color`
 option trains the SVR algorithm to predict chromatic biases from just the 5 independent LSST colors.
 In contrast, the `use_mag` option trains from the 6 LSST magnitudes directly.  We have found the
-best results in practice occur, however, when train the algorithm using the 5 independent colors + 1
-independent magnitude (arbitrarily chosen to be _i_ band); this is the default.
+best results in practice occur, however, when we train the algorithm using the 5 independent
+colors + 1 independent magnitude (arbitrarily chosen to be $$i$$ band); this is the default.
 
-For now, let's just proceed with the default options.
+For now, let's just proceed with the default options.  (Note that these scripts take ~30-45 minutes
+on a 2012 Macbook Pro).
 {% highlight bash %}
 $ python star_ML.py
 $ python gal_ML.py
@@ -87,25 +89,25 @@ You can mouseover the following plots to see the uncorrected versions.  (Note th
 slightly different the ones on the previous page.  They've been regenerated to use precisely the
 same galaxies as the corrected versions, i.e. they use only the galaxies from the test set.)
 
-<img src="{{site.url}}/img/dRbar.corrected.LSST_r.png" width="650"
- onmouseover="this.src='{{site.url}}/img/dRbar.few.LSST_r.png'"
- onmouseout="this.src='{{site.url}}/img/dRbar.corrected.LSST_r.png'">
+<img src="{{site.url}}/img/dLnRbarSqr_corrected_LSST_r.png" width="650"
+ onmouseover="this.src='{{site.url}}/img/dLnRbarSqr_few_LSST_r.png'"
+ onmouseout="this.src='{{site.url}}/img/dLnRbarSqr_corrected_LSST_r.png'">
 
-<img src="{{site.url}}/img/dV.corrected.LSST_r.png" width="650"
- onmouseover="this.src='{{site.url}}/img/dV.few.LSST_r.png'"
- onmouseout="this.src='{{site.url}}/img/dV.corrected.LSST_r.png'">
+<img src="{{site.url}}/img/dV_corrected_LSST_r.png" width="650"
+ onmouseover="this.src='{{site.url}}/img/dV_few_LSST_r.png'"
+ onmouseout="this.src='{{site.url}}/img/dV_corrected_LSST_r.png'">
 
-<img src="{{site.url}}/img/dS_m02.corrected.LSST_r.png" width="650"
- onmouseover="this.src='{{site.url}}/img/dS_m02.few.LSST_r.png'"
- onmouseout="this.src='{{site.url}}/img/dS_m02.corrected.LSST_r.png'">
+<img src="{{site.url}}/img/dS_m02_corrected_LSST_r.png" width="650"
+ onmouseover="this.src='{{site.url}}/img/dS_m02_few_LSST_r.png'"
+ onmouseout="this.src='{{site.url}}/img/dS_m02_corrected_LSST_r.png'">
 
-<img src="{{site.url}}/img/dS_p06.corrected.Euclid_350.png" width="650"
- onmouseover="this.src='{{site.url}}/img/dS_p06.few.Euclid_350.png'"
- onmouseout="this.src='{{site.url}}/img/dS_p06.corrected.Euclid_350.png'">
+<img src="{{site.url}}/img/dS_p06_corrected_Euclid_350.png" width="650"
+ onmouseover="this.src='{{site.url}}/img/dS_p06_few_Euclid_350.png'"
+ onmouseout="this.src='{{site.url}}/img/dS_p06_corrected_Euclid_350.png'">
 
 In this last figure, we're using LSST photometry to help correct the Euclid chromatic bias.  This
 correction does a particularly good job since the Euclid 350nm visible filter is approximately the
-union of the LSST _r_, _i_, and _z_ filters.  These three LSST filters provide quite of bit of
+union of the LSST $$r$$, $$i$$, and $$z$$ filters.  These three LSST filters provide quite of bit of
 information, therefore, as to what the SED of a star or galaxy looks like across the Euclid filter.
 Note that the LSST sky overlaps the proposed Euclid sky by about 5000 square degrees, or about a
 third of either survey's footprint.
