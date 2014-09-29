@@ -62,12 +62,12 @@ the machine learning algorithm.
 
 Finally, there are two options that control how the photometric data is used.  The `--use_color`
 option trains the SVR algorithm to predict chromatic biases from just the 5 independent LSST colors.
-In contrast, the `use_mag` option trains from the 6 LSST magnitudes directly.  We have found the
+In contrast, the `--use_mag` option trains from the 6 LSST magnitudes directly.  We have found the
 best results in practice occur, however, when we train the algorithm using the 5 independent
 colors + 1 independent magnitude (arbitrarily chosen to be $$i$$ band); this is the default.
 
 For now, let's just proceed with the default options.  (Note that these scripts take ~30-45 minutes
-on a 2012 Macbook Pro).
+each on a 2012 Macbook Pro).
 {% highlight bash %}
 $ python star_ML.py
 $ python gal_ML.py

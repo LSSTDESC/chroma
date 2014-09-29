@@ -26,8 +26,8 @@ Let's look at the chromatic seeing plot for LSST $$r$$-band:
 <img src="{{site.url}}/img/S_m02_LSST_r_vs_LSST_r-LSST_i.png" width="650">
 
 In the top panel, the same chromatic biases as on the previous page are being plotted on the
-y-axis, but the x-axis has been replaced with the LSST _r_ - _i_ color.  Clearly there is a
-correlation.  Using just the _r_ - _i_ color to make a correction, we get the bottom panel.
+y-axis, but the x-axis has been replaced with the LSST $$r$$ - $$i$$ color.  Clearly there is a
+correlation.  Using just the $$r$$ - $$i$$ color to make a correction, we get the bottom panel.
 The lines and star symbols here are much closer to landing within the requirement box than without
 a correction.  Presumably, if we used all six photometric bands we could do better still.  We will
 investigate this possibility shortly.
