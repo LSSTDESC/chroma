@@ -163,7 +163,7 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     else:
-        raise ValueError("Unknown chromatic bias in plot_bias")
+        raise ValueError("Unknown chromatic bias in plot_bias_vs_color")
 
     band_dict = {'LSST_r':"r",
                  'LSST_i':"i"}
