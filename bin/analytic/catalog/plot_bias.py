@@ -14,8 +14,6 @@ hist_axes_range = [0.17, 0.12, 0.09, 0.7]
 scatter_axes_range = [0.26, 0.12, 0.70, 0.7]
 var_axes_range = [0.26, 0.82, 0.70, 0.1]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
-data_dir = '../../../data/'
-star_table = '../../analytic/output/stars.pkl'
 fontsize = 16
 
 # hardcode some requirements, order is [DES, LSST]
