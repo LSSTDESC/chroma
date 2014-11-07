@@ -169,7 +169,7 @@ def runme():
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--nmax', type=int, default=30000,
-                        help="maximum number of stars to process")
+                        help="maximum number of stars to process (default: 30000)")
     parser.add_argument('--outfile', default = 'output/star_data.pkl',
                         help="output filename (Default: output/star_data.pkl)")
     parser.add_argument('--infile', default = 'output/star_catalog.dat',
