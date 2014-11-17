@@ -402,7 +402,7 @@ def epoch_variance_bias(cat):
     ms = []
     c1s = []
     c2s = []
-    rsquared_gal = 0.4**2
+    rsquared_gal = 0.3**2
     for i in range(len(dec_edges)-1):
         w = (cat["fieldDec"] > dec_edges[i]) & (cat["fieldDec"] < dec_edges[i+1]) & good
         x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
@@ -460,7 +460,7 @@ def epoch_variance_bias_fields(cat):
     ax.legend(prop={'size':14})
     ax.set_xlabel('Declination (deg)', fontsize=14)
     ax.set_ylabel(r"Shear calibration bias / ($\Delta \bar{R}_{45})^2$ (arcsec$^{-2}$)", fontsize=14)
-    ax.set_ylim(-2.5, 2.5)
+    ax.set_ylim(-4, 4)
     ax.set_xlim(-70, 10)
     fig.tight_layout()
     if not os.path.isdir('output'):
