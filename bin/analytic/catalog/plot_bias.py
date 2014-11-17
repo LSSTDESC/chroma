@@ -10,11 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Specify the locations of three different plot elements.
-hist_axes_range = [0.17, 0.12, 0.09, 0.6]
-scatter_axes_range = [0.26, 0.12, 0.70, 0.6]
-var_axes_range = [0.26, 0.72, 0.70, 0.2]
+hist_axes_range = [0.17, 0.12, 0.09, 0.65]
+scatter_axes_range = [0.26, 0.12, 0.70, 0.65]
+var_axes_range = [0.26, 0.77, 0.70, 0.15]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 fontsize = 16
+
+# Some annotation arrow properties
+arrowdict = dict(facecolor='black', shrink=0.1, width=1.5, headwidth=4, frac=0.2)
 
 # hardcode some requirements, order is [DES, LSST]
 r2sqr_gal = np.r_[0.4, 0.3]**2
@@ -178,6 +181,17 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = np.abs(2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata)
             galdata = np.abs(2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata)
             ylabel = r'$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)'
+        # annotate
+        ax.annotate("LSST requirement",
+                    xy=(0.1, mean_DeltaRbarSqr_req[1]),
+                    xytext=(0.18, mean_DeltaRbarSqr_req[1]/2.1),
+                    arrowprops=arrowdict,
+                    zorder=10)
+        ax.annotate("DES requirement",
+                    xy=(0.1, mean_DeltaRbarSqr_req[0]),
+                    xytext=(0.18, mean_DeltaRbarSqr_req[0]/2.1),
+                    arrowprops=arrowdict,
+                    zorder=10)
     elif bias == 'V':
         ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
         ax.fill_between(xlim,
@@ -206,6 +220,23 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
             ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
+        if band == 'LSST_i':
+            ax.annotate("LSST requirement",
+                        xy=(0.1, mean_DeltaV_req[1]),
+                        xytext=(0.18, mean_DeltaV_req[1]-5.e-5),
+                        arrowprops=arrowdict,
+                        zorder=10)
+        else:
+            ax.annotate("LSST requirement",
+                        xy=(0.1, mean_DeltaV_req[1]),
+                        xytext=(0.18, mean_DeltaV_req[1]+2.e-4),
+                        arrowprops=arrowdict,
+                        zorder=10)
+            ax.annotate("DES requirement",
+                        xy=(0.1, mean_DeltaV_req[0]),
+                        xytext=(0.18, mean_DeltaV_req[0]-2.e-4),
+                        arrowprops=arrowdict,
+                        zorder=10)
     elif bias == 'S_m02':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim,
@@ -234,6 +265,16 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+        ax.annotate("LSST requirement",
+                    xy=(0.1, mean_dS_m02_req[1]),
+                    xytext=(0.18, mean_dS_m02_req[1]+2.e-3),
+                    arrowprops=arrowdict,
+                    zorder=10)
+        ax.annotate("DES requirement",
+                    xy=(0.1, mean_dS_m02_req[0]),
+                    xytext=(0.18, mean_dS_m02_req[0]+2.e-3),
+                    arrowprops=arrowdict,
+                    zorder=10)
     elif bias == 'S_p06':
         ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
         ax.fill_between(xlim,
