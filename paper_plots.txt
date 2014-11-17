@@ -14,7 +14,7 @@ Figure 3)
     import opsim
     cat = opsim.opsim_parse()
     opsim.savecat(cat) # for faster loading with cat = opsim.loadcat() in the future.
-    opsim.epoch_variance_field(cat, 1950) # part (a)
+    opsim.epoch_variance_field(cat, 1950)
   Output to epoch_variance_field1950.pdf
 
 Figure 4)
@@ -22,7 +22,7 @@ Figure 4)
   From ipython in CHROMA/bin/opsim directory:
     import opsim
     cat = opsim.loadcat() # load previously cached catalog
-    opsim.epoch_variance_bias_fields(cat) # part (b)
+    opsim.epoch_variance_bias_fields(cat)
   Output to misregistration_bias_fields.pdf
 
 Figures 5-10)
