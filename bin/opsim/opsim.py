@@ -435,7 +435,7 @@ def epoch_variance_bias_fields(cat):
     c2s = []
     decs = []
     fields = np.unique(cat['fieldID'])
-    rsquared_gal = 0.4**2
+    rsquared_gal = 0.3**2
     with chroma.ProgressBar(len(fields)) as bar:
         for field in fields:
             bar.update()

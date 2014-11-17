@@ -36,13 +36,13 @@ Figures 5-10)
       setup matplotlib
       setup sims_maf
       setup sims_catUtils
-    Run CHROMA_DIR/bin/analytic/catalogs/make_catalogs.py
-    Run CHROMA_DIR/bin/analytic/catalogs/process_gal_catalog.py
-    Run CHROMA_DIR/bin/analytic/catalogs/process_star_catalog.py
-    Run CHROMA_DIR/bin/analytic/catalogs/gal_ML.py
-    Run CHROMA_DIR/bin/analytic/catalogs/star_ML.py
-  Figures generated from CHROMA_DIR/bin/analytic/catalogs/paper_plots.py
-  Output to CHROMA_DIR/bin/analytic/catalogs/output/d*pdf
+    Run CHROMA_DIR/bin/analytic/catalog/make_catalogs.py
+    Run CHROMA_DIR/bin/analytic/catalog/process_gal_catalog.py
+    Run CHROMA_DIR/bin/analytic/catalog/process_star_catalog.py
+    Run CHROMA_DIR/bin/analytic/catalog/gal_ML.py
+    Run CHROMA_DIR/bin/analytic/catalog/star_ML.py
+  Figures generated from CHROMA_DIR/bin/analytic/catalog/paper_plots.py
+  Output to CHROMA_DIR/bin/analytic/catalog/output/d*pdf
 
 Figures 11-14, 16)
   Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
