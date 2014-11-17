@@ -142,6 +142,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         # then replace with corrected measurements if requested
         if corrected:
             stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
+            ungaldata = galdata
             galdata = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
             # d((DR)^2) = 2 DR d(DR)
             stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
@@ -176,6 +177,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         # then replace with corrected measurements if requested
         if corrected:
             stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
+            ungaldata = galdata
             galdata = (gals['Rbar'][band] - gals['photo_Rbar'][band]) * 180/np.pi * 3600
             # d((DR)^2) = 2 DR d(DR)
             stardata = np.abs(2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata)
@@ -218,6 +220,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ylim[1] = mean_DeltaV_req[1]*1.2
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
+            ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
             ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
         if band == 'LSST_i':
@@ -263,6 +266,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ylim[1] = mean_dS_m02_req[1]*1.2
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
+            ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
         ax.annotate("LSST requirement",
@@ -292,6 +296,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         ylim = set_range(np.concatenate([stardata, galdata]))
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
+            ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     elif bias == 'S_p10':
@@ -311,6 +316,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         ylim = set_range(np.concatenate([stardata, galdata]))
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
+            ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
     else:
@@ -328,10 +334,18 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
     means = [np.mean(galdata[(gals.redshift > xbins[i])
                              & (gals.redshift < xbins[i+1])])
-                             for i in range(nbins)]
+             for i in range(nbins)]
     sqrt_vars = [np.sqrt(np.var(galdata[(gals.redshift > xbins[i])
                                         & (gals.redshift < xbins[i+1])]))
                  for i in range(nbins)]
+    var_ylim = [0, np.max(sqrt_vars)*1.2]
+    if 'ungaldata' in locals():
+        unsqrt_vars = [np.sqrt(np.var(ungaldata[(gals.redshift > xbins[i])
+                                                & (gals.redshift < xbins[i+1])]))
+                       for i in range(nbins)]
+        var_ylim = [0, np.max(unsqrt_vars)*1.2]
+
+
     zs = 0.5*(xbins[1:] + xbins[:-1])
     ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
 
@@ -385,7 +399,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     var_ax.set_xlim(ax.get_xlim())
     var_ax.xaxis.set_ticklabels([])
     var_ax.set_ylabel('$\sqrt{\mathrm{Var}}$')
-    var_ylim = [0, np.max(sqrt_vars)*1.2]
     var_ax.set_ylim(var_ylim)
     var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
 
