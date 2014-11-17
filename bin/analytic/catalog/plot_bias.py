@@ -10,40 +10,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Specify the locations of three different plot elements.
-hist_axes_range = [0.17, 0.12, 0.09, 0.7]
-scatter_axes_range = [0.26, 0.12, 0.70, 0.7]
-var_axes_range = [0.26, 0.82, 0.70, 0.1]
+hist_axes_range = [0.17, 0.12, 0.09, 0.6]
+scatter_axes_range = [0.26, 0.12, 0.70, 0.6]
+var_axes_range = [0.26, 0.72, 0.70, 0.2]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 fontsize = 16
 
 # hardcode some requirements, order is [DES, LSST]
-r2sqr_gal = np.r_[0.6, 0.4]**2
+r2sqr_gal = np.r_[0.4, 0.3]**2
 r2sqr_PSF = np.r_[0.8, 0.7]**2
 
 mean_m_req = np.r_[0.008, 0.003]
-shear_var = 4.e-4
-var_c_req = mean_m_req * 2 * shear_var
 
-psf_ellip = 0.05
-
-mean_DeltaRbarSqr_req = mean_m_req * 1.0
-var_DeltaRbarSqr_req = var_c_req * 0.5**2
+mean_DeltaRbarSqr_req = mean_m_req / 2.0
 
 mean_DeltaV_req = r2sqr_gal * mean_m_req
-var_DeltaV_req = r2sqr_gal**2 * var_c_req
 
 mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
-var_dS_m02_req = var_c_req * (r2sqr_gal / r2sqr_PSF * 2.0 / psf_ellip)**2
 
 m_Euclid = 0.001
-c_Euclid = m_Euclid * 2 * shear_var
 r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
-epsf_Euclid = 0.1 # is this a good assumption for Euclid?
 mean_dS_p06_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
-var_dS_p06_req = c_Euclid * (r2gal_Euclid / r2psf_Euclid * 2.0 / epsf_Euclid)**2
 mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
-var_dS_p10_req = c_Euclid * (r2gal_Euclid / r2psf_Euclid * 2.0 / epsf_Euclid)**2
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, log=False, **kwargs):
@@ -117,7 +106,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     f = plt.figure(figsize=(8, 6))
     # scatter plot
     ax = f.add_axes(scatter_axes_range)
-    xlim = (-0.1, 2.5)
+    xlim = (0.0, 2.5)
     ax.set_xlim(xlim)
 
     # create variance axis so can draw requirement bars
@@ -133,11 +122,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_DeltaRbarSqr_req[1]]*2,
                         [mean_DeltaRbarSqr_req[1]]*2,
                         color='#777777', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[0])]*2,
-                            color='#999999', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[1])]*2,
-                            color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_DeltaRbarSqr_req[0])]
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
         stardata = stars['Rbar'][band] * 180/np.pi * 3600
@@ -172,11 +156,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         color='#777777', zorder=2)
         ax.set_yscale('log')
 
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[0])]*2,
-                            color='#999999', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaRbarSqr_req[1])]*2,
-                            color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_DeltaRbarSqr_req[0])]
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
         stardata = stars['Rbar'][band] * 180/np.pi * 3600
@@ -209,11 +188,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_DeltaV_req[1]]*2,
                         [mean_DeltaV_req[1]]*2,
                         color='#777777', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaV_req[0])]*2,
-                            color='#999999', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_DeltaV_req[1])]*2,
-                            color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_DeltaV_req[0])]
+
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
         stardata = stars[bias][band] * (180/np.pi * 3600)**2
         galdata = gals[bias][band] * (180/np.pi * 3600)**2
         norm = np.mean(stardata)
@@ -239,11 +216,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_dS_m02_req[1]]*2,
                         [mean_dS_m02_req[1]]*2,
                         color='#777777', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_dS_m02_req[0])]*2,
-                            color='#999999', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_dS_m02_req[1])]*2,
-                            color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_dS_m02_req[0])]
+
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -265,9 +240,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_dS_p06_req]*2,
                         [mean_dS_p06_req]*2,
                         color='#777777', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_dS_p06_req)]*2,
-                            color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_dS_p06_req)]
+
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -284,8 +259,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_dS_p10_req]*2,
                         [mean_dS_p10_req]*2,
                         color='#777777', zorder=2)
-        var_ax.fill_between(xlim, [0]*2, [np.sqrt(var_dS_p10_req)]*2, color='#777777', zorder=2)
-        var_ylim = [0, 1.2*np.sqrt(var_dS_p10_req)]
+
+        # get *uncorrected* bias measurements in order to set ylimits, even if
+        # corrected measurements are requested for plot.
         stardata = stars[bias][band]
         galdata = gals[bias][band]
         starmean = np.mean(stardata)
@@ -366,13 +342,19 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
 
     # variance axis
     var_ax.set_xlim(ax.get_xlim())
-    var_ax.set_ylim(var_ylim)
-    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
-                        color='#BBBBBB', zorder=1)
     var_ax.xaxis.set_ticklabels([])
     var_ax.set_ylabel('$\sqrt{\mathrm{Var}}$')
-    var_ax.yaxis.set_ticklabels([])
+    var_ylim = [0, np.max(sqrt_vars)*1.2]
+    var_ax.set_ylim(var_ylim)
     var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
+
+    var_ax.locator_params(axis='y', nbins=4, prune='lower')
+    yticks = var_ax.get_yticks()
+    # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
+    var_ylim = [0, var_ax.get_ylim()[1]]
+    # var_ax.set_ylim(var_ylim)
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
+                        color='#BBBBBB', zorder=1)
 
     f.savefig(outfile, dpi=220)
 
