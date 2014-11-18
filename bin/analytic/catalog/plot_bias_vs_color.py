@@ -52,6 +52,7 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
 
     # x-axis: colors
     colordata = gals['mag'][cbands[0]] - gals['mag'][cbands[1]]
+    plotcolor = gals['redshift']
 
     # fill in some data based on which chromatic bias is requested.
     if bias == 'RbarSqr':
@@ -74,9 +75,9 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
             # d((DR)^2) = 2 DR d(DR)
             stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
             galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
-            ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
+            ylabel = r"$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)"
     elif bias == 'LnRbarSqr':
-        ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
+        ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.set_yscale('log')
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
@@ -100,9 +101,9 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
             # d((DR)^2) = 2 DR d(DR)
             stardata = np.abs(2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata)
             galdata = np.abs(2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata)
-            ylabel = r'$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)'
+            ylabel = r"$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)"
     elif bias == 'V':
-        ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
+        ylabel = r"$\Delta \mathrm{V}}$ (arcsec$^2$)"
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -116,9 +117,9 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
-            ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
+            ylabel = "$\delta(\Delta \mathrm{V})$ (arcsec$^2$)"
     elif bias == 'S_m02':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = r"$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -131,9 +132,9 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
     elif bias == 'S_p06':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -146,9 +147,9 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
     elif bias == 'S_p10':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -161,14 +162,14 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
         if corrected:
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
     else:
         raise ValueError("Unknown chromatic bias in plot_bias_vs_color")
 
     band_dict = {'LSST_r':"r",
                  'LSST_i':"i"}
 
-    im = ax.scatter(colordata, galdata, zorder=4, **kwargs)
+    ax.scatter(colordata, galdata, zorder=4, **kwargs)
     ax.set_xlabel(r"${} - {}$".format(band_dict[cbands[0]], band_dict[cbands[1]]),
                   fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
@@ -189,16 +190,16 @@ def plot_bias_vs_color(gals, stars, bias, band, cbands, outfile, corrected=False
 if __name__ == '__main__':
     s=3
     parser = ArgumentParser()
-    parser.add_argument('--galfile', default = 'output/corrected_galaxy_data.pkl',
+    parser.add_argument('--galfile', default = "output/corrected_galaxy_data.pkl",
                         help="input galaxy file. Default 'output/corrected_galaxy_data.pkl'")
-    parser.add_argument('--starfile', default = 'output/corrected_star_data.pkl',
+    parser.add_argument('--starfile', default = "output/corrected_star_data.pkl",
                         help="input star file. Default 'output/corrected_star_data.pkl'")
     parser.add_argument('--corrected', action='store_true',
                         help="plot learning residuals instead of G5v residuals.")
-    parser.add_argument('bias', default="Rbar", nargs='?',
+    parser.add_argument('bias', default='Rbar', nargs='?',
                         help="""which chromatic bias to plot (Default: 'Rbar')
                              Other possibilities include: 'V', 'S_m02', 'S_p06', 'S_p10'""")
-    parser.add_argument('--band', default="LSST_r", nargs='?',
+    parser.add_argument('--band', default='LSST_r', nargs='?',
                         help="band of chromatic bias to plot (Default: 'LSST_r')")
     parser.add_argument('--color', default=['LSST_r', 'LSST_i'], nargs=2,
                         help="color to use for symbol color (Default: ['LSST_r', 'LSST_i'])")

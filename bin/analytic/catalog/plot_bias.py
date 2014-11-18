@@ -116,7 +116,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
     if bias == 'RbarSqr':
-        ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
+        ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaRbarSqr_req[0]]*2,
                         [mean_DeltaRbarSqr_req[0]]*2,
@@ -147,9 +147,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             # d((DR)^2) = 2 DR d(DR)
             stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
             galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
-            ylabel = r'$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)'
+            ylabel = r"$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)"
     elif bias == 'LnRbarSqr':
-        ylabel = r'$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)'
+        ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [1.e-7]*2,
                         [mean_DeltaRbarSqr_req[0]]*2,
@@ -182,7 +182,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             # d((DR)^2) = 2 DR d(DR)
             stardata = np.abs(2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata)
             galdata = np.abs(2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata)
-            ylabel = r'$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)'
+            ylabel = r"$|\delta((\Delta \overline{\mathrm{R}})^2)|$ (arcsec$^2$)"
         # annotate
         ax.annotate("LSST requirement",
                     xy=(0.1, mean_DeltaRbarSqr_req[1]),
@@ -195,7 +195,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     arrowprops=arrowdict,
                     zorder=10)
     elif bias == 'V':
-        ylabel = '$\Delta \mathrm{V}}$ (arcsec$^2$)'
+        ylabel = "$\Delta \mathrm{V}}$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaV_req[0]]*2,
                         [mean_DeltaV_req[0]]*2,
@@ -222,7 +222,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) * (180/np.pi * 3600)**2
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
-            ylabel = '$\delta(\Delta \mathrm{V})$ (arcsec$^2$)'
+            ylabel = "$\delta(\Delta \mathrm{V})$ (arcsec$^2$)"
         if band == 'LSST_i':
             ax.annotate("LSST requirement",
                         xy=(0.1, mean_DeltaV_req[1]),
@@ -241,7 +241,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         arrowprops=arrowdict,
                         zorder=10)
     elif bias == 'S_m02':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_m02_req[0]]*2,
                         [mean_dS_m02_req[0]]*2,
@@ -268,7 +268,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
         ax.annotate("LSST requirement",
                     xy=(0.1, mean_dS_m02_req[1]),
                     xytext=(0.18, mean_dS_m02_req[1]+2.e-3),
@@ -280,7 +280,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     arrowprops=arrowdict,
                     zorder=10)
     elif bias == 'S_p06':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_p06_req]*2,
                         [mean_dS_p06_req]*2,
@@ -298,9 +298,9 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
     elif bias == 'S_p10':
-        ylabel = '$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$'
+        ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_p10_req]*2,
                         [mean_dS_p10_req]*2,
@@ -318,7 +318,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             stardata = (stars[bias][band] - stars['photo_'+bias][band]) / stars['photo_'+bias][band]
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
-            ylabel = '$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$'
+            ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
     else:
         raise ValueError("Unknown chromatic bias in plot_bias")
 
@@ -327,7 +327,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     clim = set_range(c)
     clim[1] += 0.1 * (clim[1]-clim[0])
     im = ax.scatter(gals.redshift, galdata, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel('redshift', fontsize=fontsize)
+    ax.set_xlabel("redshift", fontsize=fontsize)
 
     # running mean and variance:
     nbins = int(len(galdata)**0.4)
@@ -390,7 +390,8 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # colorbar
     cbar_ax = f.add_axes(colorbar_axes_range)
     cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel('{} - {}'.format(cbands[0].replace('LSST_',''), cbands[1].replace('LSST_','')),
+    cbar_ax.set_ylabel("{} - {}".format(cbands[0].replace('LSST_',''),
+                                        cbands[1].replace('LSST_','')),
                        fontsize=fontsize)
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(fontsize)
@@ -398,7 +399,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # variance axis
     var_ax.set_xlim(ax.get_xlim())
     var_ax.xaxis.set_ticklabels([])
-    var_ax.set_ylabel('$\sqrt{\mathrm{Var}}$')
+    var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
     var_ax.set_ylim(var_ylim)
     var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
 
@@ -415,16 +416,16 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
 if __name__ == '__main__':
     s=3
     parser = ArgumentParser()
-    parser.add_argument('--galfile', default = 'output/corrected_galaxy_data.pkl',
+    parser.add_argument('--galfile', default = "output/corrected_galaxy_data.pkl",
                         help="input galaxy file. Default 'output/corrected_galaxy_data.pkl'")
-    parser.add_argument('--starfile', default = 'output/corrected_star_data.pkl',
+    parser.add_argument('--starfile', default = "output/corrected_star_data.pkl",
                         help="input star file. Default 'output/corrected_star_data.pkl'")
     parser.add_argument('--corrected', action='store_true',
                         help="plot learning residuals instead of G5v residuals.")
-    parser.add_argument('bias', default="Rbar", nargs='?',
+    parser.add_argument('bias', default='Rbar', nargs='?',
                         help="""which chromatic bias to plot (Default: 'Rbar')
                              Other possibilities include: 'V', 'S_m02', 'S_p06', 'S_p10'""")
-    parser.add_argument('--band', default="LSST_r", nargs='?',
+    parser.add_argument('--band', default='LSST_r', nargs='?',
                         help="band of chromatic bias to plot (Default: 'LSST_r')")
     parser.add_argument('--color', default=['LSST_r', 'LSST_i'], nargs=2,
                         help="color to use for symbol color (Default: ['LSST_r', 'LSST_i'])")
@@ -444,36 +445,36 @@ if __name__ == '__main__':
         if args.corrected:
             # LSST r-band
             plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dLnRbarSqr_corrected_LSST_r.png', corrected=True, s=s)
+                      outfile="output/dLnRbarSqr_corrected_LSST_r.png", corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_corrected_LSST_r.png', corrected=True, s=s)
+                      outfile="output/dV_corrected_LSST_r.png", corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_corrected_LSST_r.png', corrected=True, s=s)
+                      outfile="output/dS_m02_corrected_LSST_r.png", corrected=True, s=s)
             # LSST i-band
             plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dLnRbarSqr_corrected_LSST_i.png', corrected=True, s=s)
+                      outfile="output/dLnRbarSqr_corrected_LSST_i.png", corrected=True, s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_corrected_LSST_i.png', corrected=True, s=s)
+                      outfile="output/dV_corrected_LSST_i.png", corrected=True, s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_corrected_LSST_i.png', corrected=True, s=s)
+                      outfile="output/dS_m02_corrected_LSST_i.png", corrected=True, s=s)
             # Euclid 350nm band
             plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_p06_corrected_Euclid_350.png', corrected=True, s=s)
+                      outfile="output/dS_p06_corrected_Euclid_350.png", corrected=True, s=s)
         else:
             # LSST r-band
             plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dLnRbarSqr_LSST_r.png', s=s)
+                      outfile="output/dLnRbarSqr_LSST_r.png", s=s)
             plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_LSST_r.png', s=s)
+                      outfile="output/dV_LSST_r.png", s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_LSST_r.png', s=s)
+                      outfile="output/dS_m02_LSST_r.png", s=s)
             # LSST i-band
             plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dLnRbarSqr_LSST_i.png', s=s)
+                      outfile="output/dLnRbarSqr_LSST_i.png", s=s)
             plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dV_LSST_i.png', s=s)
+                      outfile="output/dV_LSST_i.png", s=s)
             plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_m02_LSST_i.png', s=s)
+                      outfile="output/dS_m02_LSST_i.png", s=s)
             # Euclid 350nm band
             plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile='output/dS_p06_Euclid_350.png', s=s)
+                      outfile="output/dS_p06_Euclid_350.png", s=s)
