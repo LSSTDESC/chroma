@@ -15,6 +15,18 @@ band_dict = {'LSST_r':"r",
              'LSST_i':"i"}
 fontsize=12
 
+# Some annotation arrow properties
+arrowdict = dict(facecolor='black', shrink=0.1, width=1.5, headwidth=4, frac=0.2)
+
+# hardcode some requirements, order is [DES, LSST]
+r2sqr_gal = np.r_[0.4, 0.3]**2
+r2sqr_PSF = np.r_[0.8, 0.7]**2
+
+mean_m_req = np.r_[0.008, 0.003]
+mean_DeltaRbarSqr_req = mean_m_req / 2.0
+mean_DeltaV_req = r2sqr_gal * mean_m_req
+mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
+
 def set_range(x):
     """ Return a plotting range 30% larger than the interval containing 99% of the data.
     """
@@ -42,9 +54,6 @@ def plot_panel(ax, galdata, colordata, cdata, cbands, ylabel, ylim):
         label.set_fontsize(fontsize)
     for label in ax.get_yticklabels():
         label.set_fontsize(fontsize)
-    xlim = ax.get_xlim()
-    ax.set_xlim(xlim)
-    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
 
     return im
 
@@ -65,7 +74,13 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     galdata **= 2
     ylim = set_range(galdata)
     ylim[0] = 0.0
-    plot_panel(axarr[0,0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    plot_panel(axarr[0, 0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    ax = axarr[0, 0]
+    xlim = ax.get_xlim()
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[1]]*2, color='#777777')
 
     # Corrected RbarSqr
     stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
@@ -74,7 +89,12 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     stardata = 2 * (stars['Rbar'][band] * 180/np.pi * 3600 - norm) * stardata
     galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
     ylabel = r"$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)"
-    plot_panel(axarr[0,1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    plot_panel(axarr[0, 1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    ax = axarr[0, 1]
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[1]]*2, color='#777777')
 
     # V
     ylabel = r"$\Delta \mathrm{V}}$ (arcsec$^2$)"
@@ -84,13 +104,44 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     stardata -= norm
     galdata -= norm
     ylim = set_range(np.concatenate([stardata, galdata]))
-    plot_panel(axarr[1,0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    plot_panel(axarr[1, 0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    ax = axarr[1, 0]
+    xlim = ax.get_xlim()
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [-mean_DeltaV_req[0]]*2, [mean_DeltaV_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [-mean_DeltaV_req[1]]*2, [mean_DeltaV_req[1]]*2, color='#777777')
+    ax.annotate("LSST requirement",
+                xy=(-0.35, -mean_DeltaV_req[1]),
+                xytext=(-0.25, -mean_DeltaV_req[1]-0.0003),
+                arrowprops=arrowdict,
+                zorder=10)
+    ax.annotate("DES requirement",
+                xy=(-0.35, -mean_DeltaV_req[0]),
+                xytext=(-0.25, -mean_DeltaV_req[0]-0.0003),
+                arrowprops=arrowdict,
+                zorder=10)
 
     # Corrected V
     stardata = (stars['V'][band] - stars['photo_'+'V'][band]) * (180/np.pi * 3600)**2
     galdata = (gals['V'][band] - gals['photo_'+'V'][band]) * (180/np.pi * 3600)**2
     ylabel = "$\delta(\Delta \mathrm{V})$ (arcsec$^2$)"
-    plot_panel(axarr[1,1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    plot_panel(axarr[1, 1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    ax = axarr[1, 1]
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [-mean_DeltaV_req[0]]*2, [mean_DeltaV_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [-mean_DeltaV_req[1]]*2, [mean_DeltaV_req[1]]*2, color='#777777')
+    ax.annotate("LSST requirement",
+                xy=(-0.35, -mean_DeltaV_req[1]),
+                xytext=(-0.25, -mean_DeltaV_req[1]-0.0005),
+                arrowprops=arrowdict,
+                zorder=10)
+    ax.annotate("DES requirement",
+                xy=(-0.35, -mean_DeltaV_req[0]),
+                xytext=(-0.25, -mean_DeltaV_req[0]-0.0005),
+                arrowprops=arrowdict,
+                zorder=10)
 
     # S
     ylabel = r"$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
@@ -100,13 +151,45 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     stardata = (stardata - starmean)/starmean
     galdata = (galdata - starmean)/starmean
     ylim = set_range(np.concatenate([stardata, galdata]))
-    plot_panel(axarr[2,0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    plot_panel(axarr[2, 0], galdata, colordata, cdata, cbands, ylabel, ylim)
+    ax = axarr[2, 0]
+    xlim = ax.get_xlim()
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [-mean_dS_m02_req[0]]*2, [mean_dS_m02_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [-mean_dS_m02_req[1]]*2, [mean_dS_m02_req[1]]*2, color='#777777')
+    ax.annotate("LSST requirement",
+                xy=(-0.35, -mean_dS_m02_req[1]),
+                xytext=(-0.25, -mean_dS_m02_req[1]-0.003),
+                arrowprops=arrowdict,
+                zorder=10)
+    ax.annotate("DES requirement",
+                xy=(-0.35, -mean_dS_m02_req[0]),
+                xytext=(-0.25, -mean_dS_m02_req[0]-0.003),
+                arrowprops=arrowdict,
+                zorder=10)
 
     # Corrected S
     stardata = (stars['S_m02'][band] - stars['photo_'+'S_m02'][band]) / stars['photo_'+'S_m02'][band]
     galdata = (gals['S_m02'][band] - gals['photo_'+'S_m02'][band]) / gals['photo_'+'S_m02'][band]
     ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
-    im = plot_panel(axarr[2,1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    im = plot_panel(axarr[2, 1], galdata, colordata, cdata, cbands, ylabel, ylim)
+    xlim = ax.get_xlim()
+    ax = axarr[2, 1]
+    ax.set_xlim(xlim)
+    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
+    ax.fill_between(xlim, [-mean_dS_m02_req[0]]*2, [mean_dS_m02_req[0]]*2, color='#999999')
+    ax.fill_between(xlim, [-mean_dS_m02_req[1]]*2, [mean_dS_m02_req[1]]*2, color='#777777')
+    ax.annotate("LSST requirement",
+                xy=(-0.35, -mean_dS_m02_req[1]),
+                xytext=(-0.25, -mean_dS_m02_req[1]-0.003),
+                arrowprops=arrowdict,
+                zorder=10)
+    ax.annotate("DES requirement",
+                xy=(-0.35, -mean_dS_m02_req[0]),
+                xytext=(-0.25, -mean_dS_m02_req[0]-0.003),
+                arrowprops=arrowdict,
+                zorder=10)
 
     # colorbar
     colorbar_axes_range = [0.86, 0.77, 0.017, 0.19]
