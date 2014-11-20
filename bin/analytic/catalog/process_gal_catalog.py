@@ -37,7 +37,7 @@ def file_len(fname):
             pass
     return i + 1
 
-def composite_spectrum(gal, norm_bandpass):
+def composite_spectrum(gal, norm_bandpass, emission=False):
     if 'CAT_SHARE_DATA' in os.environ:
         SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
     elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
@@ -47,6 +47,8 @@ def composite_spectrum(gal, norm_bandpass):
     if gal['sedPathBulge'] != 'None':
         bulge_SED = chroma.SampledSED(SED_dir+gal['sedPathBulge'])
         bulge_SED = bulge_SED.createWithMagnitude(norm_bandpass, gal['magNormBulge'])
+        if emission:
+            bulge_SED = bulge_SED.addEmissionLines()
         bulge_SED = bulge_SED.createExtincted(A_v=gal['internalAVBulge'],
                                               R_v=gal['internalRVBulge'])
         bulge_SED = bulge_SED.createRedshifted(gal['redshift'])
@@ -54,6 +56,8 @@ def composite_spectrum(gal, norm_bandpass):
     if gal['sedPathDisk'] != 'None':
         disk_SED = chroma.SampledSED(SED_dir+gal['sedPathDisk'])
         disk_SED = disk_SED.createWithMagnitude(norm_bandpass, gal['magNormDisk'])
+        if emission:
+            disk_SED = disk_SED.addEmissionLines()
         disk_SED = disk_SED.createExtincted(A_v=gal['internalAVDisk'],
                                             R_v=gal['internalRVDisk'])
         disk_SED = disk_SED.createRedshifted(gal['redshift'])
@@ -169,7 +173,7 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                 data[j].internalAVDisk = float(s[19])
                 data[j].internalRVDisk = float(s[20])
 
-                spec = composite_spectrum(data[j], filters['norm'])
+                spec = composite_spectrum(data[j], filters['norm'], emission=emission)
                 for k, f in enumerate('ugrizy'):
                     # grab catalog magnitude
                     data[j]['mag']['LSST_'+f] = float(s[5+k])
@@ -197,18 +201,14 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                         data[j]['S_p06'][fname] = np.nan
                         data[j]['S_p10'][fname] = np.nan
 
-                # if emission:
-                #     spec = phot.make_composite_spec_with_emission_lines(data[j], filters,
-                #                                                         zps, wave_match)
-                # else:
-                #     spec = phot.make_composite_spec(data[j], filters, zps, wave_match)
                 if debug:
                     print
                     print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
                     print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
-                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['Euclid_{}'.format(fw)])
+                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']
+                                                                  ['Euclid_{}'.format(fw)])
                                                  for fw in [150, 250, 350, 450]])
                 j += 1
     return data
