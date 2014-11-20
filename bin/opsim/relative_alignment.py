@@ -28,10 +28,6 @@ def plot_field(cat, field, filter_name, align_SED_file, target_SED_file, target_
     target_SED = galsim.SED(SED_dir+target_SED_file)
     bandpass = galsim.Bandpass(filter_dir+"LSST_{}.dat".format(filter_name))
 
-    # align_SED = chroma.SED(SED_dir+align_SED_file)
-    # target_SED = chroma.SED(SED_dir+target_SED_file).atRedshift(target_z)
-    # bandpass = chroma.Bandpass(filter_dir+'LSST_{}.dat'.format(filter_name))
-
     align_moments = align_SED.calculateDCRMomentShifts(bandpass,
                                                        zenith_angle = np.pi/4.0 * galsim.radians)
     target_moments = target_SED.calculateDCRMomentShifts(bandpass,
@@ -41,9 +37,6 @@ def plot_field(cat, field, filter_name, align_SED_file, target_SED_file, target_
     delta_R = (target_moments[0][1,0] - align_moments[0][1,0]) * 180./np.pi * 3600 * 1000
     # square arcseconds
     delta_V = (target_moments[1][1,1] - align_moments[1][1,1]) * (180./np.pi * 3600)**2
-
-    # delta_R = (target_moments[0] - align_moments[0]) * 180./np.pi * 3600 * 1000 # milliarcseconds
-    # delta_V = (target_moments[1] - align_moments[1]) * (180./np.pi * 3600)**2 # square arcseconds
 
     rsquared = 0.4**2 # square arcseconds
     m = delta_V * np.tan(cat[wobj]['z_a'])**2 / rsquared
