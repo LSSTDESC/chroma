@@ -87,7 +87,7 @@ class SampledSED(object):
             raise ValueError("Unknown flux_type `{}` in SampledSED.__init__".format(flux_type))
 
     def __call__(self, wave):
-        """ Return flux density in photons/nm as a function of wavelength in nm.
+        """ Return flux density in photons/s/nm as a function of wavelength in nm.
         """
         try:
             return self.interp(wave)
@@ -225,6 +225,31 @@ class SampledSED(object):
         dwave_dR = np.append(dwave_dR, dwave_dR[-1]) # fudge the last array element
         angle_dens = photons * np.abs(dwave_dR)
         return R, angle_dens
+
+    def addEmissionLines(self):
+        # get UV continuum flux
+        UV_fphot = self(230.0) # photons / nm / s
+        h = 6.62e-27 # ergs / Hz
+        UV_fnu = UV_fphot * h * (230.0) # converted to erg/s/Hz
+
+        wave = self.interp.x
+        fphot = self.interp.y
+
+        # then add lines appropriately
+        lines = ['OII','OIII','Hbeta','Halpha','Lya']
+        multipliers = np.r_[1.0, 0.36, 0.61, 1.77, 2.0] * 1.0e13
+        waves = [372.7, 500.7, 486.1, 656.3, 121.5] # nm
+        velocity = 200.0 # km/s
+        for line, m, w in zip(lines, multipliers, waves):
+            line_flux = UV_fnu * m # ergs / sec
+            hc = 1.986e-9 # erg nm
+            line_flux *= w / hc # converted to phot / sec
+            sigma = velocity / 299792.458 * w # sigma in Angstroms
+            amplitude = line_flux / sigma / np.sqrt(2.0 * np.pi)
+            fphot += amplitude * np.exp(-(wave-w)**2/(2*sigma**2))
+        ret = self.copy()
+        ret.interp = interp1d(wave, fphot)
+        return ret
 
 
 class SampledBandpass(object):
