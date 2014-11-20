@@ -253,10 +253,17 @@ if __name__ == '__main__':
                         help="use only colors as features (Default: colors + 1 magnitude)")
     parser.add_argument('--use_mag', action='store_true',
                         help="use only magnitudes as features (Default: colors + 1 magnitude)")
+    parser.add_argument('--mag_err', default=0.0, type=float,
+                        help="magnitude error to apply to test data before regression")
     args = parser.parse_args()
 
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))
+
+    elif args.mag_err != 0.0:
+        shape = test_objs['magCalc']['LSST_u'].shape
+        for band in 'ugrizy':
+            test_objs['magCalc']['LSST_{}'.format(band)] += args.mag_err * np.random.randn(*shape)
 
     out = gal_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                  test_objs[args.teststart:args.teststart+args.ntest],
