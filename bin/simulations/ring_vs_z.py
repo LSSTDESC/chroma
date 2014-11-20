@@ -62,10 +62,10 @@ def ring_vs_z(args):
     logger.addHandler(console)
 
     # build filter bandpass
-    bandpass = chroma.Bandpass(args.datadir+args.filter)
+    bandpass = galsim.Bandpass(args.datadir+args.filter)
 
     # build star SED
-    star_SED = chroma.SED(args.datadir+args.starspec)
+    star_SED = galsim.SED(args.datadir+args.starspec)
 
     # Thin bandpass and spectra if requested
     if args.thin is not None:
@@ -184,7 +184,7 @@ def ring_vs_z(args):
     zs = np.arange(args.zmin, args.zmax+0.001, args.dz)
     for z in zs:
         # build galaxy SED
-        gal_SED = chroma.SED(args.datadir+args.galspec, flux_type='flambda')
+        gal_SED = galsim.SED(args.datadir+args.galspec, flux_type='flambda')
         gal_SED = gal_SED.atRedshift(z)
         if args.thin is not None:
             gal_SED = gal_SED.thin(args.thin)
@@ -217,18 +217,23 @@ def ring_vs_z(args):
 
         # First calculate \Delta V
         if not args.noDCR:
-            dmom_DCR1 = star_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
-            dmom_DCR2 = gal_SED.getDCRMomentShifts(bandpass, args.zenith_angle * np.pi / 180)
-            Vstar = dmom_DCR1[1] * (3600 * 180 / np.pi)**2
-            Vgal = dmom_DCR2[1] * (3600 * 180 / np.pi)**2
+            dmom_DCR1 = star_SED.calculateDCRMomentShifts(bandpass,
+                                                          zenith_angle=(args.zenith_angle
+                                                                        * galsim.degrees))
+            dmom_DCR2 = gal_SED.calculateDCRMomentShifts(bandpass,
+                                                         zenith_angle=(args.zenith_angle
+                                                                       * galsim.degrees))
+            # radians -> arcseconds
+            Vstar = (dmom_DCR1[1] * (3600 * 180 / np.pi)**2)[1, 1]
+            Vgal = (dmom_DCR2[1] * (3600 * 180 / np.pi)**2)[1, 1]
         else:
             Vstar = 0.0
             Vgal = 0.0
         dV = Vgal - Vstar
         # Second calculate \Delta r^2 / r^2
         if args.alpha != 0.0:
-            seeing1 = star_SED.getSeeingShift(bandpass, alpha=args.alpha)
-            seeing2 = gal_SED.getSeeingShift(bandpass, alpha=args.alpha)
+            seeing1 = star_SED.calculateSeeingMomentRatio(bandpass, alpha=args.alpha)
+            seeing2 = gal_SED.calculateSeeingMomentRatio(bandpass, alpha=args.alpha)
             dr2r2 = (seeing2 - seeing1)/seeing1
             logger.debug("star seeing correction: {}".format(seeing1))
             logger.debug("galaxy seeing correction: {}".format(seeing2))

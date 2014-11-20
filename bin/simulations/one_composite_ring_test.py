@@ -90,7 +90,7 @@ def one_composite_ring_test(args):
     #----------------------------------------------------------------------------------------------
 
     # load filter bandpass
-    bandpass = chroma.Bandpass(args.datadir+args.filter)
+    bandpass = galsim.Bandpass(args.datadir+args.filter)
 
     # load and redshift bulge and disk SEDs
     bulge_SED = galsim.SED(args.datadir+args.bulgespec, flux_type="flambda")
