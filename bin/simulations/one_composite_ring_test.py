@@ -93,9 +93,9 @@ def one_composite_ring_test(args):
     bandpass = chroma.Bandpass(args.datadir+args.filter)
 
     # load and redshift bulge and disk SEDs
-    bulge_SED = chroma.SED(args.datadir+args.bulgespec, flux_type="flambda")
+    bulge_SED = galsim.SED(args.datadir+args.bulgespec, flux_type="flambda")
     bulge_SED = bulge_SED.atRedshift(args.redshift)
-    disk_SED = chroma.SED(args.datadir+args.diskspec, flux_type="flambda")
+    disk_SED = galsim.SED(args.datadir+args.diskspec, flux_type="flambda")
     disk_SED = disk_SED.atRedshift(args.redshift)
 
     # normalize SEDs to 1.0, let gparams below handle the actual relative fluxes of
@@ -109,7 +109,7 @@ def one_composite_ring_test(args):
     if args.starspec is None:
         star_SED = args.bulge_frac*bulge_SED + (1.0-args.bulge_frac)*disk_SED
     else:
-        star_SED = chroma.SED(args.datadir+args.starspec, flux_type="flambda")
+        star_SED = galsim.SED(args.datadir+args.starspec, flux_type="flambda")
     star_SED = star_SED.withFlux(1.0, bandpass)
 
     # Thin bandpass and spectra if requested
