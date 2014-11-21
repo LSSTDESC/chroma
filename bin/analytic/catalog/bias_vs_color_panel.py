@@ -198,9 +198,7 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     cbar_ax.set_ylabel("redshift", fontsize=fontsize)
 
     f.tight_layout()
-    f.savefig("output/bias_vs_color_panel.pdf")
-
-
+    f.savefig(outfile)
 
 
 if __name__ == '__main__':
@@ -213,8 +211,8 @@ if __name__ == '__main__':
                         help="band of chromatic bias to plot (Default: 'LSST_r')")
     parser.add_argument('--color', default=['LSST_r', 'LSST_i'], nargs=2,
                         help="color to use for symbol color (Default: ['LSST_r', 'LSST_i'])")
-    parser.add_argument('--outfile', default="output/chromatic_bias.png", nargs='?',
-                        help="output filename (Default: 'output/chromatic_bias.png')")
+    parser.add_argument('--outfile', default="output/bias_vs_color_panel.pdf", nargs='?',
+                        help="output filename (Default: 'output/bias_vs_color_panel.pdf')")
     args = parser.parse_args()
 
     gals = cPickle.load(open(args.galfile))
