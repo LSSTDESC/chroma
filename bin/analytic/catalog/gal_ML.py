@@ -270,7 +270,7 @@ if __name__ == '__main__':
         # From http://www.lsst.org/files/docs/137.03_Pinto_Cadence_Design_8x10.pdf
         nvisits = np.r_[56, 80, 184, 184, 160, 160]
         exptime = 30.0 * nvisits
-        npix = 0.3**2 * np.pi / 0.2**2 #rough number of pixels per galaxy
+        npix = (0.3**2 + 0.7**2) * np.pi / 0.2**2 #rough number of pixels per galaxy
         skycounts = s0 * 10**(-0.4 * (B - 24.0)) * 0.2**2 * npix * exptime
         counterr = np.sqrt(skycounts)
 
