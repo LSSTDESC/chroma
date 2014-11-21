@@ -32,8 +32,8 @@ zenith_angle = 35 * np.pi/180
 ax[1,0].set_xlabel('Wavelength (nm)', fontsize=12)
 ax[1,1].set_xlabel('Refraction (arcsec)', fontsize=12)
 for i, s in enumerate(spectra):
-    SED = chroma.SampledSED(s)
-    SED = SED.createRedshifted(redshifts[i])
+    SED = chroma.SED(s)
+    SED = SED.atRedshift(redshifts[i])
     wave = np.arange(500.0, 901.0, 1.0)
     photons = SED(wave)
     scale = 1.2 * photons[(wave > 500) & (wave < 900)].max()
@@ -52,7 +52,7 @@ for i, s in enumerate(spectra):
     ax[i,1].set_xlim(26.25, 27.25)
 
     for f in filters:
-        filter_ = chroma.SampledBandpass(f).createTruncated(blue_limit=500, red_limit=1000)
+        filter_ = chroma.Bandpass(f).truncate(blue_limit=500, red_limit=1000)
         photons_filtered = photons * filter_(wave)
         color = np.interp(wave, cwave, np.linspace(1.0, 0.0, 256))
 
