@@ -925,10 +925,13 @@ class Bandpass(object):
             blue_limit = self.blue_limit
         if red_limit is None:
             red_limit = self.red_limit
+        blue_limit = max([blue_limit, self.blue_limit])
+        red_limit = min([red_limit, self.red_limit])
+
         if len(self.wave_list) > 0:
-            wave = np.array(self.wave_list)
-            tp = self.func(wave)
             if relative_throughput is not None:
+                wave = np.array(self.wave_list)
+                tp = self.func(wave)
                 w = (tp >= tp.max()*relative_throughput).nonzero()
                 blue_limit = max([min(wave[w]), blue_limit])
                 red_limit = min([max(wave[w]), red_limit])
