@@ -45,30 +45,30 @@ def composite_spectrum(gal, norm_bandpass, emission=False):
     else:
         raise ValueError("Cannot find CatSim SED files.")
     if gal['sedPathBulge'] != 'None':
-        bulge_SED = chroma.SampledSED(SED_dir+gal['sedPathBulge'])
-        bulge_SED = bulge_SED.createWithMagnitude(norm_bandpass, gal['magNormBulge'])
+        bulge_SED = chroma.SED(SED_dir+gal['sedPathBulge'])
+        bulge_SED = bulge_SED.withMagnitude(gal['magNormBulge'], norm_bandpass)
         if emission:
             bulge_SED = bulge_SED.addEmissionLines()
-        bulge_SED = bulge_SED.createExtincted(A_v=gal['internalAVBulge'],
-                                              R_v=gal['internalRVBulge'])
-        bulge_SED = bulge_SED.createRedshifted(gal['redshift'])
+        bulge_SED = bulge_SED.redden(A_v=gal['internalAVBulge'],
+                                     R_v=gal['internalRVBulge'])
+        bulge_SED = bulge_SED.atRedshift(gal['redshift'])
         SED = bulge_SED
     if gal['sedPathDisk'] != 'None':
-        disk_SED = chroma.SampledSED(SED_dir+gal['sedPathDisk'])
-        disk_SED = disk_SED.createWithMagnitude(norm_bandpass, gal['magNormDisk'])
+        disk_SED = chroma.SED(SED_dir+gal['sedPathDisk'])
+        disk_SED = disk_SED.withMagnitude(gal['magNormDisk'], norm_bandpass)
         if emission:
             disk_SED = disk_SED.addEmissionLines()
-        disk_SED = disk_SED.createExtincted(A_v=gal['internalAVDisk'],
-                                            R_v=gal['internalRVDisk'])
-        disk_SED = disk_SED.createRedshifted(gal['redshift'])
+        disk_SED = disk_SED.redden(A_v=gal['internalAVDisk'],
+                                   R_v=gal['internalRVDisk'])
+        disk_SED = disk_SED.atRedshift(gal['redshift'])
         if 'SED' in locals():
             SED += disk_SED
         else:
             SED = disk_SED
     if gal['sedPathAGN'] != 'None':
-        AGN_SED = chroma.SampledSED(SED_dir+gal['sedPathAGN'])
-        AGN_SED = AGN_SED.createWithMagnitude(norm_bandpass, gal['magNormAGN'])
-        AGN_SED = AGN_SED.createRedshifted(gal['redshift'])
+        AGN_SED = chroma.SED(SED_dir+gal['sedPathAGN'])
+        AGN_SED = AGN_SED.withMagnitude(gal['magNormAGN'], norm_bandpass)
+        AGN_SED = AGN_SED.atRedshift(gal['redshift'])
         if 'SED' in locals():
             SED += AGN_SED
         else:
@@ -80,11 +80,18 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
-        filters['LSST_{}'.format(f)] = chroma.SampledBandpass(ffile).createThinned(10)
+        filters['LSST_{}'.format(f)] = (chroma.Bandpass(ffile)
+                                        .thin(1.e-5)
+                                        .withZeropoint('AB', effective_diameter=6.4, exptime=30.0))
     for width in [150,250,350,450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
-        filters['Euclid_{}'.format(width)] = chroma.SampledBandpass(ffile).createThinned(10)
-    filters['norm'] = chroma.SampledBandpass(interp1d([499, 500, 501], [0, 1, 0]))
+        filters['Euclid_{}'.format(width)] = (chroma.Bandpass(ffile)
+                                              .thin(1.e-5)
+                                              .withZeropoint('AB',
+                                                             effective_diameter=6.4,
+                                                             exptime=30.0))
+    filters['norm'] = (chroma.Bandpass(interp1d([499, 500, 501], [0, 1, 0]))
+                       .withZeropoint('AB', effective_diameter=6.4, exptime=30.0))
 
     nrows = file_len(filename)
     if nmax is None:

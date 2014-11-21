@@ -45,22 +45,31 @@ def stellar_spectrum(star, norm_bandpass):
     else:
         raise ValueError("Cannot find CatSim SED files.")
     SED_dir = os.environ['HOME'] + '/lsst/DarwinX86/sims_sed_library/2014.04.23/'
-    SED = chroma.SampledSED(SED_dir+star['sedFilePath'])
-    SED = SED.createWithMagnitude(norm_bandpass, star['magNorm'])
-    SED = SED.createExtincted(A_v=star['galacticAv'])
+    SED = chroma.SED(SED_dir+star['sedFilePath'])
+    SED = SED.withMagnitude(star['magNorm'], norm_bandpass)
+    SED = SED.redden(A_v=star['galacticAv'])
     return SED
 
 def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0):
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
-        filters['LSST_{}'.format(f)] = chroma.SampledBandpass(ffile).createThinned(10) #thin for speed
+        filters['LSST_{}'.format(f)] = (chroma.Bandpass(ffile)
+                                        .thin(1.e-5) #thin for speed
+                                        .withZeropoint('AB',
+                                                       effective_diameter=6.4,
+                                                       exptime=30.0))
     for width in [150,250,350,450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
-        filters['Euclid_{}'.format(width)] = chroma.SampledBandpass(ffile).createThinned(10)
+        filters['Euclid_{}'.format(width)] = (chroma.Bandpass(ffile)
+                                              .thin(1.e-5)
+                                              .withZeropoint('AB',
+                                                             effective_diameter=6.4,
+                                                             exptime=30.0))
     # LSST SED catalog entries are normalized by their AB magnitude at 500 nm.  So define a narrow
     # filter at 500nm to use for normalization.
-    filters['norm'] = chroma.SampledBandpass(interp1d([499, 500, 501], [0, 1, 0]))
+    filters['norm'] = (chroma.Bandpass(interp1d([499, 500, 501], [0, 1, 0]))
+                       .withZeropoint('AB', effective_diameter=6.4, exptime=30.0))
 
     nrows = file_len(filename)
     if nmax is None:

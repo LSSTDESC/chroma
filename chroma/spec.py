@@ -481,16 +481,18 @@ class SED(object):
         truncate the wavelength range to lie between 91 nm and 6000 nm where the extinction
         correction law is defined.
         """
-        wave = self.interp.x
-        wgood = (wave >= 91) & (wave <= 3300)
-        wave = wave[wgood]
-        flux = self.interp.y[wgood]
-        ext = extinction.reddening(wave * 10, a_v=A_v, r_v=R_v, model='f99')
-        ret = self.copy()
-        ret.interp = interp1d(wave, flux / ext)
-        ret.blue_limit = wave[0]
-        ret.red_limit = wave[-1]
-        return ret
+        return self / (lambda w: extinction.reddening(w, a_v=A_v, r_v=R_v, model='f99'))
+
+        # wave = self.interp.x
+        # wgood = (wave >= 91) & (wave <= 3300)
+        # wave = wave[wgood]
+        # flux = self.interp.y[wgood]
+        # ext = extinction.reddening(wave * 10, a_v=A_v, r_v=R_v, model='f99')
+        # ret = self.copy()
+        # ret.interp = interp1d(wave, flux / ext)
+        # ret.blue_limit = wave[0]
+        # ret.red_limit = wave[-1]
+        # return ret
 
     def getDCRAngleDensity(self, bandpass, zenith, **kwargs):
         """Return photon density per unit refraction angle through a given filter.
@@ -511,24 +513,43 @@ class SED(object):
         h = 6.62e-27 # ergs / Hz
         UV_fnu = UV_fphot * h * (230.0) # converted to erg/s/Hz
 
-        wave = self.interp.x
-        fphot = self.interp.y
-
-        # then add lines appropriately
+        # construct line function
         lines = ['OII','OIII','Hbeta','Halpha','Lya']
         multipliers = np.r_[1.0, 0.36, 0.61, 1.77, 2.0] * 1.0e13
         waves = [372.7, 500.7, 486.1, 656.3, 121.5] # nm
         velocity = 200.0 # km/s
-        for line, m, w in zip(lines, multipliers, waves):
-            line_flux = UV_fnu * m # ergs / sec
-            hc = 1.986e-9 # erg nm
-            line_flux *= w / hc # converted to phot / sec
-            sigma = velocity / 299792.458 * w # sigma in Angstroms
-            amplitude = line_flux / sigma / np.sqrt(2.0 * np.pi)
-            fphot += amplitude * np.exp(-(wave-w)**2/(2*sigma**2))
-        ret = self.copy()
-        ret.interp = interp1d(wave, fphot)
-        return ret
+
+        def lines(w):
+            out = np.zeros_like(w, dtype=np.float64)
+            for lm, lw in zip(multipliers, waves):
+                line_flux = UV_fnu * lm # ergs / sec
+                hc = 1.986e-9 # erg nm
+                line_flux *= lw / hc # converted to phot / sec
+                sigma = velocity / 299792.458 * lw # sigma in Angstroms
+                amplitude = line_flux / sigma / np.sqrt(2.0 * np.pi)
+                out += amplitude * np.exp(-(lw-w)**2/(2*sigma**2))
+            return out
+
+        return self + SED(lines, flux_type='fphotons')
+
+        # wave = self.interp.x
+        # fphot = self.interp.y
+
+        # # then add lines appropriately
+        # lines = ['OII','OIII','Hbeta','Halpha','Lya']
+        # multipliers = np.r_[1.0, 0.36, 0.61, 1.77, 2.0] * 1.0e13
+        # waves = [372.7, 500.7, 486.1, 656.3, 121.5] # nm
+        # velocity = 200.0 # km/s
+        # for line, m, w in zip(lines, multipliers, waves):
+        #     line_flux = UV_fnu * m # ergs / sec
+        #     hc = 1.986e-9 # erg nm
+        #     line_flux *= w / hc # converted to phot / sec
+        #     sigma = velocity / 299792.458 * w # sigma in Angstroms
+        #     amplitude = line_flux / sigma / np.sqrt(2.0 * np.pi)
+        #     fphot += amplitude * np.exp(-(wave-w)**2/(2*sigma**2))
+        # ret = self.copy()
+        # ret.interp = interp1d(wave, fphot)
+        # return ret
 
 
 class Bandpass(object):
@@ -972,14 +993,106 @@ class Bandpass(object):
         if len(self.wave_list) > 0:
             x = self.wave_list
             f = self(x)
-            newx, newf = utilities.thin_tabulated_values(x, f, rel_err=rel_err,
-                                                         preserve_range=preserve_range)
+            newx, newf = thin_tabulated_values(x, f, rel_err=rel_err,
+                                               preserve_range=preserve_range)
             # preserve type
             ret = self.copy()
-            ret.func = interp1d(newx, newf, interpolant='linear')
+            ret.func = interp1d(newx, newf)
             ret.blue_limit = np.min(newx)
             ret.red_limit = np.max(newx)
             ret.wave_list = np.array(newx)
             if hasattr(ret, '_effective_wavelength'):
                 del ret._effective_wavelength
             return ret
+
+
+def thin_tabulated_values(x, f, rel_err=1.e-4, preserve_range=False):
+    """
+    Remove items from a set of tabulated f(x) values so that the error in the integral is still
+    accurate to a given relative accuracy.
+
+    The input `x,f` values can be lists, NumPy arrays, or really anything that can be converted
+    to a NumPy array.  The new lists will be output as python lists.
+
+    @param x                The `x` values in the f(x) tabulation.
+    @param f                The `f` values in the f(x) tabulation.
+    @param rel_err          The maximum relative error to allow in the integral from the removal.
+                            [default: 1.e-4]
+    @param preserve_range   Should the original range of `x` be preserved? (True) Or should the ends
+                            be trimmed to include only the region where the integral is
+                            significant? (False)  [default: False]
+
+    @returns a tuple of lists `(x_new, y_new)` with the thinned tabulation.
+    """
+    x = np.array(x)
+    f = np.array(f)
+
+    # Check for valid inputs
+    if len(x) != len(f):
+        raise ValueError("len(x) != len(f)")
+    if rel_err <= 0 or rel_err >= 1:
+        raise ValueError("rel_err must be between 0 and 1")
+    if not (np.diff(x) >= 0).all():
+        raise ValueError("input x is not sorted.")
+
+    # Check for trivial noop.
+    if len(x) <= 2:
+        # Nothing to do
+        return
+
+    # Start by calculating the complete integral of |f|
+    total_integ = np.trapz(abs(f),x)
+    if total_integ == 0:
+        return np.array([ x[0], x[-1] ]), np.array([ f[0], f[-1] ])
+    thresh = rel_err * total_integ
+
+    if not preserve_range:
+        # Remove values from the front that integrate to less than thresh.
+        integ = 0.5 * (abs(f[0]) + abs(f[1])) * (x[1] - x[0])
+        k0 = 0
+        while k0 < len(x)-2 and integ < thresh:
+            k0 = k0+1
+            integ += 0.5 * (abs(f[k0]) + abs(f[k0+1])) * (x[k0+1] - x[k0])
+        # Now the integral from 0 to k0+1 (inclusive) is a bit too large.
+        # That means k0 is the largest value we can use that will work as the staring value.
+
+        # Remove values from the back that integrate to less than thresh.
+        k1 = len(x)-1
+        integ = 0.5 * (abs(f[k1-1]) + abs(f[k1])) * (x[k1] - x[k1-1])
+        while k1 > k0 and integ < thresh:
+            k1 = k1-1
+            integ += 0.5 * (abs(f[k1-1]) + abs(f[k1])) * (x[k1] - x[k1-1])
+        # Now the integral from k1-1 to len(x)-1 (inclusive) is a bit too large.
+        # That means k1 is the smallest value we can use that will work as the ending value.
+
+        x = x[k0:k1+1]  # +1 since end of range is given as one-past-the-end.
+        f = f[k0:k1+1]
+
+    # Start a new list with just the first item so far
+    newx = [ x[0] ]
+    newf = [ f[0] ]
+
+    k0 = 0  # The last item currently in the new array
+    k1 = 1  # The current item we are considering to skip or include
+    while k1 < len(x)-1:
+        # We are considering replacing all the true values between k0 and k1+1 (non-inclusive)
+        # with a linear approxmation based on the points at k0 and k1+1.
+        lin_f = f[k0] + (f[k1+1]-f[k0])/(x[k1+1]-x[k0]) * (x[k0:k1+2] - x[k0])
+        # Integrate | f(x) - lin_f(x) | from k0 to k1+1, inclusive.
+        integ = np.trapz(abs(f[k0:k1+2] - lin_f), x[k0:k1+2])
+        # If the integral of the difference is < thresh, we can skip this item.
+        if integ < thresh:
+            # OK to skip item k1
+            k1 = k1 + 1
+        else:
+            # Have to include this one.
+            newx.append(x[k1])
+            newf.append(f[k1])
+            k0 = k1
+            k1 = k1 + 1
+
+    # Always include the last item
+    newx.append(x[-1])
+    newf.append(f[-1])
+
+    return newx, newf
