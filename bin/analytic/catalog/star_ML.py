@@ -214,16 +214,14 @@ if __name__ == '__main__':
                         help="use only colors as features (Default: colors + 1 magnitude)")
     parser.add_argument('--use_mag', action='store_true',
                         help="use only magnitudes as features (Default: colors + 1 magnitude)")
-    parser.add_argument('--mag_err', default=0.0, type=float,
-                        help="magnitude error to apply to test data before regression")
-    parser.add_argument('--dk_err', action='store_true',
-                        help="use D. Kirkby notes to estimate errors")
+    parser.add_argument('--no_err', action='store_true',
+                        help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
     args = parser.parse_args()
 
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))
 
-    if args.dk_err:
+    if not args.no_err:
         A = np.pi * (0.5 * 6.4)**2 # LSST mirror area
         s0 = np.r_[0.732, 2.124, 1.681, 1.249, 0.862, 0.452] * A # DK zeropoint
         # Sky brightness from http://www.lsst.org/files/docs/gee_137.28.pdf
@@ -242,11 +240,6 @@ if __name__ == '__main__':
             magerr = 2.5 / np.log(10) * counterr[i]/counts
             magerr[magerr < 0.01] = 0.01 # minimum error
             test_objs['magCalc']['LSST_{}'.format(band)] += magerr * np.random.randn(*shape)
-
-    elif args.mag_err != 0.0:
-        shape = test_objs['magCalc']['LSST_u'].shape
-        for band in 'ugrizy':
-            test_objs['magCalc']['LSST_{}'.format(band)] += args.mag_err * np.random.randn(*shape)
 
     out = star_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                   test_objs[args.teststart:args.teststart+args.ntest],
