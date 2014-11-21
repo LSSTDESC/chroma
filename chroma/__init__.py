@@ -1,6 +1,5 @@
 from dcr import *
-from sed import *
-from sampled import *
+from spec import *
 from galtool import *
 from utils import *
 from target import *
