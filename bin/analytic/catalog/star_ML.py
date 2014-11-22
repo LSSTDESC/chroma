@@ -222,24 +222,10 @@ if __name__ == '__main__':
     test_objs = cPickle.load(open(args.testfile))
 
     if not args.no_err:
-        A = np.pi * (0.5 * 6.4)**2 # LSST mirror area
-        s0 = np.r_[0.732, 2.124, 1.681, 1.249, 0.862, 0.452] * A # DK zeropoint
-        # Sky brightness from http://www.lsst.org/files/docs/gee_137.28.pdf
-        B = np.r_[22.8, 22.2, 21.3, 20.3, 19.1, 18.1]
-        # From http://www.lsst.org/files/docs/137.03_Pinto_Cadence_Design_8x10.pdf
-        nvisits = np.r_[56, 80, 184, 184, 160, 160]
-        exptime = 30.0 * nvisits
-        npix = 0.7**2 * np.pi / 0.2**2 #rough number of pixels per star
-        skycounts = s0 * 10**(-0.4 * (B - 24.0)) * 0.2**2 * npix * exptime
-        counterr = np.sqrt(skycounts)
-
+        shape = len(test_objs['magCalc']['LSST_u'])
         for i, band in enumerate('ugrizy'):
-            shape = test_objs['magCalc']['LSST_u'].shape
-            counts = (exptime[i] * s0[i]
-                      * 10**(-0.4 * (test_objs['magCalc']['LSST_{}'.format(band)] - 24.0)))
-            magerr = 2.5 / np.log(10) * counterr[i]/counts
-            magerr[magerr < 0.01] = 0.01 # minimum error
-            test_objs['magCalc']['LSST_{}'.format(band)] += magerr * np.random.randn(*shape)
+            test_objs['magCalc']['LSST_'+band] += (np.random.randn(shape)
+                                                   * test_objs['magErr']['LSST_'+band])
 
     out = star_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                   test_objs[args.teststart:args.teststart+args.ntest],
