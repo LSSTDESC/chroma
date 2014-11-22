@@ -16,18 +16,30 @@ Chromatic biases include:
         \alpha = 0.6 : appropriate for Euclid (see Voigt+12 or Cypriano+10).  denoted 'S_p06'
 """
 
-import os
 import sys
+import os
 import cPickle
 from argparse import ArgumentParser
 
 import numpy as np
 from scipy.interpolate import interp1d
+import galsim
 
 import _mypath
 import chroma
+import chroma.lsstetc
+
+# For use in Exposure Time Calculator for magnitude error estimates
+psf = galsim.Kolmogorov(fwhm = 0.67)
 
 datadir = '../../../data/'
+
+if 'CAT_SHARE_DATA' in os.environ:
+    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
+    SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
+else:
+    raise ValueError("Cannot find CatSim SED files.")
 
 def file_len(fname):
     """Count '\n's in file.
@@ -37,44 +49,16 @@ def file_len(fname):
             pass
     return i + 1
 
-def composite_spectrum(gal, norm_bandpass, emission=False):
-    if 'CAT_SHARE_DATA' in os.environ:
-        SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
-    elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
-        SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
-    else:
-        raise ValueError("Cannot find CatSim SED files.")
-    if gal['sedPathBulge'] != 'None':
-        bulge_SED = chroma.SED(SED_dir+gal['sedPathBulge'])
-        bulge_SED = bulge_SED.withMagnitude(gal['magNormBulge'], norm_bandpass)
-        if emission:
-            bulge_SED = bulge_SED.addEmissionLines()
-        bulge_SED = bulge_SED.redden(A_v=gal['internalAVBulge'],
-                                     R_v=gal['internalRVBulge'])
-        bulge_SED = bulge_SED.atRedshift(gal['redshift'])
-        SED = bulge_SED
-    if gal['sedPathDisk'] != 'None':
-        disk_SED = chroma.SED(SED_dir+gal['sedPathDisk'])
-        disk_SED = disk_SED.withMagnitude(gal['magNormDisk'], norm_bandpass)
-        if emission:
-            disk_SED = disk_SED.addEmissionLines()
-        disk_SED = disk_SED.redden(A_v=gal['internalAVDisk'],
-                                   R_v=gal['internalRVDisk'])
-        disk_SED = disk_SED.atRedshift(gal['redshift'])
-        if 'SED' in locals():
-            SED += disk_SED
-        else:
-            SED = disk_SED
-    if gal['sedPathAGN'] != 'None':
-        AGN_SED = chroma.SED(SED_dir+gal['sedPathAGN'])
-        AGN_SED = AGN_SED.withMagnitude(gal['magNormAGN'], norm_bandpass)
-        AGN_SED = AGN_SED.atRedshift(gal['redshift'])
-        if 'SED' in locals():
-            SED += AGN_SED
-        else:
-            SED = AGN_SED
-
-    return SED
+def component_spectrum(sedfile, magnorm, av, rv, redshift, norm_bandpass, emission=False):
+    sed = chroma.SED(SED_dir+sedfile)
+    sed = sed.withMagnitude(magnorm, norm_bandpass)
+    sed.blue_limit = 91
+    sed.red_limit = 6000
+    if emission:
+        sed = sed.addEmissionLines()
+    sed = sed.redden(A_v=av, R_v=rv)
+    sed = sed.atRedshift(redshift)
+    return sed
 
 def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
     filters = {}
@@ -98,51 +82,61 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
         nmax = nrows
     if nmax > (nrows-1):
         nmax = nrows-1
-    ugrizy = [('LSST_u', np.float32),
-              ('LSST_g', np.float32),
-              ('LSST_r', np.float32),
-              ('LSST_i', np.float32),
-              ('LSST_z', np.float32),
-              ('LSST_y', np.float32)]
-    ugrizyE = [('LSST_u', np.float32),
-               ('LSST_g', np.float32),
-               ('LSST_r', np.float32),
-               ('LSST_i', np.float32),
-               ('LSST_z', np.float32),
-               ('LSST_y', np.float32),
-               ('Euclid_150', np.float32),
-               ('Euclid_250', np.float32),
-               ('Euclid_350', np.float32),
-               ('Euclid_450', np.float32)]
-    E = [('Euclid_150', np.float32),
-         ('Euclid_250', np.float32),
-         ('Euclid_350', np.float32),
-         ('Euclid_450', np.float32)]
+    ugrizy = [('LSST_u', np.float),
+              ('LSST_g', np.float),
+              ('LSST_r', np.float),
+              ('LSST_i', np.float),
+              ('LSST_z', np.float),
+              ('LSST_y', np.float)]
+    ugrizyE = [('LSST_u', np.float),
+               ('LSST_g', np.float),
+               ('LSST_r', np.float),
+               ('LSST_i', np.float),
+               ('LSST_z', np.float),
+               ('LSST_y', np.float),
+               ('Euclid_150', np.float),
+               ('Euclid_250', np.float),
+               ('Euclid_350', np.float),
+               ('Euclid_450', np.float)]
+    E = [('Euclid_150', np.float),
+         ('Euclid_250', np.float),
+         ('Euclid_350', np.float),
+         ('Euclid_450', np.float)]
 
     data = np.recarray((nmax,),
                        dtype = [('galTileID', np.uint64),
                                 ('objectID', np.uint64),
-                                ('raJ2000', np.float64),
-                                ('decJ2000', np.float64),
-                                ('redshift', np.float32),
+                                ('raJ2000', np.float),
+                                ('decJ2000', np.float),
+                                ('redshift', np.float),
+                                ('BulgeHLR', np.float),
+                                ('DiskHLR', np.float),
+                                ('BulgeE1', np.float),
+                                ('BulgeE2', np.float),
+                                ('DiskE1', np.float),
+                                ('DiskE2', np.float),
                                 ('sedPathBulge', np.str_, 64),
                                 ('sedPathDisk', np.str_, 64),
                                 ('sedPathAGN', np.str_, 64),
-                                ('magNormBulge', np.float32),
-                                ('magNormDisk', np.float32),
-                                ('magNormAGN', np.float32),
-                                ('internalAVBulge', np.float32),
-                                ('internalRVBulge', np.float32),
-                                ('internalAVDisk', np.float32),
-                                ('internalRVDisk', np.float32),
+                                ('magNormBulge', np.float),
+                                ('magNormDisk', np.float),
+                                ('magNormAGN', np.float),
+                                ('internalAVBulge', np.float),
+                                ('internalRVBulge', np.float),
+                                ('internalAVDisk', np.float),
+                                ('internalRVDisk', np.float),
                                 ('mag', ugrizy),
                                 ('magCalc', ugrizyE),
+                                ('magErr', ugrizy),
+                                ('BulgeFrac', ugrizyE),
                                 ('Rbar', ugrizy),
                                 ('V', ugrizy),
                                 ('dVcg', ugrizy),
                                 ('S_m02', ugrizy),
                                 ('S_p06', E),
                                 ('S_p10', E)])
+
+    data[:] = np.nan
 
     order = [d+1 for d in xrange(nrows)]
     if randomize:
@@ -164,50 +158,110 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                 if order[j] != i : continue
                 bar.update()
                 s = line.split(', ')
+
+                # position
                 data[j].galTileID = int(s[0])
                 data[j].objectID = int(s[1])
                 data[j].raJ2000 = float(s[2])
                 data[j].decJ2000 = float(s[3])
                 data[j].redshift = float(s[4])
-                data[j].sedPathBulge = s[11]
-                data[j].sedPathDisk = s[12]
-                data[j].sedPathAGN = s[13]
-                data[j].magNormBulge = float(s[14])
-                data[j].magNormDisk = float(s[15])
-                data[j].magNormAGN = float(s[16])
-                data[j].internalAVBulge = float(s[17])
-                data[j].internalRVBulge = float(s[18])
-                data[j].internalAVDisk = float(s[19])
-                data[j].internalRVDisk = float(s[20])
 
-                spec = composite_spectrum(data[j], filters['norm'], emission=emission)
+                # size and ellipticity
+                A_Bulge = float(s[5])
+                A_Disk = float(s[6])
+                B_Bulge = float(s[7])
+                B_Disk = float(s[8])
+                PA_Bulge = float(s[9])
+                PA_Disk = float(s[10])
+                if A_Bulge != 0.0:
+                    data[j].BulgeHLR = np.sqrt(A_Bulge * B_Bulge)
+                    ellip = (A_Bulge**2 - B_Bulge**2) / (A_Bulge**2 + B_Bulge**2)
+                    if ellip > 0.99:
+                        ellip = 0.99
+                    data[j].BulgeE1 = ellip * np.cos(2 * PA_Bulge * np.pi/180.0)
+                    data[j].BulgeE2 = ellip * np.sin(2 * PA_Bulge * np.pi/180.0)
+                if A_Disk != 0.0:
+                    data[j].DiskHLR = np.sqrt(A_Disk * B_Disk)
+                    ellip = (A_Disk**2 - B_Disk**2) / (A_Disk**2 + B_Disk**2)
+                    if ellip > 0.99:
+                        ellip = 0.99
+                    data[j].DiskE1 = ellip * np.cos(2 * PA_Disk * np.pi/180.0)
+                    data[j].DiskE2 = ellip * np.sin(2 * PA_Disk * np.pi/180.0)
+
+                # spectrum
+                data[j].sedPathBulge = s[17]
+                data[j].sedPathDisk = s[18]
+                data[j].sedPathAGN = s[19]
+                data[j].magNormBulge = float(s[20])
+                data[j].magNormDisk = float(s[21])
+                data[j].magNormAGN = float(s[22])
+                data[j].internalAVBulge = float(s[23])
+                data[j].internalRVBulge = float(s[24])
+                data[j].internalAVDisk = float(s[25])
+                data[j].internalRVDisk = float(s[26])
+
+                # create indiv and composite SEDs, and galsim SBProfiles
+                if 'bulge_spec' in locals():
+                    del bulge_spec
+                if 'disk_spec' in locals():
+                    del disk_spec
+                if A_Bulge != 0.0:
+                    bulge_spec = component_spectrum(
+                        data[j].sedPathBulge, data[j].magNormBulge,
+                        data[j].internalAVBulge, data[j].internalRVBulge,
+                        data[j].redshift, filters['norm'], emission=emission)
+                    spec = bulge_spec
+                    bulge = galsim.DeVaucouleurs(half_light_radius = data[j].BulgeHLR)
+                    bulge = bulge.shear(e1=data[j].BulgeE1, e2=data[j].BulgeE2)
+                if A_Disk != 0.0:
+                    disk_spec = component_spectrum(
+                        data[j].sedPathDisk, data[j].magNormDisk,
+                        data[j].internalAVDisk, data[j].internalRVDisk,
+                        data[j].redshift, filters['norm'], emission=emission)
+                    spec = disk_spec
+                    disk = galsim.Exponential(half_light_radius = data[j].DiskHLR)
+                    disk = disk.shear(e1=data[j].DiskE1, e2=data[j].DiskE2)
+                if 'bulge_spec' in locals() and 'disk_spec' in locals():
+                    spec = bulge_spec + disk_spec
+
+                # loop through filters and fill in database columns
                 for k, f in enumerate('ugrizy'):
                     # grab catalog magnitude
-                    data[j]['mag']['LSST_'+f] = float(s[5+k])
+                    data[j]['mag']['LSST_'+f] = float(s[11+k])
                     bp = filters['LSST_'+f] # for brevity
                     try:
-                        data[j]['magCalc']['LSST_'+f] = spec.getMagnitude(bp)
-                        dcr = spec.getDCRMomentShifts(bp, np.pi/4)
-                        data[j]['Rbar']['LSST_'+f] = dcr[0]
-                        data[j]['V']['LSST_'+f] = dcr[1]
-                        data[j]['S_m02']['LSST_'+f] = spec.getSeeingShift(bp, alpha=-0.2)
+                        data[j]['magCalc']['LSST_'+f] = spec.calculateMagnitude(bp)
+                        dcr = spec.calculateDCRMomentShifts(bp, zenith_angle=np.pi/4)
+                        data[j]['Rbar']['LSST_'+f] = dcr[0][1,0]
+                        data[j]['V']['LSST_'+f] = dcr[1][1,1]
+                        data[j]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
+                        if 'bulge_spec' in locals() and 'disk_spec' not in locals():
+                            data[j]['BulgeFrac']['LSST_'+f] = 1.0
+                            gal = bulge
+                        elif 'disk_spec' in locals() and 'bulge_spec' not in locals():
+                            data[j]['BulgeFrac']['LSST_'+f] = 0.0
+                            gal = disk
+                        else:
+                            bulge_flux = bulge_spec.calculateFlux(bp)
+                            disk_flux = disk_spec.calculateFlux(bp)
+                            data[j]['BulgeFrac']['LSST_'+f] = bulge_flux / disk_flux
+                            gal = bulge*bulge_flux + disk*disk_flux
+                        profile = galsim.Convolve(psf, gal)
+                        etc = chroma.lsstetc.ETC(profile)
+                        data[j]['magErr']['LSST_'+f] = etc.err(data[j]['magCalc']['LSST_'+f],
+                                                               band=f)
                     except:
-                        data[j]['magCalc']['LSST_'+f] = np.nan
-                        data[j]['Rbar']['LSST_'+f] = np.nan
-                        data[j]['V']['LSST_'+f] = np.nan
-                        data[j]['S_m02']['LSST_'+f] = np.nan
+                        pass
+                # separate loop for Euclid filters
                 for fw in [150, 250, 350, 450]:
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
                     try:
-                        data[j]['magCalc'][fname] = spec.getMagnitude(bp)
-                        data[j]['S_p06'][fname] = spec.getSeeingShift(bp, alpha=0.6)
-                        data[j]['S_p10'][fname] = spec.getSeeingShift(bp, alpha=1.0)
+                        data[j]['magCalc'][fname] = spec.calculateMagnitude(bp)
+                        data[j]['S_p06'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=0.6)
+                        data[j]['S_p10'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=1.0)
                     except:
-                        data[j]['magCalc'][fname] = np.nan
-                        data[j]['S_p06'][fname] = np.nan
-                        data[j]['S_p10'][fname] = np.nan
-
+                        pass
                 if debug:
                     print
                     print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+fname])

@@ -23,11 +23,24 @@ from argparse import ArgumentParser
 
 import numpy as np
 from scipy.interpolate import interp1d
+import galsim
 
 import _mypath
 import chroma
+import chroma.lsstetc
+
+# Exposure Time Calculator for magnitude error estimates
+psf = galsim.Kolmogorov(fwhm = 0.67)
+etc = chroma.lsstetc.ETC(psf)
 
 datadir = '../../../data/'
+
+if 'CAT_SHARE_DATA' in os.environ:
+    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
+    SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
+else:
+    raise ValueError("Cannot find CatSim SED files.")
 
 def file_len(fname):
     """Count '\n's in file.
@@ -38,17 +51,13 @@ def file_len(fname):
     return i + 1
 
 def stellar_spectrum(star, norm_bandpass):
-    if 'CAT_SHARE_DATA' in os.environ:
-        SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
-    elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
-        SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
-    else:
-        raise ValueError("Cannot find CatSim SED files.")
     SED_dir = os.environ['HOME'] + '/lsst/DarwinX86/sims_sed_library/2014.04.23/'
-    SED = chroma.SED(SED_dir+star['sedFilePath'])
-    SED = SED.withMagnitude(star['magNorm'], norm_bandpass)
-    SED = SED.redden(A_v=star['galacticAv'])
-    return SED
+    sed = chroma.SED(SED_dir+star['sedFilePath'])
+    sed = sed.withMagnitude(star['magNorm'], norm_bandpass)
+    sed.blue_limit = 91
+    sed.red_limit = 6000
+    sed = sed.redden(A_v=star['galacticAv'])
+    return sed
 
 def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0):
     filters = {}
@@ -78,42 +87,44 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
         nmax = nrows-1
 
     # Define some useful np dtypes
-    ugrizy = [('LSST_u', np.float32),
-              ('LSST_g', np.float32),
-              ('LSST_r', np.float32),
-              ('LSST_i', np.float32),
-              ('LSST_z', np.float32),
-              ('LSST_y', np.float32)]
-    ugrizyE = [('LSST_u', np.float32),
-               ('LSST_g', np.float32),
-               ('LSST_r', np.float32),
-               ('LSST_i', np.float32),
-               ('LSST_z', np.float32),
-               ('LSST_y', np.float32),
-               ('Euclid_150', np.float32),
-               ('Euclid_250', np.float32),
-               ('Euclid_350', np.float32),
-               ('Euclid_450', np.float32)]
-    E = [('Euclid_150', np.float32),
-         ('Euclid_250', np.float32),
-         ('Euclid_350', np.float32),
-         ('Euclid_450', np.float32)]
+    ugrizy = [('LSST_u', np.float),
+              ('LSST_g', np.float),
+              ('LSST_r', np.float),
+              ('LSST_i', np.float),
+              ('LSST_z', np.float),
+              ('LSST_y', np.float)]
+    ugrizyE = [('LSST_u', np.float),
+               ('LSST_g', np.float),
+               ('LSST_r', np.float),
+               ('LSST_i', np.float),
+               ('LSST_z', np.float),
+               ('LSST_y', np.float),
+               ('Euclid_150', np.float),
+               ('Euclid_250', np.float),
+               ('Euclid_350', np.float),
+               ('Euclid_450', np.float)]
+    E = [('Euclid_150', np.float),
+         ('Euclid_250', np.float),
+         ('Euclid_350', np.float),
+         ('Euclid_450', np.float)]
 
     # Define the output compound dtype
     data = np.recarray((nmax,),
                           dtype = [('objectID', np.int64),
-                                   ('raJ2000', np.float64),
-                                   ('decJ2000', np.float64),
-                                   ('magNorm', np.float32),
+                                   ('raJ2000', np.float),
+                                   ('decJ2000', np.float),
+                                   ('magNorm', np.float),
                                    ('sedFilePath', np.str_, 64),
-                                   ('galacticAv', np.float32),
+                                   ('galacticAv', np.float),
                                    ('mag', ugrizy),
                                    ('magCalc', ugrizyE),
+                                   ('magErr', ugrizy),
                                    ('Rbar', ugrizy),
                                    ('V', ugrizy),
                                    ('S_m02', ugrizy),
                                    ('S_p06', E),
                                    ('S_p10', E)])
+    data[:] = np.nan
 
     with open(filename) as f:
         if not debug:
@@ -134,42 +145,41 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                 data[i-1].galacticAv = float(s[11])
                 spec = stellar_spectrum(data[i-1], filters['norm'])
 
-                # fill in magnitudes and chromatic biases
+                # loop through filters and fill in database columns
                 for k, f in enumerate('ugrizy'):
                     # also append magnitude from catalog as a sanity check
                     data[i-1]['mag']['LSST_'+f] = float(s[4+k])
                     bp = filters['LSST_'+f] # for brevity
                     try:
-                        data[i-1]['magCalc']['LSST_'+f] = spec.getMagnitude(bp)
-                        dcr = spec.getDCRMomentShifts(bp, np.pi/4)
-                        data[i-1]['Rbar']['LSST_'+f] = dcr[0]
-                        data[i-1]['V']['LSST_'+f] = dcr[1]
-                        data[i-1]['S_m02']['LSST_'+f] = spec.getSeeingShift(bp, alpha=-0.2)
+                        data[i-1]['magCalc']['LSST_'+f] = spec.calculateMagnitude(bp)
+                        dcr = spec.calculateDCRMomentShifts(bp, zenith_angle=np.pi/4)
+                        data[i-1]['Rbar']['LSST_'+f] = dcr[0][1,0]
+                        data[i-1]['V']['LSST_'+f] = dcr[1][1,1]
+                        data[i-1]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
+                        data[i-1]['magErr']['LSST_'+f] = etc.err(data[i-1]['magCalc']['LSST_'+f],
+                                                                 band=f)
                     except:
-                        data[i-1]['magCalc']['LSST_'+f] = np.nan
-                        data[i-1]['Rbar']['LSST_'+f] = np.nan
-                        data[i-1]['V']['LSST_'+f] = np.nan
-                        data[i-1]['S_m02']['LSST_'+f] = np.nan
+                        pass
+                # separate loop for Euclid filters
                 for fw in [150, 250, 350, 450]:
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
                     try:
-                        data[i-1]['magCalc'][fname] = spec.getMagnitude(bp)
-                        data[i-1]['S_p06'][fname] = spec.getSeeingShift(bp, alpha=0.6)
-                        data[i-1]['S_p10'][fname] = spec.getSeeingShift(bp, alpha=1.0)
+                        data[i-1]['magCalc'][fname] = spec.calculateMagnitude(bp)
+                        data[i-1]['S_p06'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=0.6)
+                        data[i-1]['S_p10'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=1.0)
                     except:
-                        data[i-1]['magCalc'][fname] = np.nan
-                        data[i-1]['S_p06'][fname] = np.nan
-                        data[i-1]['S_p10'][fname] = np.nan
-
+                        pass
                 if debug:
                     print
-                    print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[i-1]['magCalc']['LSST_'+fname])
-                                                 for fname in 'ugrizy'])
+                    print 'syn mag:' + ' '.join(['{:6.3f}'.format(
+                        data[i-1]['magCalc']['LSST_'+fname])
+                        for fname in 'ugrizy'])
                     print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[i-1]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
-                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(data[i-1]['magCalc']['Euclid_{}'.format(fw)])
-                                                 for fw in [150, 250, 350, 450]])
+                    print 'Euclid: ' + ' '.join(['{:6.3f}'.format(
+                        data[i-1]['magCalc']['Euclid_{}'.format(fw)])
+                        for fw in [150, 250, 350, 450]])
     return data
 
 def runme():
