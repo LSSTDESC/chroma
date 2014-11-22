@@ -134,7 +134,7 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
         with chroma.ProgressBar(nmax, file=outdev) as bar:
             for i, line in enumerate(f):
                 if i == 0 : continue #ignore column labels row
-                if i >= nmax : break
+                if i > nmax : break
                 bar.update()
                 s = line.split(', ')
                 data[i-1].objectID = int(s[0])
