@@ -32,9 +32,10 @@ class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin, AstrometryBase):
     comment_char = ''
     catalog_type = 'example_galaxy_catalog'
     column_outputs = ['galtileid', 'objectId', 'raJ2000', 'decJ2000', 'redshift',
-                      'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab', 'sedPathBulge',
-                      'sedPathDisk', 'sedPathAgn', 'magNormBulge', 'magNormDisk', 'magNormAgn',
-                      # 'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk']
+                      'a_b', 'a_d', 'a_d', 'b_d', 'pa_bulge', 'pa_disk',
+                      'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab',
+                      'sedPathBulge', 'sedPathDisk', 'sedPathAgn',
+                      'magNormBulge', 'magNormDisk', 'magNormAgn',
                       'internalAvBulge', 'internalRvBulge', 'internalAvDisk', 'internalRvDisk',
                       'glon', 'glat', 'EBV']
     default_formats = {'S':'%s', 'f':'%.8f', 'i':'%i'}
