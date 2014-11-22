@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 
 import dcr
+import extinction
 
 class SED(object):
     """Simple SED object to represent the spectral energy distributions of stars and galaxies.
@@ -481,18 +482,7 @@ class SED(object):
         truncate the wavelength range to lie between 91 nm and 6000 nm where the extinction
         correction law is defined.
         """
-        return self / (lambda w: extinction.reddening(w, a_v=A_v, r_v=R_v, model='f99'))
-
-        # wave = self.interp.x
-        # wgood = (wave >= 91) & (wave <= 3300)
-        # wave = wave[wgood]
-        # flux = self.interp.y[wgood]
-        # ext = extinction.reddening(wave * 10, a_v=A_v, r_v=R_v, model='f99')
-        # ret = self.copy()
-        # ret.interp = interp1d(wave, flux / ext)
-        # ret.blue_limit = wave[0]
-        # ret.red_limit = wave[-1]
-        # return ret
+        return self / (lambda w: extinction.reddening(w * 10, a_v=A_v, r_v=R_v, model='f99'))
 
     def getDCRAngleDensity(self, bandpass, zenith, **kwargs):
         """Return photon density per unit refraction angle through a given filter.
