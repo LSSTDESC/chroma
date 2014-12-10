@@ -30,30 +30,30 @@ import chroma
 
 # Define some useful numpy dtypes.
 # LSST filters
-ugrizy =  [('LSST_u', np.float32),
-           ('LSST_g', np.float32),
-           ('LSST_r', np.float32),
-           ('LSST_i', np.float32),
-           ('LSST_z', np.float32),
-           ('LSST_y', np.float32)]
+ugrizy =  [('LSST_u', np.float),
+           ('LSST_g', np.float),
+           ('LSST_r', np.float),
+           ('LSST_i', np.float),
+           ('LSST_z', np.float),
+           ('LSST_y', np.float)]
 # The Euclid telescope will fly with one optical filter, nominally of width 350nm.  We include
 # additional potential optical filters here to see the effect of filter width on chromatic biases,
 # as was done in Voigt et al. (2012)
-E =       [('Euclid_150', np.float32),
-           ('Euclid_250', np.float32),
-           ('Euclid_350', np.float32),
-           ('Euclid_450', np.float32)]
+E =       [('Euclid_150', np.float),
+           ('Euclid_250', np.float),
+           ('Euclid_350', np.float),
+           ('Euclid_450', np.float)]
 # Both LSST and Euclid
-ugrizyE = [('LSST_u', np.float32),
-           ('LSST_g', np.float32),
-           ('LSST_r', np.float32),
-           ('LSST_i', np.float32),
-           ('LSST_z', np.float32),
-           ('LSST_y', np.float32),
-           ('Euclid_150', np.float32),
-           ('Euclid_250', np.float32),
-           ('Euclid_350', np.float32),
-           ('Euclid_450', np.float32)]
+ugrizyE = [('LSST_u', np.float),
+           ('LSST_g', np.float),
+           ('LSST_r', np.float),
+           ('LSST_i', np.float),
+           ('LSST_z', np.float),
+           ('LSST_y', np.float),
+           ('Euclid_150', np.float),
+           ('Euclid_250', np.float),
+           ('Euclid_350', np.float),
+           ('Euclid_450', np.float)]
 
 def compute_mags_moments(sed, filters):
     """ Given an SED and some filters, compute magnitudes and chromatic biases.
@@ -63,8 +63,12 @@ def compute_mags_moments(sed, filters):
                                      ('V', ugrizy),      # DCR second moment shift
                                      ('S_m02', ugrizy),  # PSF size shift with exponent -0.2
                                      ('S_p06', E),       # same, but exponent = +0.6
-                                     ('S_p10', E)])      # same, but exponent = +1.0
+                                     ('S_p10', E),       # same, but exponent = +1.0
+                                     ('linear', ugrizyE)]) #LinearSecondMomentShift
     for filter_name, bandpass in filters.iteritems():
+        w_eff = bandpass.effective_wavelength
+        beta_slope = 1.e-5 #arcsec^2/nm
+        beta_slope *= (1./3600 * np.pi/180)**2 # -> rad^2/nm
         # some magnitude calculations will fail because the SED doesn't cover the wavelength range
         # of the bandpass filter.  Catch these here.
         try:
@@ -79,9 +83,13 @@ def compute_mags_moments(sed, filters):
             try:
                 out[0]['S_p06'][filter_name] = sed.calculateSeeingMomentRatio(bandpass, alpha=0.6)
                 out[0]['S_p10'][filter_name] = sed.calculateSeeingMomentRatio(bandpass, alpha=1.0)
+                out[0]['linear'][filter_name] = sed.calculateLinearMomentShift(bandpass,
+                                                                               beta_slope,
+                                                                               w_eff)
             except ValueError:
                 out[0]['S_p06'][filter_name] = np.nan
                 out[0]['S_p10'][filter_name] = np.nan
+                out[0]['linear'][filter_name] = np.nan
         else:
             # For LSST filters, compute shifts in the zenith-direction first and second moments of
             # the PSF due to differential chromatic refraction.  Store results for a zenith angle of
@@ -95,10 +103,14 @@ def compute_mags_moments(sed, filters):
                 out[0]['Rbar'][filter_name] = DCR_mom[0][1,0]
                 out[0]['V'][filter_name] = DCR_mom[1][1,1]
                 out[0]['S_m02'][filter_name] = sed.calculateSeeingMomentRatio(bandpass, alpha=-0.2)
+                out[0]['linear'][filter_name] = sed.calculateLinearMomentShift(bandpass,
+                                                                               beta_slope,
+                                                                               w_eff)
             except ValueError:
                 out[0]['Rbar'][filter_name] = np.nan
                 out[0]['V'][filter_name] = np.nan
                 out[0]['S_m02'][filter_name] = np.nan
+                out[0]['linear'][filter_name] = np.nan
     return out
 
 def construct_analytic_table():
@@ -137,7 +149,8 @@ def construct_analytic_table():
                                                          ('V', ugrizy),
                                                          ('S_m02', ugrizy),
                                                          ('S_p06', E),
-                                                         ('S_p10', E)])
+                                                         ('S_p10', E),
+                                                         ('linear', ugrizyE)])
     for i, star_type in enumerate(star_types):
         star_SED = chroma.SED(spec_dir + star_type + '.ascii')
         data = compute_mags_moments(star_SED, filters)
@@ -150,13 +163,14 @@ def construct_analytic_table():
 
     # now onto galaxies
     gal_data = np.recarray((len(gal_types)*100,), dtype = [('gal_type', 'a11'),
-                                                           ('redshift', np.float32),
+                                                           ('redshift', np.float),
                                                            ('mag', ugrizyE),
                                                            ('Rbar', ugrizy),
                                                            ('V', ugrizy),
                                                            ('S_m02', ugrizy),
                                                            ('S_p06', E),
-                                                           ('S_p10', E)])
+                                                           ('S_p10', E),
+                                                           ('linear', ugrizyE)])
     i=0
     with chroma.ProgressBar(100 * len(gal_types)) as bar:
         for gal_type in gal_types:

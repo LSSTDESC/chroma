@@ -22,7 +22,7 @@ import numpy as np
 import regressor
 
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
-        use_color=False, use_mag=False):
+        use_color=False, use_mag=False, regressor="SVR"):
 
     if predict_var is None:
         raise ValueError
@@ -93,14 +93,27 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
         test_X[:,5] = test_objs['magCalc']['LSST_i']
 
-    import sklearn.svm
-    learner = regressor.regress(sklearn.svm.SVR(C=100, gamma=0.1))
-    # import sklearn.ensemble
-    # learner = regressor.regress(sklearn.ensemble.RandomForestRegressor(50))
-    learner.add_training_data(train_X, train_Y)
-    learner.train()
-    predict_Y = learner.predict(test_X)
+    from sklearn.preprocessing import StandardScaler
 
+    Y_scaler = StandardScaler().fit(train_Y)
+    X_scaler = StandardScaler().fit(train_X)
+
+    scaled_train_Y = Y_scaler.transform(train_Y)
+    scaled_train_X = X_scaler.transform(train_X)
+    scaled_test_X = X_scaler.transform(test_X)
+
+    if regressor == 'SVR':
+        from sklearn.svm import SVR
+        learner = SVR(C=100, gamma=0.1)
+    elif regressor == 'RandomForest':
+        from sklearn.ensemble import RandomForestRegressor
+        learner = RandomForestRegressor(200)
+    elif regressor == 'ExtraTrees':
+        from sklearn.ensemble import ExtraTreesRegressor
+        learner = ExtraTreesRegressor(200)
+
+    learner.fit(scaled_train_X, scaled_train_Y)
+    predict_Y = Y_scaler.inverse_transform(learner.predict(scaled_test_X))
     return predict_Y
 
 def gal_ML(train_objs, test_objs, **kwargs):
@@ -123,43 +136,43 @@ def gal_ML(train_objs, test_objs, **kwargs):
     good = good & np.isnan(test_objs.magNormAGN)
     test_objs = test_objs[good]
 
-    ugrizy = [('LSST_u', np.float32),
-              ('LSST_g', np.float32),
-              ('LSST_r', np.float32),
-              ('LSST_i', np.float32),
-              ('LSST_z', np.float32),
-              ('LSST_y', np.float32)]
-    ugrizyE = [('LSST_u', np.float32),
-               ('LSST_g', np.float32),
-               ('LSST_r', np.float32),
-               ('LSST_i', np.float32),
-               ('LSST_z', np.float32),
-               ('LSST_y', np.float32),
-               ('Euclid_150', np.float32),
-               ('Euclid_250', np.float32),
-               ('Euclid_350', np.float32),
-               ('Euclid_450', np.float32)]
-    E = [('Euclid_150', np.float32),
-         ('Euclid_250', np.float32),
-         ('Euclid_350', np.float32),
-         ('Euclid_450', np.float32)]
+    ugrizy = [('LSST_u', np.float),
+              ('LSST_g', np.float),
+              ('LSST_r', np.float),
+              ('LSST_i', np.float),
+              ('LSST_z', np.float),
+              ('LSST_y', np.float)]
+    ugrizyE = [('LSST_u', np.float),
+               ('LSST_g', np.float),
+               ('LSST_r', np.float),
+               ('LSST_i', np.float),
+               ('LSST_z', np.float),
+               ('LSST_y', np.float),
+               ('Euclid_150', np.float),
+               ('Euclid_250', np.float),
+               ('Euclid_350', np.float),
+               ('Euclid_450', np.float)]
+    E = [('Euclid_150', np.float),
+         ('Euclid_250', np.float),
+         ('Euclid_350', np.float),
+         ('Euclid_450', np.float)]
 
     data = np.recarray((len(test_objs),),
                           dtype = [('galTileID', np.uint64),
                                    ('objectID', np.uint64),
-                                   ('raJ2000', np.float64),
-                                   ('decJ2000', np.float64),
-                                   ('redshift', np.float32),
+                                   ('raJ2000', np.float),
+                                   ('decJ2000', np.float),
+                                   ('redshift', np.float),
                                    ('sedPathBulge', np.str_, 64),
                                    ('sedPathDisk', np.str_, 64),
                                    ('sedPathAGN', np.str_, 64),
-                                   ('magNormBulge', np.float32),
-                                   ('magNormDisk', np.float32),
-                                   ('magNormAGN', np.float32),
-                                   ('internalAVBulge', np.float32),
-                                   ('internalRVBulge', np.float32),
-                                   ('internalAVDisk', np.float32),
-                                   ('internalRVDisk', np.float32),
+                                   ('magNormBulge', np.float),
+                                   ('magNormDisk', np.float),
+                                   ('magNormAGN', np.float),
+                                   ('internalAVBulge', np.float),
+                                   ('internalRVBulge', np.float),
+                                   ('internalAVDisk', np.float),
+                                   ('internalRVDisk', np.float),
                                    ('mag', ugrizy),
                                    ('magCalc', ugrizyE),
                                    ('Rbar', ugrizy),
@@ -172,7 +185,7 @@ def gal_ML(train_objs, test_objs, **kwargs):
                                    ('photo_S_m02', ugrizy),
                                    ('photo_S_p06', E),
                                    ('photo_S_p10', E),
-                                   ('photo_redshift', np.float32)])
+                                   ('photo_redshift', np.float)])
     copy_fields = ['galTileID', 'objectID', 'raJ2000', 'decJ2000', 'redshift',
                    'sedPathBulge', 'sedPathDisk', 'sedPathAGN', 'magNormBulge',
                    'magNormDisk', 'magNormAGN', 'internalAVBulge', 'internalAVDisk',
@@ -247,7 +260,7 @@ if __name__ == '__main__':
                         help='number of objects on which to train ML (Default: 16000)')
     parser.add_argument('--teststart', type=int, default=16000,
                         help='object index at which to start training (Default: 16000)')
-    parser.add_argument('--ntest', type=int, default=4000,
+    parser.add_argument('--ntest', type=int, default=8000,
                         help='number of objects on which to test ML (Default: 4000)')
     parser.add_argument('--use_color', action='store_true',
                         help="use only colors as features (Default: colors + 1 magnitude)")
@@ -255,8 +268,21 @@ if __name__ == '__main__':
                         help="use only magnitudes as features (Default: colors + 1 magnitude)")
     parser.add_argument('--no_err', action='store_true',
                         help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
+    regressor = parser.add_mutually_exclusive_group()
+    regressor.add_argument("--RandomForest", action="store_true",
+                           help="Use random forest regressor (Default: SVR)")
+    regressor.add_argument("--ExtraTrees", action="store_true",
+                           help="Use extra trees regressor (Default: SVR)")
     args = parser.parse_args()
 
+    if args.RandomForest:
+        regressor = 'RandomForest'
+    elif args.ExtraTrees:
+        regressor = 'ExtraTrees'
+    else:
+        regressor = 'SVR'
+
+    print "loading data"
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))
 
@@ -269,5 +295,6 @@ if __name__ == '__main__':
     out = gal_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                  test_objs[args.teststart:args.teststart+args.ntest],
                  use_color=args.use_color,
-                 use_mag=args.use_mag)
+                 use_mag=args.use_mag,
+                 regressor=regressor)
     cPickle.dump(out, open(args.outfile, 'wb'))

@@ -477,6 +477,30 @@ class SED(object):
             return quad(lambda w: weight(w) * kernel(w),
                         bandpass.blue_limit, bandpass.red_limit) / flux
 
+    def calculateLinearMomentShift(self, bandpass, slope, base_wavelength=500):
+        """ Calculates the integral:
+        \int{F(w) S(w) w (w - base_wavelength)*slope dw} / \int{F(w) S(w) w dw}
+
+        @param bandpass         Bandpass through which object is being imaged.
+        @param slope            dIxx/dw and -dIyy/dw in square-radians per nanometer
+        @param base_wavelength  Reference wavelength in nm from which to change PSF moment
+
+        @returns the above integral
+        """
+        flux = self.calculateFlux(bandpass)
+        if len(bandpass.wave_list) > 0:
+            x = np.union1d(bandpass.wave_list, self.wave_list)
+            x = x[(x <= bandpass.red_limit) & (x >= bandpass.blue_limit)]
+            R = (x - base_wavelength) * slope
+            photons = self(x)
+            throughput = bandpass(x)
+            return np.trapz(throughput * photons * R, x) / flux
+        else:
+            weight = lambda w: bandpass(w) * self(w)
+            kernel = lambda w: (w - base_wavelength)*slope
+            return 1./flux * quad(lambda w: weight(w) * kernel(w),
+                                  bandpass.blue_limit, bandpass.red_limit)
+
     def redden(self, A_v, R_v=3.1):
         """ Return a new SED with the specified extinction applied.  Note that this will
         truncate the wavelength range to lie between 91 nm and 6000 nm where the extinction

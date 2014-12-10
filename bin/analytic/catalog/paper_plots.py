@@ -9,7 +9,7 @@ for band in bands:
     for typ in types:
         for corr in corrs:
             cmd = "python plot_bias.py"
-            cmd += " --starfile output/star_data_dkerr.pkl"
+            cmd += " --galfile output/corrected_galaxy_data.pkl"
             cmd += ' '+typ
             cmd += " --band LSST_{}".format(band)
             cmd += ' '+corr[0]

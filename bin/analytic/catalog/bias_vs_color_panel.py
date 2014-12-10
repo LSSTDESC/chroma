@@ -81,6 +81,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[1]]*2, color='#777777')
+    ax.axhline(-mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
     # Corrected RbarSqr
     stardata = (stars['Rbar'][band] - stars['photo_Rbar'][band]) * 180/np.pi * 3600
@@ -95,6 +99,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [0.0]*2, [mean_DeltaRbarSqr_req[1]]*2, color='#777777')
+    ax.axhline(-mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
     # V
     ylabel = r"$\Delta \mathrm{V}}$ (arcsec$^2$)"
@@ -111,6 +119,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [-mean_DeltaV_req[0]]*2, [mean_DeltaV_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [-mean_DeltaV_req[1]]*2, [mean_DeltaV_req[1]]*2, color='#777777')
+    ax.axhline(-mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
     ax.annotate("LSST requirement",
                 xy=(-0.35, -mean_DeltaV_req[1]),
                 xytext=(-0.25, -mean_DeltaV_req[1]-0.0003),
@@ -132,6 +144,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [-mean_DeltaV_req[0]]*2, [mean_DeltaV_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [-mean_DeltaV_req[1]]*2, [mean_DeltaV_req[1]]*2, color='#777777')
+    ax.axhline(-mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
     ax.annotate("LSST requirement",
                 xy=(-0.35, -mean_DeltaV_req[1]),
                 xytext=(-0.25, -mean_DeltaV_req[1]-0.0005),
@@ -158,6 +174,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [-mean_dS_m02_req[0]]*2, [mean_dS_m02_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [-mean_dS_m02_req[1]]*2, [mean_dS_m02_req[1]]*2, color='#777777')
+    ax.axhline(-mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
     ax.annotate("LSST requirement",
                 xy=(-0.35, -mean_dS_m02_req[1]),
                 xytext=(-0.25, -mean_dS_m02_req[1]-0.003),
@@ -180,6 +200,10 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB')
     ax.fill_between(xlim, [-mean_dS_m02_req[0]]*2, [mean_dS_m02_req[0]]*2, color='#999999')
     ax.fill_between(xlim, [-mean_dS_m02_req[1]]*2, [mean_dS_m02_req[1]]*2, color='#777777')
+    ax.axhline(-mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(-mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+    ax.axhline(mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+    ax.axhline(mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
     ax.annotate("LSST requirement",
                 xy=(-0.35, -mean_dS_m02_req[1]),
                 xytext=(-0.25, -mean_dS_m02_req[1]-0.003),

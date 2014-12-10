@@ -24,12 +24,18 @@ r2sqr_gal = np.r_[0.4, 0.3]**2
 r2sqr_PSF = np.r_[0.8, 0.7]**2
 
 mean_m_req = np.r_[0.008, 0.003]
+# C variance sufficient
+var_c_sufficient = 1.8e-7 * np.r_[(5000/18000.)**(-0.5) * (12./30)**(-0.5) * (0.68/0.82)**(-0.6), 1.0]
 
 mean_DeltaRbarSqr_req = mean_m_req / 2.0
+var_DeltaRbarSqr_sufficient = var_c_sufficient / 1.0**2
 
 mean_DeltaV_req = r2sqr_gal * mean_m_req
+var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2
 
 mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
+epsf = 0.05
+var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2
 
 m_Euclid = 0.001
 r2gal_Euclid = 0.23**2 # where did I get this from?
@@ -116,6 +122,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
     if bias == 'RbarSqr':
+        var_req = np.sqrt(var_DeltaRbarSqr_sufficient)
         ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaRbarSqr_req[0]]*2,
@@ -125,6 +132,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_DeltaRbarSqr_req[1]]*2,
                         [mean_DeltaRbarSqr_req[1]]*2,
                         color='#777777', zorder=2)
+        ax.axhline(-mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(-mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
         stardata = stars['Rbar'][band] * 180/np.pi * 3600
@@ -149,6 +160,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
             ylabel = r"$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)"
     elif bias == 'LnRbarSqr':
+        var_req = np.sqrt(var_DeltaRbarSqr_sufficient)
         ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [1.e-7]*2,
@@ -158,6 +170,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [1.e-7]*2,
                         [mean_DeltaRbarSqr_req[1]]*2,
                         color='#777777', zorder=2)
+        ax.axhline(-mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(-mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaRbarSqr_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaRbarSqr_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
         ax.set_yscale('log')
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
@@ -195,6 +211,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     arrowprops=arrowdict,
                     zorder=10)
     elif bias == 'V':
+        var_req = np.sqrt(var_DeltaV_sufficient)
         ylabel = "$\Delta \mathrm{V}}$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaV_req[0]]*2,
@@ -204,6 +221,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_DeltaV_req[1]]*2,
                         [mean_DeltaV_req[1]]*2,
                         color='#777777', zorder=2)
+        ax.axhline(-mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(-mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaV_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(mean_DeltaV_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -241,6 +262,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         arrowprops=arrowdict,
                         zorder=10)
     elif bias == 'S_m02':
+        var_req = np.sqrt(var_dS_m02_sufficient)
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_m02_req[0]]*2,
@@ -250,6 +272,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         [-mean_dS_m02_req[1]]*2,
                         [mean_dS_m02_req[1]]*2,
                         color='#777777', zorder=2)
+        ax.axhline(-mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(-mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
+        ax.axhline(mean_dS_m02_req[0], c='k', alpha=0.1, zorder=10, lw=0.5)
+        ax.axhline(mean_dS_m02_req[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
         # get *uncorrected* bias measurements in order to set ylimits, even if
         # corrected measurements are requested for plot.
@@ -326,7 +352,11 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     c = gals['magCalc'][cbands[0]] - gals['magCalc'][cbands[1]]
     clim = set_range(c)
     clim[1] += 0.1 * (clim[1]-clim[0])
-    im = ax.scatter(gals.redshift, galdata, c=c, vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
+    rand_order = np.random.shuffle(np.arange(len(gals)))
+    im = ax.scatter(gals.redshift[rand_order],
+                    galdata[rand_order],
+                    c=c[rand_order],
+                    vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
     ax.set_xlabel("redshift", fontsize=fontsize)
 
     # running mean and variance:
@@ -410,6 +440,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # var_ax.set_ylim(var_ylim)
     var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
                         color='#BBBBBB', zorder=1)
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
+                        color='#999999')
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
+                        color='#777777')
 
     f.savefig(outfile, dpi=220)
 

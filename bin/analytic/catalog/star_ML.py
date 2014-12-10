@@ -93,15 +93,22 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
         test_X[:,5] = test_objs['magCalc']['LSST_i']
 
-    import sklearn.svm
-    learner = regressor.regress(sklearn.svm.SVR(C=100, gamma=0.1))
-    # import sklearn.ensemble
-    # learner = regressor.regress(sklearn.ensemble.RandomForestRegressor(50))
-    learner.add_training_data(train_X, train_Y)
-    learner.train()
-    predict_Y = learner.predict(test_X)
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.svm import SVR
 
+    Y_scaler = StandardScaler().fit(train_Y)
+    X_scaler = StandardScaler().fit(train_X)
+
+    scaled_train_Y = Y_scaler.transform(train_Y)
+    scaled_train_X = X_scaler.transform(train_X)
+    scaled_test_X = X_scaler.transform(test_X)
+
+    from sklearn.ensemble import RandomForestRegressor
+    learner = RandomForestRegressor(50).fit(scaled_train_X, scaled_train_Y)
+    # learner = SVR(C=100, gamma=0.1).fit(scaled_train_X, scaled_train_Y)
+    predict_Y = Y_scaler.inverse_transform(learner.predict(scaled_test_X))
     return predict_Y
+
 
 def star_ML(train_objs, test_objs, **kwargs):
     ugrizy = [('LSST_u', np.float32),
