@@ -112,7 +112,15 @@ clearperturbations
 clearclouds
 qevariation 0.0
 airglowvariation 0
+backalpha 0.0001
+backgamma 1.0
+contaminationmode 0
+diffractionmode 0
+lascatprob 0.0
+fieldanisotropy 0
+pixelerror 0
 centroidfile 1
+shuttererror 0
 ''')
     if not atm:
         f.write('''clearturbulence

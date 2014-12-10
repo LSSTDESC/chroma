@@ -151,12 +151,12 @@ y700 = values[w700]['fwhm']
 y = y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
-rwave, rthru = numpy.genfromtxt('../../data/filters/LSST_r.dat').T
+rwave, rthru = numpy.genfromtxt('../../../../data/filters/LSST_r.dat').T
 rthru /= rthru.max()
 rthru *= 0.3
 rthru += 2.8
 fwhm_ax.fill_between(rwave, rthru, color='blue', alpha=0.1)
-iwave, ithru = numpy.genfromtxt('../../data/filters/LSST_i.dat').T
+iwave, ithru = numpy.genfromtxt('../../../../data/filters/LSST_i.dat').T
 ithru /= ithru.max()
 ithru *= 0.3
 ithru += 2.8
@@ -194,12 +194,12 @@ y700 = values[w700]['fwhm']
 y = y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
-rwave, rthru = numpy.genfromtxt('../../data/filters/LSST_r.dat').T
+rwave, rthru = numpy.genfromtxt('../../../../data/filters/LSST_r.dat').T
 rthru /= rthru.max()
 rthru *= 0.3
 rthru += 2.8
 fwhm_ax.fill_between(rwave, rthru, color='blue', alpha=0.1)
-iwave, ithru = numpy.genfromtxt('../../data/filters/LSST_i.dat').T
+iwave, ithru = numpy.genfromtxt('../../../../data/filters/LSST_i.dat').T
 ithru /= ithru.max()
 ithru *= 0.3
 ithru += 2.8
@@ -230,12 +230,12 @@ y700 = values[w700]['fwhm']
 y = y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
-rwave, rthru = numpy.genfromtxt('../../data/filters/LSST_r.dat').T
+rwave, rthru = numpy.genfromtxt('../../../../data/filters/LSST_r.dat').T
 rthru /= rthru.max()
 rthru *= 0.3
 rthru += 2.8
 fwhm_ax.fill_between(rwave, rthru, color='blue', alpha=0.1)
-iwave, ithru = numpy.genfromtxt('../../data/filters/LSST_i.dat').T
+iwave, ithru = numpy.genfromtxt('../../../../data/filters/LSST_i.dat').T
 ithru /= ithru.max()
 ithru *= 0.3
 ithru += 2.8
@@ -279,12 +279,12 @@ y700 = values[w700]['fwhm']
 y = y700 * (x/700.)**(-0.2)
 fwhm_ax.plot(x, y, color='k')
 # also plot filters in background
-rwave, rthru = numpy.genfromtxt('../../data/filters/LSST_r.dat').T
+rwave, rthru = numpy.genfromtxt('../../../../data/filters/LSST_r.dat').T
 rthru /= rthru.max()
 rthru *= 0.3
 rthru += 2.8
 fwhm_ax.fill_between(rwave, rthru, color='blue', alpha=0.1)
-iwave, ithru = numpy.genfromtxt('../../data/filters/LSST_i.dat').T
+iwave, ithru = numpy.genfromtxt('../../../../data/filters/LSST_i.dat').T
 ithru /= ithru.max()
 ithru *= 0.3
 ithru += 2.8
