@@ -8,45 +8,90 @@ import numpy as np
 import galsim
 
 # Some constants
-pixel_scale = 0.2 # arcsec
+# --------------
+#
 # LSST effective area in meters^2
-A = 6.4**2 * np.pi
+A = 319/9.6 # etendue / FoV.  I *think* this includes vignetting
+
 # zeropoints from DK notes in photons per second per pixel
 # should eventually compute these on the fly from filter throughput functions.
-s0 = A * np.r_[0.732, 2.124, 1.681, 1.249, 0.862, 0.452]
+s0 = {'u': A*0.732,
+      'g': A*2.124,
+      'r': A*1.681,
+      'i': A*1.249,
+      'z': A*0.862,
+      'Y': A*0.452}
 # Sky brightnesses in AB mag / arcsec^2.
 # stole these from http://www.lsst.org/files/docs/gee_137.28.pdf
-B = np.r_[22.8, 22.2, 21.3, 20.3, 19.1, 18.1]
+# should eventually construct a sky SED (varies with the moon phase) and integrate to get these
+B = {'u': 22.8,
+     'g': 22.2,
+     'r': 21.3,
+     'i': 20.3,
+     'z': 19.1,
+     'Y': 18.1}
 # number of visits
 # From http://www.lsst.org/files/docs/137.03_Pinto_Cadence_Design_8x10.pdf
-nvisits = np.r_[56, 80, 184, 184, 160, 160]
+fiducial_nvisits = {'u': 56,
+                    'g': 80,
+                    'r': 184,
+                    'i': 184,
+                    'z': 160,
+                    'Y': 160}
 # exposure time per visit
 visit_time = 30.0
 # Sky brightness per arcsec^2 per second
-sbar = s0 * 10**(-0.4*(B-24.0))
-banddict = {'u':0, 'g':1, 'r':2, 'i':3, 'z':4, 'y':5}
+sbar = {}
+for k in B.keys():
+    sbar[k] = s0[k] * 10**(-0.4*(B[k]-24.0))
+
+# And some random numbers for drawing
+bd = galsim.BaseDeviate(1)
 
 class ETC(object):
-    def __init__(self, profile, pixel_scale=0.2, stamp_size=15):
+    def __init__(self, band, pixel_scale=None, stamp_size=None, threshold=0.0,
+                 nvisits=None):
         self.pixel_scale = pixel_scale
         self.stamp_size = stamp_size
-        self.profile = profile
+        self.threshold = threshold
+        self.band = band
+        if nvisits is None:
+            self.exptime = fiducial_nvisits[band] * visit_time
+        else:
+            self.exptime = nvisits * visit_time
+        self.sky = sbar[band] * self.exptime * self.pixel_scale**2
+        self.sigma_sky = np.sqrt(self.sky)
+        self.s0 = s0[band]
 
-    def SNR(self, mag, band='r'):
+    def draw(self, profile, mag, noise=False):
         img = galsim.ImageD(self.stamp_size, self.stamp_size, scale=self.pixel_scale)
-        iband = banddict[band]
-        exptime = nvisits[iband] * visit_time
-        flux = s0[iband] * 10**(-0.4*(mag - 24.0)) * exptime
-        self.profile.setFlux(flux)
-        self.profile.drawImage(image=img)
-        imgsqr = img.array**2
+        flux = self.s0 * 10**(-0.4*(mag - 24.0)) * self.exptime
+        profile.setFlux(flux)
+        profile.drawImage(image=img)
+        if noise:
+            gd = galsim.GaussianNoise(bd, sigma=self.sigma_sky)
+            img.addNoise(gd)
+        return img
+
+    def SNR(self, profile, mag):
+        img = self.draw(profile, mag, noise=False)
+        mask = img.array > (self.threshold * self.sigma_sky)
+        imgsqr = img.array**2*mask
         signal = imgsqr.sum()
-        noise = np.sqrt((imgsqr * sbar[iband] * exptime * self.pixel_scale**2).sum())
+        noise = np.sqrt((imgsqr * self.sky).sum())
         return signal / noise
 
-    def err(self, mag, band='r'):
-        snr = self.SNR(mag, band)
+    def err(self, profile, mag):
+        snr = self.SNR(profile, mag)
         return 2.5 / np.log(10) / snr
+
+    def display(self, profile, mag, noise=True):
+        img = self.draw(profile, mag, noise)
+        import matplotlib.pyplot as plt
+        import matplotlib.cm as cm
+        plt.imshow(img.array, cmap=cm.Greens)
+        plt.colorbar()
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -65,21 +110,21 @@ if __name__ == '__main__':
                              help="Use Moffat PSF (Default Gaussian)")
     parser.add_argument("--PSF_beta", type=float, default=3.0,
                         help="Set beta parameter of Moffat profile PSF. (Default 2.5)")
-    parser.add_argument("--PSF_FWHM", type=float, default=0.7,
-                        help="Set FWHM of PSF in arcsec (Default 0.7).")
+    parser.add_argument("--PSF_FWHM", type=float, default=0.67,
+                        help="Set FWHM of PSF in arcsec (Default 0.67).")
     parser.add_argument("--PSF_phi", type=float, default=0.0,
                         help="Set position angle of PSF in degrees (Default 0.0).")
     parser.add_argument("--PSF_ellip", type=float, default=0.0,
                         help="Set ellipticity of PSF (Default 0.0)")
 
     # Galaxy structural arguments
-    parser.add_argument("-n", "--sersic_n", type=float, default=0.5,
-                        help="Sersic index (Default 0.5)")
+    parser.add_argument("-n", "--sersic_n", type=float, default=1.0,
+                        help="Sersic index (Default 1.0)")
     parser.add_argument("--gal_ellip", type=float, default=0.3,
                         help="Set ellipticity of galaxy (Default 0.3)")
     parser.add_argument("--gal_phi", type=float, default=0.0,
                         help="Set position angle of galaxy in radians (Default 0.0)")
-    parser.add_argument("--gal_HLR", type=float, default=0.5,
+    parser.add_argument("--gal_HLR", type=float, default=0.2,
                         help="Set galaxy half-light-radius. (default 0.5 arcsec)")
 
     # Simulation input arguments
@@ -91,6 +136,16 @@ if __name__ == '__main__':
     # Magnitude!
     parser.add_argument("--mag", type=float, default=25.3,
                         help="magnitude of galaxy")
+    # threshold
+    parser.add_argument("--threshold", type=float, default=0.0,
+                        help="Threshold, in sigma-sky units, above which to include pixels")
+
+    # Observation characteristics
+    parser.add_argument("--nvisits", type=int, default=None)
+
+    # draw the image!
+    parser.add_argument("--display", action='store_true',
+                        help="Display image used to compute SNR.")
 
     args = parser.parse_args()
 
@@ -107,8 +162,19 @@ if __name__ == '__main__':
 
     profile = galsim.Convolve(psf, gal)
 
-    etc = ETC(profile, pixel_scale=args.pixel_scale, stamp_size=args.stamp_size)
+    etc = ETC(args.band, pixel_scale=args.pixel_scale, stamp_size=args.stamp_size,
+              threshold=args.threshold, nvisits=args.nvisits)
 
-    print "input magnitude: {}".format(args.mag)
-    print "output SNR: {}".format(etc.SNR(args.mag, args.band))
-    print "output mag err: {}".format(etc.err(args.mag, args.band))
+    print
+    print "input"
+    print "------"
+    print "band: {}".format(args.band)
+    print "magnitude: {}".format(args.mag)
+    print
+    print "output"
+    print "------"
+    print "SNR: {}".format(etc.SNR(profile, args.mag))
+    print "mag err: {}".format(etc.err(profile, args.mag))
+
+    if args.display:
+        etc.display(profile, args.mag)
