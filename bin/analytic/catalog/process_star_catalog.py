@@ -31,7 +31,7 @@ import chroma.lsstetc
 
 # Exposure Time Calculator for magnitude error estimates
 psf = galsim.Kolmogorov(fwhm = 0.67)
-etc = chroma.lsstetc.ETC(psf)
+etc = {f:chroma.lsstetc.ETC(f) for f in 'ugrizy'}
 
 datadir = '../../../data/'
 
@@ -156,8 +156,8 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                         data[i-1]['Rbar']['LSST_'+f] = dcr[0][1,0]
                         data[i-1]['V']['LSST_'+f] = dcr[1][1,1]
                         data[i-1]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
-                        data[i-1]['magErr']['LSST_'+f] = etc.err(data[i-1]['magCalc']['LSST_'+f],
-                                                                 band=f)
+                        data[i-1]['magErr']['LSST_'+f] = etc[f].err(psf,
+                                                                    data[i-1]['magCalc']['LSST_'+f])
                     except:
                         pass
                 # separate loop for Euclid filters
@@ -174,6 +174,9 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                     print
                     print 'syn mag:' + ' '.join(['{:6.3f}'.format(
                         data[i-1]['magCalc']['LSST_'+fname])
+                        for fname in 'ugrizy'])
+                    print 'syn err:' + ' '.join(['{:6.3f}'.format(
+                        data[i-1]['magErr']['LSST_'+fname])
                         for fname in 'ugrizy'])
                     print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[i-1]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])

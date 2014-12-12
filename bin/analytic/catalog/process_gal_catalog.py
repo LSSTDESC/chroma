@@ -247,9 +247,9 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                             data[j]['BulgeFrac']['LSST_'+f] = bulge_flux / disk_flux
                             gal = bulge*bulge_flux + disk*disk_flux
                         profile = galsim.Convolve(psf, gal)
-                        etc = chroma.lsstetc.ETC(profile)
-                        data[j]['magErr']['LSST_'+f] = etc.err(data[j]['magCalc']['LSST_'+f],
-                                                               band=f)
+                        etc = chroma.lsstetc.ETC(f)
+                        data[j]['magErr']['LSST_'+f] = etc.err(profile,
+                                                               data[j]['magCalc']['LSST_'+f])
                     except:
                         pass
                 # separate loop for Euclid filters
@@ -265,6 +265,8 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
                 if debug:
                     print
                     print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+fname])
+                                                 for fname in 'ugrizy'])
+                    print 'syn err:' + ' '.join(['{:6.3f}'.format(data[j]['magErr']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
                     print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])

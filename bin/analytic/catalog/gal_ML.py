@@ -19,8 +19,6 @@ from argparse import ArgumentParser
 
 import numpy as np
 
-import regressor
-
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         use_color=False, use_mag=False, regressor="SVR"):
 

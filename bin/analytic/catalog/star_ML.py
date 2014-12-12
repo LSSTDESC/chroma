@@ -19,10 +19,8 @@ from argparse import ArgumentParser
 
 import numpy as np
 
-import regressor
-
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
-        use_color=False, use_mag=False):
+        use_color=False, use_mag=False, regressor="SVR"):
 
     if predict_var is None:
         raise ValueError
@@ -94,7 +92,6 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         test_X[:,5] = test_objs['magCalc']['LSST_i']
 
     from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVR
 
     Y_scaler = StandardScaler().fit(train_Y)
     X_scaler = StandardScaler().fit(train_X)
@@ -103,9 +100,17 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
     scaled_train_X = X_scaler.transform(train_X)
     scaled_test_X = X_scaler.transform(test_X)
 
-    from sklearn.ensemble import RandomForestRegressor
-    learner = RandomForestRegressor(50).fit(scaled_train_X, scaled_train_Y)
-    # learner = SVR(C=100, gamma=0.1).fit(scaled_train_X, scaled_train_Y)
+    if regressor == 'SVR':
+        from sklearn.svm import SVR
+        learner = SVR(C=100, gamma=0.1)
+    elif regressor == 'RandomForest':
+        from sklearn.ensemble import RandomForestRegressor
+        learner = RandomForestRegressor(200)
+    elif regressor == 'ExtraTrees':
+        from sklearn.ensemble import ExtraTreesRegressor
+        learner = ExtraTreesRegressor(200)
+
+    learner.fit(scaled_train_X, scaled_train_Y)
     predict_Y = Y_scaler.inverse_transform(learner.predict(scaled_test_X))
     return predict_Y
 
@@ -223,7 +228,19 @@ if __name__ == '__main__':
                         help="use only magnitudes as features (Default: colors + 1 magnitude)")
     parser.add_argument('--no_err', action='store_true',
                         help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
+    regressor = parser.add_mutually_exclusive_group()
+    regressor.add_argument("--RandomForest", action="store_true",
+                           help="Use random forest regressor (Default: SVR)")
+    regressor.add_argument("--ExtraTrees", action="store_true",
+                           help="Use extra trees regressor (Default: SVR)")
     args = parser.parse_args()
+
+    if args.RandomForest:
+        regressor = 'RandomForest'
+    elif args.ExtraTrees:
+        regressor = 'ExtraTrees'
+    else:
+        regressor = 'SVR'
 
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))

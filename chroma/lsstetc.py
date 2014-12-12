@@ -20,7 +20,7 @@ s0 = {'u': A*0.732,
       'r': A*1.681,
       'i': A*1.249,
       'z': A*0.862,
-      'Y': A*0.452}
+      'y': A*0.452}
 # Sky brightnesses in AB mag / arcsec^2.
 # stole these from http://www.lsst.org/files/docs/gee_137.28.pdf
 # should eventually construct a sky SED (varies with the moon phase) and integrate to get these
@@ -29,7 +29,7 @@ B = {'u': 22.8,
      'r': 21.3,
      'i': 20.3,
      'z': 19.1,
-     'Y': 18.1}
+     'y': 18.1}
 # number of visits
 # From http://www.lsst.org/files/docs/137.03_Pinto_Cadence_Design_8x10.pdf
 fiducial_nvisits = {'u': 56,
@@ -37,19 +37,17 @@ fiducial_nvisits = {'u': 56,
                     'r': 184,
                     'i': 184,
                     'z': 160,
-                    'Y': 160}
+                    'y': 160}
 # exposure time per visit
 visit_time = 30.0
 # Sky brightness per arcsec^2 per second
-sbar = {}
-for k in B.keys():
-    sbar[k] = s0[k] * 10**(-0.4*(B[k]-24.0))
+sbar = {k:s0[k] * 10**(-0.4*(B[k]-24.0)) for k in B.keys()}
 
 # And some random numbers for drawing
 bd = galsim.BaseDeviate(1)
 
 class ETC(object):
-    def __init__(self, band, pixel_scale=None, stamp_size=None, threshold=0.0,
+    def __init__(self, band, pixel_scale=0.2, stamp_size=31, threshold=0.0,
                  nvisits=None):
         self.pixel_scale = pixel_scale
         self.stamp_size = stamp_size
