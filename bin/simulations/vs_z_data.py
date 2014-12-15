@@ -7,9 +7,9 @@ def vs_z_data(args):
     correction_modes = [("", "noCorr"),             # no correction
                         ("--perturb", "Perturb")]   # perturbative correction
 
-    size_modes = [("--PSF_r2 0.42 --gal_r2 0.40", "r2r2"),              # hold r2_psf and r2_gal fixed
-                  ("--PSF_FWHM 0.7 --gal_HLR 0.33", "FWHMHLR"),         # hold FWHM_psf and HLR_gal fixed
-                  ("--PSF_FWHM 0.7 --gal_convFWHM 1.006", "FWHMFWHM")]  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
+    size_modes = [("--PSF_r2 0.42 --gal_r2 0.30", "r2r2"),              # hold r2_psf and r2_gal fixed
+                  ("--PSF_FWHM 0.7 --gal_HLR 0.25", "FWHMHLR"),         # hold FWHM_psf and HLR_gal fixed
+                  ("--PSF_FWHM 0.7 --gal_convFWHM 0.898", "FWHMFWHM")]  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
 
     physics_modes = [("", "both"),            # don't turn anything off
                      ("--alpha 0.0", "DCR"),  # turn off chromatic seeing,

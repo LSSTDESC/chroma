@@ -44,7 +44,12 @@ Figures 5-10)
   Figures generated from CHROMA_DIR/bin/analytic/catalog/paper_plots.py
   Output to CHROMA_DIR/bin/analytic/catalog/output/d*pdf
 
-Figures 11-14, 16)
+Figure 11)
+  Requires processed CatSim catalog as above.
+  Run CHROMA_DIR/bin/analytic/catalog/bias_vs_color_panel.pdf
+  Output to CHROMA_DIR/bin/analytic/catalog/output/bias_vs_color_panel.pdf
+
+Figures 12-15, 17)
   Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
   Then create plots with CHROMA_DIR/bin/simulations/plot_vs_z.py
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_DCR_noCorr_r2r2.pdf
@@ -53,7 +58,7 @@ Figures 11-14, 16)
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_noCorr_FWHMHLR.pdf
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_Perturb_FWHMHLR.pdf
 
-Figure 15)
+Figure 16)
   First generate data. From CHROMA_DIR/bin/simulations/ run:
   $ python one_ring_test.py --redshift 0.6 --zenith_angle 60 --gal_r2 0.3 -n4 --moffat --maximum_fft_size 16384 --diagnostic output/d.fits
   Next make the plot.
