@@ -105,10 +105,17 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         learner = SVR(C=100, gamma=0.1)
     elif regressor == 'RandomForest':
         from sklearn.ensemble import RandomForestRegressor
-        learner = RandomForestRegressor(200)
+        learner = RandomForestRegressor(200, n_jobs=8)
     elif regressor == 'ExtraTrees':
         from sklearn.ensemble import ExtraTreesRegressor
-        learner = ExtraTreesRegressor(200)
+        learner = ExtraTreesRegressor(200, n_jobs=8)
+
+    # from sklearn import grid_search
+    # param_grid = {'n_estimators':[50, 100, 200],
+    #               'max_features':[2, 3, 4, 5],
+    #               'min_samples_split':[2, 3, 4]}
+    # learner = grid_search.GridSearchCV(learner, param_grid, cv=5, n_jobs=8)
+    # import ipdb; ipdb.set_trace()
 
     learner.fit(scaled_train_X, scaled_train_Y)
     predict_Y = Y_scaler.inverse_transform(learner.predict(scaled_test_X))
