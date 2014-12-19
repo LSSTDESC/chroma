@@ -273,6 +273,8 @@ if __name__ == '__main__':
                         help="use only magnitudes as features (Default: colors + 1 magnitude)")
     parser.add_argument('--no_err', action='store_true',
                         help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
+    parser.add_argument('--min_err', default=0.01, type=float,
+                        help="minimum photometric uncertainty in each band")
     regressor = parser.add_mutually_exclusive_group()
     regressor.add_argument("--RandomForest", action="store_true",
                            help="Use random forest regressor (Default: SVR)")
@@ -294,8 +296,8 @@ if __name__ == '__main__':
     if not args.no_err:
         shape = len(test_objs['magCalc']['LSST_u'])
         for i, band in enumerate('ugrizy'):
-            test_objs['magCalc']['LSST_'+band] += (np.random.randn(shape)
-                                                   * test_objs['magErr']['LSST_'+band])
+            magerr = np.maximum(test_objs['magErr']['LSST_'+band], args.min_err)
+            test_objs['magCalc']['LSST_'+band] += np.random.randn(shape) * magerr
 
     out = gal_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                  test_objs[args.teststart:args.teststart+args.ntest],
