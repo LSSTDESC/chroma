@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Specify the locations of three different plot elements.
 hist_axes_range = [0.17, 0.12, 0.09, 0.65]
 scatter_axes_range = [0.26, 0.12, 0.70, 0.65]
-mu2_axes_range = [0.26, 0.77, 0.70, 0.15]
+var_axes_range = [0.26, 0.77, 0.70, 0.15]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
 fontsize = 16
 
@@ -24,18 +24,18 @@ r2sqr_gal = np.r_[0.4, 0.3]**2
 r2sqr_PSF = np.r_[0.8, 0.7]**2
 
 mean_m_req = np.r_[0.008, 0.003]
-# mu2_c sufficient
-mu2_c_sufficient = np.r_[6.0e-7, 1.0e-7]
+# C variance sufficient
+var_c_sufficient = 1.8e-7 * np.r_[(5000/18000.)**(-0.5) * (12./30)**(-0.5) * (0.68/0.82)**(-0.6), 1.0]
 
 mean_DeltaRbarSqr_req = mean_m_req / 2.0
-mu2_DeltaRbarSqr_sufficient = mu2_c_sufficient / 1.0**2
+var_DeltaRbarSqr_sufficient = var_c_sufficient / 1.0**2
 
 mean_DeltaV_req = r2sqr_gal * mean_m_req
-mu2_DeltaV_sufficient = mu2_c_sufficient * 4 * r2sqr_gal**2
+var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2
 
 mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
 epsf = 0.05
-mu2_dS_m02_sufficient = mu2_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2
+var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2
 
 m_Euclid = 0.001
 r2gal_Euclid = 0.23**2 # where did I get this from?
@@ -118,11 +118,11 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     xlim = (0.0, 2.5)
     ax.set_xlim(xlim)
 
-    # create second moment axis so can draw requirement bars
-    mu2_ax = f.add_axes(mu2_axes_range)
+    # create variance axis so can draw requirement bars
+    var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
     if bias == 'RbarSqr':
-        mu2_req = np.sqrt(mu2_DeltaRbarSqr_sufficient)
+        var_req = np.sqrt(var_DeltaRbarSqr_sufficient)
         ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaRbarSqr_req[0]]*2,
@@ -160,7 +160,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             galdata = 2 * (gals['Rbar'][band] * 180/np.pi * 3600 - norm) * galdata
             ylabel = r"$\delta(\left(\Delta \overline{\mathrm{R}}\right)^2)$ (arcsec$^2$)"
     elif bias == 'LnRbarSqr':
-        mu2_req = np.sqrt(mu2_DeltaRbarSqr_sufficient)
+        var_req = np.sqrt(var_DeltaRbarSqr_sufficient)
         ylabel = r"$\left(\Delta \overline{\mathrm{R}}\right)^2$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [1.e-7]*2,
@@ -211,7 +211,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     arrowprops=arrowdict,
                     zorder=10)
     elif bias == 'V':
-        mu2_req = np.sqrt(mu2_DeltaV_sufficient)
+        var_req = np.sqrt(var_DeltaV_sufficient)
         ylabel = "$\Delta \mathrm{V}}$ (arcsec$^2$)"
         ax.fill_between(xlim,
                         [-mean_DeltaV_req[0]]*2,
@@ -262,7 +262,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                         arrowprops=arrowdict,
                         zorder=10)
     elif bias == 'S_m02':
-        mu2_req = np.sqrt(mu2_dS_m02_sufficient)
+        var_req = np.sqrt(var_dS_m02_sufficient)
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_m02_req[0]]*2,
@@ -359,21 +359,22 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
     ax.set_xlabel("redshift", fontsize=fontsize)
 
-    # running mean and second moment:
+    # running mean and variance:
     nbins = int(len(galdata)**0.4)
     xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
-    means = []
-    sqrt_mu2s = []
-    unsqrt_mu2s = []
-    for i in range(nbins):
-        wgals = (gals.redshift > xbins[i]) & (gals.redshift < xbins[i+1])
-        means.append(np.mean(galdata[wgals]))
-        sqrt_mu2s.append(np.sqrt(np.mean(galdata[wgals]**2)))
-        if 'ungaldata' in locals():
-            unsqrt_mu2s.append(np.sqrt(np.mean(ungaldata[wgals]**2)))
-    mu2_ylim = [0, np.max(sqrt_mu2s)*1.2]
+    means = [np.mean(galdata[(gals.redshift > xbins[i])
+                             & (gals.redshift < xbins[i+1])])
+             for i in range(nbins)]
+    sqrt_vars = [np.sqrt(np.var(galdata[(gals.redshift > xbins[i])
+                                        & (gals.redshift < xbins[i+1])]))
+                 for i in range(nbins)]
+    var_ylim = [0, np.max(sqrt_vars)*1.2]
     if 'ungaldata' in locals():
-        mu2_ylim = [0, np.max(unsqrt_mu2s)*1.2]
+        unsqrt_vars = [np.sqrt(np.var(ungaldata[(gals.redshift > xbins[i])
+                                                & (gals.redshift < xbins[i+1])]))
+                       for i in range(nbins)]
+        var_ylim = [0, np.max(unsqrt_vars)*1.2]
+
 
     zs = 0.5*(xbins[1:] + xbins[:-1])
     ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
@@ -425,23 +426,23 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(fontsize)
 
-    # second moment axis
-    mu2_ax.set_xlim(ax.get_xlim())
-    mu2_ax.xaxis.set_ticklabels([])
-    mu2_ax.set_ylabel("$\sqrt{\mu_2}$")
-    mu2_ax.set_ylim(mu2_ylim)
-    mu2_ax.plot(zs, sqrt_mu2s, color='blue', linewidth=2)
+    # variance axis
+    var_ax.set_xlim(ax.get_xlim())
+    var_ax.xaxis.set_ticklabels([])
+    var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
+    var_ax.set_ylim(var_ylim)
+    var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
 
-    mu2_ax.locator_params(axis='y', nbins=4, prune='lower')
-    yticks = mu2_ax.get_yticks()
-    # mu2_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
-    mu2_ylim = [0, mu2_ax.get_ylim()[1]]
-    # mu2_ax.set_ylim(mu2_ylim)
-    mu2_ax.fill_between(mu2_ax.get_xlim(), [mu2_ylim[0]]*2, [mu2_ylim[1]]*2,
+    var_ax.locator_params(axis='y', nbins=4, prune='lower')
+    yticks = var_ax.get_yticks()
+    # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
+    var_ylim = [0, var_ax.get_ylim()[1]]
+    # var_ax.set_ylim(var_ylim)
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
                         color='#BBBBBB', zorder=1)
-    mu2_ax.fill_between(mu2_ax.get_xlim(), [mu2_ylim[0]]*2, [mu2_req[0]]*2,
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
                         color='#999999')
-    mu2_ax.fill_between(mu2_ax.get_xlim(), [mu2_ylim[0]]*2, [mu2_req[1]]*2,
+    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
                         color='#777777')
 
     f.savefig(outfile, dpi=220)
