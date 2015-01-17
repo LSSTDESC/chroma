@@ -430,9 +430,12 @@ def epoch_variance_bias_fields(cat):
     dxs = []
     dys = []
     dxys = []
-    ms = []
-    c1s = []
-    c2s = []
+    m_Rbar = []
+    c1_Rbar = []
+    c2_Rbar = []
+    m_V = []
+    c1_V = []
+    c2_V = []
     decs = []
     fields = np.unique(cat['fieldID'])
     rsquared_gal = 0.3**2
@@ -441,21 +444,29 @@ def epoch_variance_bias_fields(cat):
             bar.update()
             w = (cat['fieldID'] == field) & good
             if w.sum() < 100: continue
-            x0 = np.tan(cat[w]['z_a'])*np.sin(cat[w]["q"])
-            y0 = np.tan(cat[w]['z_a'])*np.cos(cat[w]["q"])
+            tanza = np.tan(cat[w]['z_a'])
+            sinq = np.sin(cat[w]["q"])
+            cosq = np.cos(cat[w]["q"])
+            sin2q = np.sin(cat[w]["q"]*2)
+            cos2q = np.cos(cat[w]["q"]*2)
+            x0 = tanza*sinq
+            y0 = tanza*cosq
             centroid = (np.mean(x0), np.mean(y0))
             dxs.append(np.mean((x0-centroid[0])**2))
             dys.append(np.mean((y0-centroid[1])**2))
             dxys.append(np.mean((x0-centroid[0])*(y0-centroid[1])))
-            ms.append((-dxs[-1]-dys[-1])/rsquared_gal)
-            c1s.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
-            c2s.append((dxys[-1])/rsquared_gal)
+            m_Rbar.append((-dxs[-1]-dys[-1])/rsquared_gal)
+            c1_Rbar.append((dxs[-1]-dys[-1])/(2.0*rsquared_gal))
+            c2_Rbar.append((dxys[-1])/rsquared_gal)
+            m_V.append(np.mean(-tanza**2 / rsquared_gal))
+            c1_V.append(np.mean(-tanza**2 * cos2q / 2 / rsquared_gal))
+            c2_V.append(np.mean(-tanza**2 * sin2q / 2 / rsquared_gal))
             decs.append(cat[w]['fieldDec'][0] * 180/np.pi)
     fig = plt.figure(figsize=(7,5))
     ax = fig.add_subplot(111)
-    ax.scatter(decs, ms, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
-    ax.scatter(decs, c1s, s=5, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$")
-    ax.scatter(decs, c2s, s=5, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, m_Rbar, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, c1_Rbar, s=5, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, c2_Rbar, s=5, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$")
     ax.plot(decs, [0]*len(decs), color='black')
     ax.legend(prop={'size':14})
     ax.set_xlabel('Declination (deg)', fontsize=14)
@@ -467,6 +478,21 @@ def epoch_variance_bias_fields(cat):
         os.mkdir('output')
     plt.savefig('output/misregistration_bias_fields.png', dpi=220)
     plt.savefig('output/misregistration_bias_fields.pdf')
+
+    fig = plt.figure(figsize=(7,5))
+    ax = fig.add_subplot(111)
+    ax.scatter(decs, m_V, s=5, color="red", label=r"$m / \Delta V_{45}$")
+    ax.scatter(decs, c1_V, s=5, color="blue", label=r"$c_+ / \Delta V_{45}$")
+    ax.scatter(decs, c2_V, s=5, color="green", label=r"$c_\times / \Delta V_{45}$")
+    ax.plot(decs, [0]*len(decs), color='black')
+    ax.legend(prop={'size':14})
+    ax.set_xlabel('Declination (deg)', fontsize=14)
+    ax.set_ylabel(r"Shear calibration bias / $\Delta V_{45}$ (arcsec$^{-2}$)", fontsize=14)
+    ax.set_ylim(-10, 10)
+    ax.set_xlim(-70, 10)
+    fig.tight_layout()
+    plt.savefig('output/DCR_V_bias_fields.png', dpi=220)
+    plt.savefig('output/DCR_V_bias_fields.pdf')
 
 def epoch_variance_field(cat, field):
     good = lensing_visits(cat)
