@@ -31,17 +31,46 @@ mean_DeltaRbarSqr_req = mean_m_req / 2.0
 var_DeltaRbarSqr_sufficient = var_c_sufficient / 1.0**2
 
 mean_DeltaV_req = r2sqr_gal * mean_m_req
-var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2
+var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2 * 0.5
+# last factor of 0.5 needed to account for possible rotation of DeltaV from being purely real.
+# see appendix of Meyers+Burchat15.
 
 mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
 epsf = 0.05
-var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2
+var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2 * 0.5
+# last factor of 0.5 needed to account for possible rotation of DeltaV from being purely real.
+# see appendix of Meyers+Burchat15.
 
 m_Euclid = 0.001
 r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
 mean_dS_p06_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
 mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
+
+print
+print
+print "DES reqs"
+print "<m>: {}".format(mean_m_req[0])
+print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[0])
+print "<dV>: {}".format(mean_DeltaV_req[0])
+print "<dS>: {}".format(mean_dS_m02_req[0])
+print "var(c): {}".format(var_c_sufficient[0])
+print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[0])
+print "var(dV): {}".format(var_DeltaV_sufficient[0])
+print "var(dS): {}".format(var_dS_m02_sufficient[0])
+print
+print "LSST reqs"
+print "<m>: {}".format(mean_m_req[1])
+print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[1])
+print "<dV>: {}".format(mean_DeltaV_req[1])
+print "<dS>: {}".format(mean_dS_m02_req[1])
+print "var(c): {}".format(var_c_sufficient[1])
+print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[1])
+print "var(dV): {}".format(var_DeltaV_sufficient[1])
+print "var(dS): {}".format(var_dS_m02_sufficient[1])
+print
+
+
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
                    histtype=None, log=False, **kwargs):
@@ -374,7 +403,6 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                                                 & (gals.redshift < xbins[i+1])]))
                        for i in range(nbins)]
         var_ylim = [0, np.max(unsqrt_vars)*1.2]
-
 
     zs = 0.5*(xbins[1:] + xbins[:-1])
     ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
