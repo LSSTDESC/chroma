@@ -9,11 +9,13 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib import ticker
 
 band = 'LSST_r'
 band_dict = {'LSST_r':"r",
              'LSST_i':"i"}
-fontsize=12
+fontsize=10
 
 # Some annotation arrow properties
 arrowdict = dict(facecolor='black', shrink=0.1, width=1.5, headwidth=4, frac=0.2)
@@ -23,17 +25,22 @@ r2sqr_gal = np.r_[0.4, 0.3]**2
 r2sqr_PSF = np.r_[0.8, 0.7]**2
 
 mean_m_req = np.r_[0.008, 0.003]
-var_c_sufficient = np.r_[6.0e-7, 1.0e-7]
+var_c_sufficient = 1.8e-7 * np.r_[(5000/18000.)**(-0.5) * (12./30)**(-0.5) * (0.68/0.82)**(-0.6),
+                                  1.0]
 
 mean_DeltaRbarSqr_req = mean_m_req / 2.0
 var_DeltaRbarSqr_sufficient = var_c_sufficient / 1.0**2
 
 mean_DeltaV_req = r2sqr_gal * mean_m_req
-var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2
+var_DeltaV_sufficient = var_c_sufficient * 4 * r2sqr_gal**2 * 0.5
+# last factor of 0.5 needed to account for possible rotation of DeltaV from being purely real.
+# see appendix of Meyers+Burchat15.
 
 mean_dS_m02_req = mean_m_req * r2sqr_gal / r2sqr_PSF
 epsf = 0.05
-var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2
+var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)**2 * 0.5
+# last factor of 0.5 needed to account for possible rotation of DeltaV from being purely real.
+# see appendix of Meyers+Burchat15.
 
 std_DeltaRbarSqr_sufficient = np.sqrt(var_DeltaRbarSqr_sufficient)
 std_DeltaV_sufficient = np.sqrt(var_DeltaV_sufficient)
@@ -49,7 +56,7 @@ def set_range(x):
     span = high-low
     return [low - 0.3*span, high + 0.3*span]
 
-def plot_panel(ax, xdata, ydata, cdata,
+def plot_panel(ax, cbar_ax, xdata, ydata, cdata,
                xlabel, ylabel,
                xlim, ylim, clim,
                text, **kwargs):
@@ -66,22 +73,34 @@ def plot_panel(ax, xdata, ydata, cdata,
 
     ax.plot([-1e8,1e8], [-1e8,1e8], c='k')
 
-    plt.setp( ax.xaxis.get_majorticklabels(), rotation=45 )
-    plt.setp( ax.yaxis.get_majorticklabels(), rotation=45 )
+    plt.setp( ax.xaxis.get_majorticklabels(), rotation=45, fontsize=fontsize )
+    plt.setp( ax.yaxis.get_majorticklabels(), rotation=45, fontsize=fontsize )
 
-    ax.text(0.06, 0.88, text, transform=ax.transAxes)
+    ax.text(0.06, 0.88, text, transform=ax.transAxes, fontsize=fontsize)
 
     ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB', zorder=1)
+
+    cbar = plt.colorbar(im, cax=cbar_ax, orientation='horizontal')
+    cbar.locator = ticker.MaxNLocator(nbins=4)
+    cbar.update_ticks()
+    for label in cbar_ax.get_xticklabels():
+        label.set_fontsize(fontsize)
+    cbar_ax.set_xlabel("redshift", fontsize=fontsize)
+
     return im
 
 def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
-    f, axarr = plt.subplots(3, 2, figsize=(9, 11))
+    fig = plt.figure(figsize=(9,10))
+    outer_grid = gridspec.GridSpec(3, 2,
+                                   left=0.1, right=0.95,
+                                   top = 0.94, bottom=0.10,
+                                   wspace=0.35, hspace=0.5)
 
     if cbands is None:
         cdata = gals['redshift']
         clim = [0., 2.0]
     else:
-        cdata = gals['mag'][cbands[0]] - gals['mag'][cbands[1]]
+        cdata = gals['magCalc'][cbands[0]] - gals['magCalc'][cbands[1]]
 
     for col, band, band_text in zip([0,1], ['LSST_r','LSST_i'], ['r band','i band']):
         # RbarSqr
@@ -103,10 +122,18 @@ def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
         ylim = set_range(galdata)
         ylim[0] = 1.e-7
 
-        ax = axarr[0, col]
+        ax = plt.Subplot(fig, outer_grid[0, col])
+        fig.add_subplot(ax)
+        inner_grid = gridspec.GridSpecFromSubplotSpec(100, 100, subplot_spec=outer_grid[0, col],
+                                                      wspace=0.0, hspace=0.0)
+        cbar_ax = plt.Subplot(fig, inner_grid[75:80, 50:90])
+        fig.add_subplot(cbar_ax)
+
         ax.set_xscale('log')
         ax.set_yscale('log')
-        plot_panel(ax, galdata, cgaldata, cdata, xlabel, ylabel, xlim, ylim, clim, band_text, s=3)
+        plot_panel(ax, cbar_ax, galdata, cgaldata, cdata,
+                   xlabel, ylabel, xlim, ylim, clim, band_text, s=3)
+
         ax.fill_between(xlim, [0.0]*2, [std_DeltaRbarSqr_sufficient[0]]*2, color='#999999', zorder=1)
         ax.fill_between(xlim, [0.0]*2, [std_DeltaRbarSqr_sufficient[1]]*2, color='#777777', zorder=2)
         ax.fill_between([0.0, std_DeltaRbarSqr_sufficient[0]],
@@ -133,18 +160,25 @@ def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
         xlim = set_range(galdata)
         ylim = set_range(galdata)
 
-        ax = axarr[1, col]
-        plot_panel(ax, galdata, cgaldata, cdata, xlabel, ylabel, xlim, ylim, clim, band_text, s=3)
+        ax = plt.Subplot(fig, outer_grid[1, col])
+        fig.add_subplot(ax)
+        inner_grid = gridspec.GridSpecFromSubplotSpec(100, 100, subplot_spec=outer_grid[1, col],
+                                                      wspace=0.0, hspace=0.0)
+        cbar_ax = plt.Subplot(fig, inner_grid[75:80, 50:90])
+        fig.add_subplot(cbar_ax)
 
-        ax.fill_between(xlim, [-std_DeltaV_sufficient[0]]*2, [std_DeltaV_sufficient[0]]*2, color='#999999',
-                        zorder=1)
-        ax.fill_between(xlim, [-std_DeltaV_sufficient[1]]*2, [std_DeltaV_sufficient[1]]*2, color='#777777',
-                        zorder=2)
+        plot_panel(ax, cbar_ax, galdata, cgaldata, cdata,
+                   xlabel, ylabel, xlim, ylim, clim, band_text, s=3)
 
-        ax.fill_between([-std_DeltaV_sufficient[0], std_DeltaV_sufficient[0]], [ylim[0]]*2, [ylim[1]]*2,
+        ax.fill_between(xlim, [-std_DeltaV_sufficient[0]]*2, [std_DeltaV_sufficient[0]]*2,
                         color='#999999', zorder=1)
-        ax.fill_between([-std_DeltaV_sufficient[1], std_DeltaV_sufficient[1]], [ylim[0]]*2, [ylim[1]]*2,
+        ax.fill_between(xlim, [-std_DeltaV_sufficient[1]]*2, [std_DeltaV_sufficient[1]]*2,
                         color='#777777', zorder=2)
+
+        ax.fill_between([-std_DeltaV_sufficient[0], std_DeltaV_sufficient[0]],
+                        [ylim[0]]*2, [ylim[1]]*2, color='#999999', zorder=1)
+        ax.fill_between([-std_DeltaV_sufficient[1], std_DeltaV_sufficient[1]],
+                        [ylim[0]]*2, [ylim[1]]*2, color='#777777', zorder=2)
 
         ax.axhline(std_DeltaV_sufficient[0], c='k', alpha=0.1, zorder=10, lw=0.5)
         ax.axhline(std_DeltaV_sufficient[1], c='k', alpha=0.3, zorder=10, lw=0.5)
@@ -164,24 +198,31 @@ def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
         starmean = np.mean(stardata)
         galdata = (galdata - starmean)/starmean
 
-        cgaldata = (gals['S_m02'][band] - gals['photo_'+'S_m02'][band]) / gals['photo_'+'S_m02'][band]
+        cgaldata = ((gals['S_m02'][band] - gals['photo_'+'S_m02'][band])
+                    / gals['photo_'+'S_m02'][band])
 
         xlim = set_range(galdata)
         ylim = set_range(galdata)
 
-        ax = axarr[2, col]
-        im = plot_panel(ax, galdata, cgaldata, cdata,
+        ax = plt.Subplot(fig, outer_grid[2, col])
+        fig.add_subplot(ax)
+        inner_grid = gridspec.GridSpecFromSubplotSpec(100, 100, subplot_spec=outer_grid[2, col],
+                                                      wspace=0.0, hspace=0.0)
+        cbar_ax = plt.Subplot(fig, inner_grid[75:80, 50:90])
+        fig.add_subplot(cbar_ax)
+
+        im = plot_panel(ax, cbar_ax, galdata, cgaldata, cdata,
                         xlabel, ylabel, xlim, ylim, clim, band_text, s=3)
 
-        ax.fill_between(xlim, [-std_dS_m02_sufficient[0]]*2, [std_dS_m02_sufficient[0]]*2, color='#999999',
-                        zorder=1)
-        ax.fill_between(xlim, [-std_dS_m02_sufficient[1]]*2, [std_dS_m02_sufficient[1]]*2, color='#777777',
-                        zorder=2)
-
-        ax.fill_between([-std_dS_m02_sufficient[0], std_dS_m02_sufficient[0]], [ylim[0]]*2, [ylim[1]]*2,
+        ax.fill_between(xlim, [-std_dS_m02_sufficient[0]]*2, [std_dS_m02_sufficient[0]]*2,
                         color='#999999', zorder=1)
-        ax.fill_between([-std_dS_m02_sufficient[1], std_dS_m02_sufficient[1]], [ylim[0]]*2, [ylim[1]]*2,
+        ax.fill_between(xlim, [-std_dS_m02_sufficient[1]]*2, [std_dS_m02_sufficient[1]]*2,
                         color='#777777', zorder=2)
+
+        ax.fill_between([-std_dS_m02_sufficient[0], std_dS_m02_sufficient[0]],
+                        [ylim[0]]*2, [ylim[1]]*2, color='#999999', zorder=1)
+        ax.fill_between([-std_dS_m02_sufficient[1], std_dS_m02_sufficient[1]],
+                        [ylim[0]]*2, [ylim[1]]*2, color='#777777', zorder=2)
 
         ax.axhline(std_dS_m02_sufficient[0], c='k', alpha=0.1, zorder=10, lw=0.5)
         ax.axhline(std_dS_m02_sufficient[1], c='k', alpha=0.3, zorder=10, lw=0.5)
@@ -193,14 +234,7 @@ def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
         ax.axvline(-std_dS_m02_sufficient[0], c='k', alpha=0.1, zorder=10, lw=0.5)
         ax.axvline(-std_dS_m02_sufficient[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
-    # colorbar
-    # colorbar_axes_range = [0.86, 0.77, 0.017, 0.19]
-    # cbar_ax = f.add_axes(colorbar_axes_range)
-    # cbar = plt.colorbar(im, cax=cbar_ax)
-    # cbar_ax.set_ylabel("redshift", fontsize=fontsize)
-
-    f.tight_layout(pad=0.5)
-    f.savefig(outfile)
+    fig.savefig(outfile)
 
 
 if __name__ == '__main__':

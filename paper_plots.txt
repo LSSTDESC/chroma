@@ -46,8 +46,8 @@ Figures 5-10)
 
 Figure 11)
   Requires processed CatSim catalog as above.
-  Run CHROMA_DIR/bin/analytic/catalog/bias_vs_color_panel.pdf
-  Output to CHROMA_DIR/bin/analytic/catalog/output/bias_vs_color_panel.pdf
+  Run CHROMA_DIR/bin/analytic/catalog/bias_vs_corrected_panel.pdf
+  Output to CHROMA_DIR/bin/analytic/catalog/output/bias_vs_corrected_panel.pdf
 
 Figures 12-15, 17)
   Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
