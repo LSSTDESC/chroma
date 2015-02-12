@@ -341,12 +341,12 @@ def one_ring_test(args):
     logger.info("Shear Calibration Results")
     logger.info("-------------------------")
     logger.info(("        " + " {:>9s}"*4).format("m1","m2","c1","c2"))
-    logger.info(("analytic" + " {:9.4f}"*2 + " {:9.4f}"*2).format(m1, m2, c1, c2))
-    logger.info(("ring    " + " {:9.4f}"*2 + " {:9.4f}"*2).format(m[0], m[1], c[0], c[1]))
+    logger.info(("analytic" + " {:9.5f}"*2 + " {:9.5f}"*2).format(m1, m2, c1, c2))
+    logger.info(("ring    " + " {:9.5f}"*2 + " {:9.5f}"*2).format(m[0], m[1], c[0], c[1]))
     logger.info("")
     logger.info("Survey requirements")
-    logger.info(("DES     " + " {:9.4f}"*2 + " {:9.4f}"*2).format(0.008, 0.008, 0.0025, 0.0025))
-    logger.info(("LSST    " + " {:9.4f}"*2 + " {:9.4f}"*2).format(0.003, 0.003, 0.0015, 0.0015))
+    logger.info(("DES     " + " {:9.5f}"*2 + " {:9.5f}"*2).format(0.008, 0.008, 0.0025, 0.0025))
+    logger.info(("LSST    " + " {:9.5f}"*2 + " {:9.5f}"*2).format(0.003, 0.003, 0.0015, 0.0015))
 
 if __name__ == "__main__":
     parser = ArgumentParser()
