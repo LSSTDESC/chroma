@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.cm
 
 band = 'LSST_r'
 band_dict = {'LSST_r':"r",
@@ -42,8 +43,11 @@ def plot_panel(ax, galdata, colordata, cdata, cbands, ylabel, ylim):
 
     rorder = np.random.permutation(len(colordata))
 
+    cmap = matplotlib.cm.get_cmap('jet')
     im = ax.scatter(colordata[rorder], galdata[rorder], c=cdata[rorder],
-                    vmin=clim[0], vmax=clim[1], zorder=4, s=3)
+                    vmin=clim[0], vmax=clim[1], zorder=4, s=3, cmap=cmap)
+    im.set_rasterized(True)
+
 
     ax.set_xlabel(r"${} - {}$".format(band_dict[cbands[0]], band_dict[cbands[1]]),
                   fontsize=fontsize)
@@ -222,7 +226,7 @@ def bias_vs_color_panel(gals, stars, band, cbands, outfile):
     cbar_ax.set_ylabel("redshift", fontsize=fontsize)
 
     f.tight_layout()
-    f.savefig(outfile)
+    f.savefig(outfile, dpi=400)
 
 
 if __name__ == '__main__':

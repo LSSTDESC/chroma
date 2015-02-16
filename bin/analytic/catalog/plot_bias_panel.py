@@ -9,6 +9,8 @@ from argparse import ArgumentParser
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.cm
+cmap = matplotlib.cm.get_cmap('jet')
 
 fontsize = 8
 
@@ -248,7 +250,8 @@ def RbarSqr_panel(gals, stars, band, cbands, fig, grid, log=False, corrected=Fal
     setup_scatter_panel(scatter_ax, xlim, ylim, log=log)
     rand_order = np.random.shuffle(np.arange(len(gals.redshift)))
     im = scatter_ax.scatter(gals.redshift[rand_order], galdata[rand_order], c=c[rand_order],
-                            vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
+                            vmin=clim[0], vmax=clim[1], zorder=4, cmap=cmap, **kwargs)
+    im.set_rasterized(True)
 
     scatter_ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
     fill_requirements(xlim, mean_DeltaRbarSqr_req, scatter_ax)
@@ -359,7 +362,8 @@ def V_panel(gals, stars, band, cbands, fig, grid, corrected=False, **kwargs):
     setup_scatter_panel(scatter_ax, xlim, ylim)
     rand_order = np.random.shuffle(np.arange(len(gals.redshift)))
     im = scatter_ax.scatter(gals.redshift[rand_order], galdata[rand_order], c=c[rand_order],
-                            vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
+                            vmin=clim[0], vmax=clim[1], zorder=4, cmap=cmap, **kwargs)
+    im.set_rasterized(True)
 
     scatter_ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
     fill_requirements(xlim, mean_DeltaV_req, scatter_ax)
@@ -481,8 +485,9 @@ def S_m02_panel(gals, stars, band, cbands, fig, grid, corrected=False, **kwargs)
     setup_scatter_panel(scatter_ax, xlim, ylim)
     rand_order = np.random.shuffle(np.arange(len(gals.redshift)))
     im = scatter_ax.scatter(gals.redshift[rand_order], galdata[rand_order], c=c[rand_order],
-                            vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-
+                            vmin=clim[0], vmax=clim[1], zorder=4, cmap=cmap, **kwargs)
+    im.set_rasterized(True)
+    
     scatter_ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
     fill_requirements(xlim, mean_dS_m02_req, scatter_ax)
 
@@ -551,7 +556,7 @@ def plot_bias_panel(args, **kwargs):
             if bias == 'S_m02':
                 S_m02_panel(gals, stars, band, args.color, fig, outer_grid[ibias, iband],
                             corrected=args.corrected, **kwargs)
-    plt.savefig(args.outfile, dpi=220)
+    plt.savefig(args.outfile, dpi=400)
 
 
 if __name__ == '__main__':

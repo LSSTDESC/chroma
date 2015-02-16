@@ -11,6 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib import ticker
+import matplotlib.cm
 
 band = 'LSST_r'
 band_dict = {'LSST_r':"r",
@@ -62,16 +63,16 @@ def plot_panel(ax, cbar_ax, xdata, ydata, cdata,
                text, **kwargs):
     rorder = np.random.permutation(len(cdata))
 
+    cmap = matplotlib.cm.get_cmap('jet')
     im = ax.scatter(xdata[rorder], ydata[rorder], c=cdata[rorder],
-                    vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
+                    vmin=clim[0], vmax=clim[1], zorder=4, cmap=cmap, **kwargs)
+    im.set_rasterized(True)
 
     ax.set_xlabel(xlabel, fontsize=fontsize)
     ax.set_ylabel(ylabel, fontsize=fontsize)
 
     ax.set_ylim(ylim)
     ax.set_xlim(xlim)
-
-    ax.plot([-1e8,1e8], [-1e8,1e8], c='k')
 
     plt.setp( ax.xaxis.get_majorticklabels(), rotation=45, fontsize=fontsize )
     plt.setp( ax.yaxis.get_majorticklabels(), rotation=45, fontsize=fontsize )
@@ -234,7 +235,7 @@ def bias_vs_corrected_panel(gals, stars, outfile, cbands=None):
         ax.axvline(-std_dS_m02_sufficient[0], c='k', alpha=0.1, zorder=10, lw=0.5)
         ax.axvline(-std_dS_m02_sufficient[1], c='k', alpha=0.3, zorder=10, lw=0.5)
 
-    fig.savefig(outfile)
+    fig.savefig(outfile, dpi=400)
 
 
 if __name__ == '__main__':
