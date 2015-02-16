@@ -60,7 +60,9 @@ Figures 12-15, 17)
 
 Figure 16)
   First generate data. From CHROMA_DIR/bin/simulations/ run:
-  $ python one_ring_test.py --redshift 0.6 --zenith_angle 60 --gal_r2 0.3 -n4 --moffat --maximum_fft_size 16384 --diagnostic output/d.fits
+  $ python one_ring_test.py --redshift 0.6 --zenith_angle 60 --gal_r2 0.3 -n4 --moffat \
+                            --maximum_fft_size 16384 --diagnostic output/d.fits
   Next make the plot.
   $ python plot_ring_diagnostic.py output/d.fits
-  The paper plot is CHROMA_DIR/bin/simulations/output/ring_diagnostic-g1-0.0-g2-0.0-beta1.0471975512.pdf
+  The paper plot is:
+  CHROMA_DIR/bin/simulations/output/ring_diagnostic-g1-0.0-g2-0.0-beta1.0471975512.pdf
