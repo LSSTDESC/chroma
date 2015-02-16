@@ -2,6 +2,14 @@
 text file star and galaxy catalogs from LSST CatSim.  These can be used to determine a
 realistic distribution of chromatic biases.  This script requires that the LSST catalog
 framework is accessible.
+
+Need to setup the following:
+      setup afw
+      setup sims_catalogs_generation
+      setup sims_catalogs_measures
+      setup matplotlib
+      setup sims_maf
+      setup sims_catUtils
 """
 
 import os
@@ -9,7 +17,7 @@ from argparse import ArgumentParser
 import warnings
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels
 from lsst.sims.photUtils.EBV import EBVmixin
 from lsst.sims.coordUtils import AstrometryBase
@@ -32,7 +40,7 @@ class ExampleGalaxyCatalog(InstanceCatalog, EBVmixin, AstrometryBase):
     comment_char = ''
     catalog_type = 'example_galaxy_catalog'
     column_outputs = ['galtileid', 'objectId', 'raJ2000', 'decJ2000', 'redshift',
-                      'a_b', 'a_d', 'a_d', 'b_d', 'pa_bulge', 'pa_disk',
+                      'a_b', 'b_b', 'a_d', 'b_d', 'pa_bulge', 'pa_disk',
                       'u_ab', 'g_ab', 'r_ab', 'i_ab', 'z_ab', 'y_ab',
                       'sedPathBulge', 'sedPathDisk', 'sedPathAgn',
                       'magNormBulge', 'magNormDisk', 'magNormAgn',
@@ -92,14 +100,16 @@ if __name__ == "__main__":
     if not args.verbose:
         warnings.simplefilter("ignore")
     #Get the observation data.  This is ra, dec, and radius in degrees
-    #You'll notice that the galaxies come back in a circular aperture and the
-    #stars come back in a RA/Dec box.  Sorry about that bug.  I'll have it fixed
-    #shortly.
-    obs_metadata = ObservationMetaData(circ_bounds=dict(ra=args.ra, dec=args.dec, radius=args.size))
+    obs_metadata = ObservationMetaData(
+        unrefractedRA=args.ra,
+        unrefractedDec=args.dec,
+        boundType='circle',
+        boundLength=args.size)
     #Get the database object by name:
     #You can get the names of the defined object types by doing:
     #>>> print DBObject
-    dbobj = DBObject.from_objid('galaxyTiled')
+    dbobj = CatalogDBObject.from_objid('galaxyTiled', address='mssql+pymssql://LSST-2:L$$TUser@localhost:1433/LSST')
+
     #Constraint in SQL
     constraint = "i_ab < 25.3"
     #File type: This is the value of catalog_type in the catalog definitions above
@@ -117,7 +127,7 @@ if __name__ == "__main__":
     cat.write_catalog(filename, chunk_size=100000)
 
     #Same as above but for main sequence stars.
-    dbobj = DBObject.from_objid('allstars')
+    dbobj = CatalogDBObject.from_objid('allstars', address='mssql+pymssql://LSST-2:L$$TUser@localhost:1433/LSST')
     constraint = "imag < 22 and imag > 16"
     filetype = 'example_star_catalog'
     print "Getting star catalog"
