@@ -168,8 +168,8 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
 
                 # size and ellipticity
                 A_Bulge = float(s[5])
-                A_Disk = float(s[6])
-                B_Bulge = float(s[7])
+                B_Bulge = float(s[6])
+                A_Disk = float(s[7])
                 B_Disk = float(s[8])
                 PA_Bulge = float(s[9])
                 PA_Disk = float(s[10])
