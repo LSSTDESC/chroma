@@ -25,7 +25,7 @@ Figure 4)
     opsim.epoch_variance_bias_fields(cat)
   Output to misregistration_bias_fields.pdf
 
-Figures 5-10)
+Figures 5&6)
   Requires processed CatSim catalog.
   Download and process CatSim catalog:
     Load lsst framework: (maybe don't need all of these... not sure.)
@@ -39,17 +39,18 @@ Figures 5-10)
     Run CHROMA_DIR/bin/analytic/catalog/make_catalogs.py
     Run CHROMA_DIR/bin/analytic/catalog/process_gal_catalog.py
     Run CHROMA_DIR/bin/analytic/catalog/process_star_catalog.py
-    Run CHROMA_DIR/bin/analytic/catalog/gal_ML.py
-    Run CHROMA_DIR/bin/analytic/catalog/star_ML.py
-  Figures generated from CHROMA_DIR/bin/analytic/catalog/paper_plots.py
-  Output to CHROMA_DIR/bin/analytic/catalog/output/d*pdf
-
-Figure 11)
+    Run CHROMA_DIR/bin/analytic/catalog/gal_ML.py --ExtraTrees
+    Run CHROMA_DIR/bin/analytic/catalog/star_ML.py --ExtraTrees
+  Run CHROMA_DIR/bin/analytic/catalog/plot_bias_panel.py --outfile output/bias_panel.pdf
+  Run CHROMA_DIR/bin/analytic/catalog/plot_bias_panel.py \
+          --corrected --outfile output/corrected_bias_panel.pdf
+  
+Figure 7)
   Requires processed CatSim catalog as above.
   Run CHROMA_DIR/bin/analytic/catalog/bias_vs_corrected_panel.pdf
   Output to CHROMA_DIR/bin/analytic/catalog/output/bias_vs_corrected_panel.pdf
 
-Figures 12-15, 17)
+Figures 8-11, 13)
   Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
   Then create plots with CHROMA_DIR/bin/simulations/plot_vs_z.py
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_DCR_noCorr_r2r2.pdf
@@ -58,7 +59,7 @@ Figures 12-15, 17)
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_noCorr_FWHMHLR.pdf
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_both_Perturb_FWHMHLR.pdf
 
-Figure 16)
+Figure 12)
   First generate data. From CHROMA_DIR/bin/simulations/ run:
   $ python one_ring_test.py --redshift 0.6 --zenith_angle 60 --gal_r2 0.3 -n4 --moffat \
                             --maximum_fft_size 16384 --diagnostic output/d.fits
