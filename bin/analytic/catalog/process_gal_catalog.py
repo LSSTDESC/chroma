@@ -35,7 +35,7 @@ psf = galsim.Kolmogorov(fwhm = 0.67)
 datadir = '../../../data/'
 
 if 'CAT_SHARE_DATA' in os.environ:
-    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data'
 elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
     SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
 else:
@@ -50,7 +50,7 @@ def file_len(fname):
     return i + 1
 
 def component_spectrum(sedfile, magnorm, av, rv, redshift, norm_bandpass, emission=False):
-    sed = chroma.SED(SED_dir+sedfile)
+    sed = chroma.SED(os.path.join(SED_dir, sedfile))
     sed = sed.withMagnitude(magnorm, norm_bandpass)
     sed.blue_limit = 91
     sed.red_limit = 6000

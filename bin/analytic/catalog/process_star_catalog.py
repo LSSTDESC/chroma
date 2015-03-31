@@ -36,7 +36,7 @@ etc = {f:chroma.lsstetc.ETC(f) for f in 'ugrizy'}
 datadir = '../../../data/'
 
 if 'CAT_SHARE_DATA' in os.environ:
-    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data/'
+    SED_dir = os.environ['CAT_SHARE_DATA'] + 'data'
 elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
     SED_dir = os.environ['SIMS_SED_LIBRARY_DIR']
 else:
@@ -51,8 +51,7 @@ def file_len(fname):
     return i + 1
 
 def stellar_spectrum(star, norm_bandpass):
-    SED_dir = os.environ['HOME'] + '/lsst/DarwinX86/sims_sed_library/2014.04.23/'
-    sed = chroma.SED(SED_dir+star['sedFilePath'])
+    sed = chroma.SED(os.path.join(SED_dir, star['sedFilePath']))
     sed = sed.withMagnitude(star['magNorm'], norm_bandpass)
     sed.blue_limit = 91
     sed.red_limit = 6000
