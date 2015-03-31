@@ -383,7 +383,7 @@ class SersicTool(GalTool):
         star = galsim.Gaussian(fwhm=1.e-8) * self.SED
         prof = galsim.Convolve(star, self.PSF)
         prof0 = prof.evaluateAtWavelength(self.bandpass.effective_wavelength)
-        scale = prof0.nyquistDx()
+        scale = prof0.nyquistScale()
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N, N, scale=scale)
         # careful, don't want to convolve by pixel twice!
@@ -426,7 +426,7 @@ class SersicTool(GalTool):
 
         # and draw into an InterpolatedImage
         prof0 = prof.evaluateAtWavelength(self.bandpass.effective_wavelength)
-        scale = prof0.nyquistDx()
+        scale = prof0.nyquistScale()
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N*9, N*9, scale=scale*0.3)
         if isinstance(prof, galsim.ChromaticObject):
