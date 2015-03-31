@@ -62,10 +62,10 @@ class ETC(object):
         self.s0 = s0[band]
 
     def draw(self, profile, mag, noise=False):
-        img = galsim.ImageD(self.stamp_size, self.stamp_size, scale=self.pixel_scale)
         flux = self.s0 * 10**(-0.4*(mag - 24.0)) * self.exptime
-        profile.setFlux(flux)
-        profile.drawImage(image=img)
+        img = profile.withFlux(flux).drawImage(nx=self.stamp_size,
+                                               ny=self.stamp_size,
+                                               scale=self.pixel_scale)
         if noise:
             gd = galsim.GaussianNoise(bd, sigma=self.sigma_sky)
             img.addNoise(gd)
