@@ -58,8 +58,8 @@ def chromatic_biases():
     colors = ['purple', 'blue', 'green', 'gold', 'magenta', 'red']
     for i, filter_ in enumerate('ugrizy'):
         # filters are stored in two columns: wavelength (nm), and throughput
-        fdata = chroma.SampledBandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
-        fwave, throughput = fdata.interp.x, fdata.interp.y
+        fdata = chroma.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
+        fwave, throughput = fdata.wave_list, fdata(fdata.wave_list)
         ax.fill_between(fwave, throughput * 2.5 - 1, -1, color=colors[i], alpha=0.3)
     # Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
     ax2 = ax.twinx()
@@ -107,8 +107,8 @@ def chromatic_biases_700():
     colors = ['purple', 'blue', 'green', 'gold', 'magenta', 'red']
     for i, filter_ in enumerate('ugrizy'):
         # filters are stored in two columns: wavelength (nm), and throughput
-        fdata = chroma.SampledBandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
-        fwave, throughput = fdata.interp.x, fdata.interp.y
+        fdata = chroma.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
+        fwave, throughput = fdata.wave_list, fdata(fdata.wave_list)
         ax.fill_between(fwave, throughput * 2.0 - 0.5, -0.5, color=colors[i], alpha=0.3)
     # Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
     ax2 = ax.twinx()
