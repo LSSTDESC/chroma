@@ -243,6 +243,7 @@ def plot_ring_diagnostic(args):
         labels = [r'$10^{-4}$', r'$10^{-3}$', r'$10^{-2}$', r'$10^{-1}$', r'1']
         cbar_flux_ax = f.add_axes([0.84, 0.43, 0.04, 0.47])
         cbar = plt.colorbar(flux_img, cax=cbar_flux_ax, cmap=cmap_flux, ticks=ticks)
+        cbar.solids.set_rasterized(True) # Fix Moire pattern that otherwise shows up in colorbar
         cbar.ax.set_yticklabels(labels, fontsize=fontsize)
 
         # ticks, labels = symlogTicksAndLabels(vmin, vmax, linthresh, linscale)
@@ -254,6 +255,7 @@ def plot_ring_diagnostic(args):
         cbar_resid_ax = f.add_axes([0.09, 0.11, 0.697, 0.04])
         cbar_resid = plt.colorbar(resid_img, cax=cbar_resid_ax, cmap=cmap_resid, ticks=ticks,
                                   orientation='horizontal')
+        cbar_resid.solids.set_rasterized(True)
         cbar_resid.ax.set_xticklabels(labels, fontsize=fontsize)
 
         dir_, file_ = os.path.split(args.outprefix)
