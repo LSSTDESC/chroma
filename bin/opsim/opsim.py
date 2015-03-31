@@ -464,9 +464,12 @@ def epoch_variance_bias_fields(cat):
             decs.append(cat[w]['fieldDec'][0] * 180/np.pi)
     fig = plt.figure(figsize=(7,5))
     ax = fig.add_subplot(111)
-    ax.scatter(decs, m_Rbar, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$")
-    ax.scatter(decs, c1_Rbar, s=5, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$")
-    ax.scatter(decs, c2_Rbar, s=5, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$")
+    ax.scatter(decs, m_Rbar, s=5, color="red", label=r"$m / (\Delta \bar{R}_{45})^2$",
+               rasterized=True)
+    ax.scatter(decs, c1_Rbar, s=5, color="blue", label=r"$c_+ / (\Delta \bar{R}_{45})^2$",
+               rasterized=True)
+    ax.scatter(decs, c2_Rbar, s=5, color="green", label=r"$c_\times / (\Delta \bar{R}_{45})^2$",
+               rasterized=True)
     ax.plot(decs, [0]*len(decs), color='black')
     ax.legend(prop={'size':14})
     ax.set_xlabel('Declination (deg)', fontsize=14)
@@ -481,9 +484,12 @@ def epoch_variance_bias_fields(cat):
 
     fig = plt.figure(figsize=(7,5))
     ax = fig.add_subplot(111)
-    ax.scatter(decs, m_V, s=5, color="red", label=r"$m / \Delta V_{45}$")
-    ax.scatter(decs, c1_V, s=5, color="blue", label=r"$c_+ / \Delta V_{45}$")
-    ax.scatter(decs, c2_V, s=5, color="green", label=r"$c_\times / \Delta V_{45}$")
+    ax.scatter(decs, m_V, s=5, color="red", label=r"$m / \Delta V_{45}$",
+               rasterized=True)
+    ax.scatter(decs, c1_V, s=5, color="blue", label=r"$c_+ / \Delta V_{45}$",
+               rasterized=True)
+    ax.scatter(decs, c2_V, s=5, color="green", label=r"$c_\times / \Delta V_{45}$",
+               rasterized=True)
     ax.plot(decs, [0]*len(decs), color='black')
     ax.legend(prop={'size':14})
     ax.set_xlabel('Declination (deg)', fontsize=14)
@@ -505,7 +511,7 @@ def epoch_variance_field(cat, field):
     dxy = np.mean((x-centroid[0])*(y-centroid[1]))
     fig = plt.figure(figsize=(7, 5))
     ax = fig.add_subplot(111)
-    ax.scatter(x, y, s=5, alpha=0.5)
+    ax.scatter(x, y, s=5, alpha=0.5, rasterized=True)
     ax.scatter(centroid[0], centroid[1], marker='x', color='red', s=80)
     ax.set_xlabel(r"$\tan z_a \sin q\,(=\,(\cos\delta)\, \Delta \alpha / \Delta \bar{R}_{45})$",
                   fontsize=16)
