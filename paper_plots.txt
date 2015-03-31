@@ -36,6 +36,7 @@ Figures 5&6)
       setup matplotlib
       setup sims_maf
       setup sims_catUtils
+    Setup UW ssh tunnel.  Email jmeyers314@gmail.com for more info on this.
     Run CHROMA_DIR/bin/analytic/catalog/make_catalogs.py
     Run CHROMA_DIR/bin/analytic/catalog/process_gal_catalog.py
     Run CHROMA_DIR/bin/analytic/catalog/process_star_catalog.py
