@@ -119,9 +119,7 @@ def one_ring_test(args):
     # Now create some galtools, which are objects that know how to draw images given some
     # parameters, thus bridging GalSim and lmfit.
 
-    gsparams = galsim.GSParams()
-    if args.maximum_fft_size is not None:
-        gsparams.maximum_fft_size = args.maximum_fft_size
+    gsparams = galsim.GSParams(maximum_fft_size = args.maximum_fft_size)
 
     # We use image offsets to investigate subpixel dithers, since using GalSim shifts would have
     # the effect of also changing the intended meaning of shears and rotations, since these are
