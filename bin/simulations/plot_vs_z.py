@@ -46,6 +46,7 @@ for size_mode in size_modes:
             outfilename += correction_mode+'_'
             outfilename += size_mode[0]+".pdf"
 
+            plotted = False
             for profile_mode in profile_modes:
                 infilename = "output/ring_vs_z_"
                 infilename += profile_mode[0]+'_'
@@ -55,7 +56,8 @@ for size_mode in size_modes:
                 try:
                     z, m1a, m1r, m2a, m2r, c1a, c1r, c2a, c2r = np.loadtxt(infilename).T
                 except:
-                    continue
+                    break
+                plotted = True
 
                 if size_mode[0] == "r2r2":
                     if profile_mode == profile_modes[0]:
@@ -77,13 +79,18 @@ for size_mode in size_modes:
                     ax2.text(0.05, 0.085, r"Curves: Analytic (no corrections)")
                     ax2.text(0.05, 0.072, r"Symbols: 10$\times$ ring test (with corrections)")
 
-                ax1.scatter(z, m1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
+                ax1.scatter(z, m1r, color="None", marker='+',
+                            edgecolor=profile_mode[2], label=profile_mode[1])
                 ax1.scatter(z, m2r, color="None", marker='x', edgecolor=profile_mode[2])
-                ax2.scatter(z, c1r, color="None", marker='+', edgecolor=profile_mode[2], label=profile_mode[1])
+                ax2.scatter(z, c1r, color="None", marker='+',
+                            edgecolor=profile_mode[2], label=profile_mode[1])
                 ax2.scatter(z, c2r, color="None", marker='x', edgecolor=profile_mode[2])
 
                 ax1.legend(fontsize=9)
                 ax2.legend(fontsize=9)
 
-            fig.tight_layout()
-            fig.savefig(outfilename, dpi=220)
+            if plotted:
+                fig.tight_layout()
+                fig.savefig(outfilename, dpi=220)
+            else:
+                plt.close(fig)

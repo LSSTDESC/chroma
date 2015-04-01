@@ -2,26 +2,8 @@ import subprocess
 import os
 from argparse import ArgumentParser
 
-def vs_z_data(args):
-
-    correction_modes = [("", "noCorr"),             # no correction
-                        ("--perturb", "Perturb")]   # perturbative correction
-
-    size_modes = [("--PSF_r2 0.42 --gal_r2 0.30", "r2r2"),              # hold r2_psf and r2_gal fixed
-                  ("--PSF_FWHM 0.7 --gal_HLR 0.25", "FWHMHLR"),         # hold FWHM_psf and HLR_gal fixed
-                  ("--PSF_FWHM 0.7 --gal_convFWHM 0.898", "FWHMFWHM")]  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
-
-    physics_modes = [("", "both"),            # don't turn anything off
-                     ("--alpha 0.0", "DCR"),  # turn off chromatic seeing,
-                     ("--noDCR", "CS")]       # turn off DCR
-
-    profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
-                     ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
-                     ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
-                     ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
-
+def vs_z_data(correction_modes, size_modes, physics_modes, profile_modes, clobber=False):
     stamp_size = 31
-
     for size_mode in size_modes:
         for physics_mode in physics_modes:
             for profile_mode in profile_modes:
@@ -33,7 +15,7 @@ def vs_z_data(args):
                     outfilename += physics_mode[1]+'_'
                     outfilename += correction_mode[1]+'_'
                     outfilename += size_mode[1]+'.dat'
-                    if not args.clobber and os.path.isfile(outfilename):
+                    if not clobber and os.path.isfile(outfilename):
                         continue
                     cmd = "python ring_vs_z.py --stamp_size {}".format(stamp_size)
                     cmd += ' '+profile_mode[0]
@@ -47,5 +29,69 @@ def vs_z_data(args):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--clobber', action='store_true')
+    parser.add_argument('--paper', action='store_true')
     args = parser.parse_args()
-    vs_z_data(args)
+
+    if args.paper:
+        # Figures 8, 9, 10
+        correction_modes = [("", "noCorr")]             # no correction
+
+        size_modes = [("--PSF_r2 0.42 --gal_r2 0.30", "r2r2")]              # hold r2_psf and r2_gal fixed
+
+        physics_modes = [("", "both"),            # don't turn anything off
+                         ("--alpha 0.0", "DCR"),  # turn off chromatic seeing,
+                         ("--noDCR", "CS")]       # turn off DCR
+
+        profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
+                         ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
+                         ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
+                         ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
+
+        vs_z_data(correction_modes, size_modes, physics_modes, profile_modes, clobber=args.clobber)
+
+        # Figure 11
+        correction_modes = [("", "noCorr")]             # no correction
+
+        size_modes = [("--PSF_FWHM 0.7 --gal_HLR 0.25", "FWHMHLR")]         # hold FWHM_psf and HLR_gal fixed
+
+        physics_modes = [("", "both")]            # don't turn anything off
+
+        profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
+                         ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
+                         ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
+                         ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
+
+        vs_z_data(correction_modes, size_modes, physics_modes, profile_modes, clobber=args.clobber)
+
+        # Figure 13
+        correction_modes = [("--perturb", "Perturb")]   # perturbative correction
+
+        size_modes = [("--PSF_FWHM 0.7 --gal_HLR 0.25", "FWHMHLR")]         # hold FWHM_psf and HLR_gal fixed
+
+        physics_modes = [("", "both")]            # don't turn anything off
+
+        profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
+                         ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
+                         ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
+                         ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
+
+        vs_z_data(correction_modes, size_modes, physics_modes, profile_modes, clobber=args.clobber)
+
+    else: #Every combination
+        correction_modes = [("", "noCorr"),             # no correction
+                            ("--perturb", "Perturb")]   # perturbative correction
+
+        size_modes = [("--PSF_r2 0.42 --gal_r2 0.30", "r2r2"),              # hold r2_psf and r2_gal fixed
+                      ("--PSF_FWHM 0.7 --gal_HLR 0.25", "FWHMHLR"),         # hold FWHM_psf and HLR_gal fixed
+                      ("--PSF_FWHM 0.7 --gal_convFWHM 0.898", "FWHMFWHM")]  # hold FWHM_psf and (psf convolved with gal)_FWHM fixed
+
+        physics_modes = [("", "both"),            # don't turn anything off
+                         ("--alpha 0.0", "DCR"),  # turn off chromatic seeing,
+                         ("--noDCR", "CS")]       # turn off DCR
+
+        profile_modes = [("", "GG"),                 # Gaussian gal, Gaussian PSF
+                         ("-n 4.0", "DG"),           # DeV galaxy, Gaussian PSF
+                         ("--moffat", "GM"),         # Gaussian galaxy, Moffat PSF
+                         ("-n 4.0 --moffat", "DM")]  # DeV galaxy, Moffat PSF
+
+        vs_z_data(correction_modes, size_modes, physics_modes, profile_modes, clobber=args.clobber)
