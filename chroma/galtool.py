@@ -430,9 +430,9 @@ class SersicTool(GalTool):
         N = prof0.SBProfile.getGoodImageSize(scale, 1.0)
         im = galsim.ImageD(N*9, N*9, scale=scale*0.3)
         if isinstance(prof, galsim.ChromaticObject):
-            prof.draw(self.bandpass, image=im)
+            prof.drawImage(self.bandpass, image=im, method='no_pixel')
         else:
-            prof.draw(image=im)
+            prof.drawImage(image=im, method='no_pixel')
         self.PSF = galsim.InterpolatedImage(im)
 
 
