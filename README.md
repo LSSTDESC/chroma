@@ -1,7 +1,7 @@
 chroma
 ======
 
-[![arXiv shield](http://img.shields.io/badge/arXiv-1409-6273-orange.svg?style=flat)](http://arxiv.org/abs/1409.6273)
+[![arXiv shield](https://img.shields.io/badge/arXiv-1409:6273-orange.svg?style=flat)](http://arxiv.org/abs/1409.6273)
 
 Investigations of chromatic PSF effects and implications for studies of weak gravitational lensing.
 
