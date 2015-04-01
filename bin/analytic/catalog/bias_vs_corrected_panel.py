@@ -245,7 +245,7 @@ if __name__ == '__main__':
     parser.add_argument('--starfile', default = "output/corrected_star_data.pkl",
                         help="input star file. Default 'output/corrected_star_data.pkl'")
     parser.add_argument('--color', default=None, nargs=2,
-                        help="color to use for symbol color (Default: None)")
+                        help="color to use for symbol color (Default: redshift)")
     parser.add_argument('--outfile', default="output/bias_vs_corrected_panel.pdf", nargs='?',
                         help="output filename (Default: 'output/bias_vs_corrected_panel.pdf')")
     args = parser.parse_args()
