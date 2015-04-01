@@ -30,12 +30,7 @@ Figures 5&6)
   Download and process CatSim catalog:
     Load lsst framework: (maybe don't need all of these... not sure.)
       source ~/lsst/loadLSST.sh
-      setup afw
-      setup sims_catalogs_generation
-      setup sims_catalogs_measures
-      setup matplotlib
       setup sims_maf
-      setup sims_catUtils
     Setup UW ssh tunnel.  Email jmeyers314@gmail.com for more info on this.
     Run CHROMA_DIR/bin/analytic/catalog/make_catalogs.py
     Run CHROMA_DIR/bin/analytic/catalog/process_gal_catalog.py
@@ -48,11 +43,11 @@ Figures 5&6)
   
 Figure 7)
   Requires processed CatSim catalog as above.
-  Run CHROMA_DIR/bin/analytic/catalog/bias_vs_corrected_panel.pdf
+  Run CHROMA_DIR/bin/analytic/catalog/bias_vs_corrected_panel.py
   Output to CHROMA_DIR/bin/analytic/catalog/output/bias_vs_corrected_panel.pdf
 
 Figures 8-11, 13)
-  Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py
+  Generate data for these by running CHROMA_DIR/bin/simulations/vs_z_data.py --paper
   Then create plots with CHROMA_DIR/bin/simulations/plot_vs_z.py
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_DCR_noCorr_r2r2.pdf
   Output to CHROMA_DIR/bin/simulations/output/ring_vs_z_CS_noCorr_r2r2.pdf
