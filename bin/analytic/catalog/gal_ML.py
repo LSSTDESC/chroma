@@ -265,7 +265,7 @@ if __name__ == '__main__':
                         help='number of objects on which to train ML (Default: 16000)')
     parser.add_argument('--teststart', type=int, default=16000,
                         help='object index at which to start training (Default: 16000)')
-    parser.add_argument('--ntest', type=int, default=8000,
+    parser.add_argument('--ntest', type=int, default=4000,
                         help='number of objects on which to test ML (Default: 4000)')
     parser.add_argument('--use_color', action='store_true',
                         help="use only colors as features (Default: colors + 1 magnitude)")
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_err', action='store_true',
                         help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
     parser.add_argument('--min_err', default=0.01, type=float,
-                        help="minimum photometric uncertainty in each band")
+                        help="minimum photometric uncertainty in each band (Default: 0.01)")
     regressor = parser.add_mutually_exclusive_group()
     regressor.add_argument("--RandomForest", action="store_true",
                            help="Use random forest regressor (Default: SVR)")
