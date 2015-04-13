@@ -663,7 +663,7 @@ class DoubleSersicTool(GalTool):
         gparam.add('y0_2', expr='y0_1')
         gparam.add('n_2', value=1.0, vary=False)
         gparam.add('hlr_2', value=0.4, min=0.0)
-        gparam.add('flux_2', expr='1.0 - flux_1', min=0.0, max=1.0)
+        gparam.add('flux_2', expr='1.0 - flux_1')
         gparam.add('g_2', expr='g_1')
         gparam.add('phi_2', expr='phi_1')
         #initialize constrained variables
