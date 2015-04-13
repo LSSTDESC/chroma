@@ -437,7 +437,7 @@ if __name__ == "__main__":
                         help="Use PerturbFastChromaticSersicTool to estimate ellipticity")
     parser.add_argument("--quiet", action="store_true",
                         help="Don't print settings")
-    parser.add_argument("--maximum_fft_size", type=int,
+    parser.add_argument("--maximum_fft_size", type=int, default=4096,
                         help="Maximum FFT GalSim is willing to do.")
 
     # and run the program...
