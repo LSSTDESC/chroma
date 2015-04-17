@@ -482,7 +482,7 @@ class SED(object):
         \int{F(w) S(w) w (w - base_wavelength)*slope dw} / \int{F(w) S(w) w dw}
 
         @param bandpass         Bandpass through which object is being imaged.
-        @param slope            dIxx/dw and -dIyy/dw in square-radians per nanometer
+        @param slope            dIxx/dw or dIyy/dw in square-radians per nanometer
         @param base_wavelength  Reference wavelength in nm from which to change PSF moment
 
         @returns the above integral
