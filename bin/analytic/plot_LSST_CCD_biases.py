@@ -75,6 +75,7 @@ def plot_LSST_CCD_additive_chromatic_bias(filter_name):
 
     f.tight_layout()
     f.savefig('output/CCD_c.{}.png'.format(filter_name), dpi=220)
+    f.savefig('output/CCD_c.{}.pdf'.format(filter_name), dpi=220)
 
 def plot_LSST_CCD_multiplicative_chromatic_bias(filter_name):
     print "Plotting {}-band multiplicative bias".format(filter_name)
@@ -139,6 +140,7 @@ def plot_LSST_CCD_multiplicative_chromatic_bias(filter_name):
 
     f.tight_layout()
     f.savefig('output/CCD_m.{}.png'.format(filter_name), dpi=220)
+    f.savefig('output/CCD_m.{}.pdf'.format(filter_name), dpi=220)
 
 if __name__ == '__main__':
     plot_LSST_CCD_additive_chromatic_bias('LSST_r')
