@@ -85,7 +85,7 @@ def compute_mags_moments(sed, filters):
                 out[0]['S_p10'][filter_name] = sed.calculateSeeingMomentRatio(bandpass, alpha=1.0)
                 out[0]['linear'][filter_name] = sed.calculateLinearMomentShift(bandpass,
                                                                                beta_slope,
-                                                                               w_eff)
+                                                                               700.0)
             except ValueError:
                 out[0]['S_p06'][filter_name] = np.nan
                 out[0]['S_p10'][filter_name] = np.nan

@@ -50,7 +50,7 @@ def plot_LSST_CCD_additive_chromatic_bias(filter_name):
         ax1.scatter(0.0, c1, facecolor=star_color, edgecolor='k', marker='*', s=160, 
                     label=star_name, zorder=3)
 
-    ax1.text(0.05, 0.05, r"$\beta_- = 1 \times 10^{-5} \mathrm{arcsec}^2/\,\mathrm{nm}$", 
+    ax1.text(0.05, 0.90, r"$\beta_- = 1 \times 10^{-5} \mathrm{arcsec}^2/\,\mathrm{nm}$", 
              transform=ax1.transAxes)
 
     gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
