@@ -59,7 +59,7 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
     for gal_type in gal_types:
         gal_idx = gals['gal_type'] == gal_type
         S = gals[gal_idx][alpha_idx][shape_filter]
-        gal_dSbySs.append((S - gals[G_idx][alpha_idx][shape_filter]) / S)
+        gal_dSbySs.append((S - stars[G_idx][alpha_idx][shape_filter]) / S)
         gal_colors.append(gals[gal_idx]['mag'][color_filters[0]]
                           - gals[gal_idx]['mag'][color_filters[1]])
 
@@ -109,7 +109,7 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
         ax1.fill_between(xlim, [-LSST_size_req]*2, [LSST_size_req]*2, color='#AAAAAA', zorder=2)
         ax2.fill_between(xlim, [-DES_size_req]*2, [DES_size_req]*2, color='#DDDDDD', zorder=2)
         ax2.fill_between(xlim, [-LSST_size_req]*2, [LSST_size_req]*2, color='#AAAAAA', zorder=2)
-        ax1.set_ylim(-0.02, 0.01)
+        ax1.set_ylim(-0.02, 0.02)
         ax2.set_ylim(-0.02, 0.02)
     elif alpha == 0.6:
         alpha_str = 'S_p06'
@@ -125,5 +125,6 @@ def PSF_size_color_correction(shape_filter, color_filters, alpha):
                                                  color_filters[1]), dpi=220)
 
 if __name__ == '__main__':
+   PSF_size_color_correction('LSST_g', ['LSST_g', 'LSST_r'], alpha=-0.2)
    PSF_size_color_correction('LSST_r', ['LSST_r', 'LSST_i'], alpha=-0.2)
    PSF_size_color_correction('Euclid_350', ['LSST_r', 'LSST_i'], alpha=0.6)
