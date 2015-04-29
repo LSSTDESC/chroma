@@ -6,9 +6,9 @@ Note that you might need to source the `loadLSST.sh` file and run `setup sims_se
 these paths to work for the current version of the lsst stack.
 
 Chromatic biases include:
-  Rbar - centroid shift due to differential chromatic refraction.
+  Rbar - zenith-direction centroid shift due to differential chromatic refraction.
   V - zenith-direction second moment shift due to differential chromatic refraction
-  S - shift in "size" of the PSF due to a power-law dependence of the FWHM with wavelength:
+  S - change in "size" of the PSF due to a power-law dependence of the FWHM with wavelength:
       FWHM \propto \lambda^{\alpha}.  S = the second moment square radius r^2 = Ixx + Iyy.
       Three cases are tabulated:
         \alpha = -0.2 : appropriate for atmospheric chromatic seeing.  denoted 'S_m02'
@@ -53,12 +53,14 @@ def file_len(fname):
 def stellar_spectrum(star, norm_bandpass):
     sed = chroma.SED(os.path.join(SED_dir, star['sedFilePath']))
     sed = sed.withMagnitude(star['magNorm'], norm_bandpass)
-    sed.blue_limit = 91
-    sed.red_limit = 6000
+    # Limit the range to that which can be reddened.
+    sed.blue_limit = max([91, sed.blue_limit])
+    sed.red_limit = min([6000, sed.blue_limit])
     sed = sed.redden(A_v=star['galacticAv'])
     return sed
 
 def process_star_file(filename, nmax=None, debug=False, seed=None, start=0):
+    # Assemble dictionary of all filters used below
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
@@ -75,12 +77,20 @@ def process_star_file(filename, nmax=None, debug=False, seed=None, start=0):
                                                              effective_diameter=6.4, # huh?
                                                              exptime=30.0))
     for f in 'ugriz':
-        ffile = datadir+'filters/sdss/SDSS_{}.dat'.format(f)
+        ffile = datadir+'filters/SDSS_{}.dat'.format(f)
         filters['SDSS_{}'.format(f)] = (galsim.Bandpass(ffile, wave_type='a')
                                         .withZeropoint('AB',
                                                        effective_diameter=6.4, # huh?
                                                        exptime=30.0))
 
+    # Sanity check
+    # import matplotlib.pyplot as plt
+    # for k, v in filters.iteritems():
+    #     plt.figure()
+    #     plt.plot(v.wave_list, v(v.wave_list))
+    #     plt.title(k)
+    #     plt.show()
+    # import sys; sys.exit()
 
     # LSST SED catalog entries are normalized by their AB magnitude at 500 nm.  So define a narrow
     # filter at 500nm to use for normalization.
