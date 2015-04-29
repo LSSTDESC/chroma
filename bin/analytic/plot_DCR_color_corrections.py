@@ -56,8 +56,8 @@ def DCR_color_correction(shape_filter, color_filters):
         gal_idx = gals['gal_type'] == gal_type
         Rbar = gals[gal_idx]['Rbar'][shape_filter]
         V = gals[gal_idx]['V'][shape_filter]
-        gal_dRbars.append((Rbar - gals[G_idx]['Rbar'][shape_filter]) * 180.0 / np.pi * 3600.0)
-        gal_dVs.append((V - gals[G_idx]['V'][shape_filter]) * (180.0 / np.pi * 3600.0)**2)
+        gal_dRbars.append((Rbar - stars[G_idx]['Rbar'][shape_filter]) * 180.0 / np.pi * 3600.0)
+        gal_dVs.append((V - stars[G_idx]['V'][shape_filter]) * (180.0 / np.pi * 3600.0)**2)
         gal_colors.append(gals[gal_idx]['mag'][color_filters[0]]
                           - gals[gal_idx]['mag'][color_filters[1]])
 
@@ -65,9 +65,10 @@ def DCR_color_correction(shape_filter, color_filters):
     gal_all_colors = np.array(gal_colors).flatten()
     gal_all_dRbars = np.array(gal_dRbars).flatten()
     gal_all_dVs = np.array(gal_dVs).flatten()
-    A_gal = np.vstack([gal_all_colors, np.ones(len(gal_all_colors))]).T # design matrix
-    slope_gal_Rbar, intercept_gal_Rbar = np.linalg.lstsq(A_gal, gal_all_dRbars)[0]
-    slope_gal_V, intercept_gal_V = np.linalg.lstsq(A_gal, gal_all_dVs)[0]
+    w = np.isfinite(gal_all_colors)
+    A_gal = np.vstack([gal_all_colors[w], np.ones(len(gal_all_colors[w]))]).T # design matrix
+    slope_gal_Rbar, intercept_gal_Rbar = np.linalg.lstsq(A_gal, gal_all_dRbars[w])[0]
+    slope_gal_V, intercept_gal_V = np.linalg.lstsq(A_gal, gal_all_dVs[w])[0]
 
     # Open Rbar figure
     f = plt.figure(figsize=(8,6))
@@ -90,8 +91,8 @@ def DCR_color_correction(shape_filter, color_filters):
         ax2.plot(color, dRbar - (intercept_gal_Rbar + slope_gal_Rbar * color), c=pcolor)
 
     # Plot trendlines
-    cmin = np.hstack([gal_all_colors, star_colors]).min()
-    cmax = np.hstack([gal_all_colors, star_colors]).max()
+    cmin = np.hstack([gal_all_colors[w], star_colors]).min()
+    cmax = np.hstack([gal_all_colors[w], star_colors]).max()
     color_range = np.array([cmin, cmax])
     ax1.plot(color_range, intercept_gal_Rbar + color_range * slope_gal_Rbar)
     ax1.plot(color_range, intercept_star_Rbar + color_range * slope_star_Rbar)
@@ -107,7 +108,12 @@ def DCR_color_correction(shape_filter, color_filters):
     ax2.fill_between(xlim, [-DES_Rbar_req]*2, [DES_Rbar_req]*2, color='#DDDDDD', zorder=2)
     ax2.fill_between(xlim, [-LSST_Rbar_req]*2, [LSST_Rbar_req]*2, color='#AAAAAA', zorder=2)
 
-
+    if shape_filter == 'LSST_g':
+        ylim = (-0.12, 0.12)
+    else:
+        ylim = (-0.03, 0.03)
+    ax1.set_ylim(ylim)
+    ax2.set_ylim(ylim)
     f.savefig('output/Rbar_{}_vs_{}-{}.png'.format(shape_filter,
                                                    color_filters[0],
                                                    color_filters[1]), dpi=220)
@@ -146,11 +152,20 @@ def DCR_color_correction(shape_filter, color_filters):
     ax1.fill_between(xlim, [-LSST_V_req]*2, [LSST_V_req]*2, color='#AAAAAA', zorder=2)
     ax2.fill_between(xlim, [-DES_V_req]*2, [DES_V_req]*2, color='#DDDDDD', zorder=2)
     ax2.fill_between(xlim, [-LSST_V_req]*2, [LSST_V_req]*2, color='#AAAAAA', zorder=2)
-    ax1.set_ylim(-0.01, 0.01)
-    ax2.set_ylim(-0.01, 0.01)
+
+    if shape_filter == 'LSST_g':
+        ylim = (-0.015, 0.015)
+    else:
+        ylim = (-0.003, 0.003)
+    ax1.set_ylim(ylim)
+    ax2.set_ylim(ylim)
     f.savefig('output/V_{}_vs_{}-{}.png'.format(shape_filter,
                                                 color_filters[0],
                                                 color_filters[1]), dpi=220)
 
 if __name__ == '__main__':
-   DCR_color_correction('LSST_r', ['LSST_r', 'LSST_i'])
+    # pick values to match PB12
+    DCR_color_correction('LSST_g', ['LSST_g', 'LSST_r'])
+    DCR_color_correction('LSST_r', ['LSST_g', 'LSST_r'])
+    DCR_color_correction('LSST_i', ['LSST_r', 'LSST_i'])
+    DCR_color_correction('LSST_z', ['LSST_i', 'LSST_z'])
