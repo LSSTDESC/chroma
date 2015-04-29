@@ -60,7 +60,7 @@ def component_spectrum(sedfile, magnorm, av, rv, redshift, norm_bandpass, emissi
     sed = sed.atRedshift(redshift)
     return sed
 
-def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=False, start=0):
+def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False, start=0):
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
@@ -139,9 +139,9 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
     data[:] = np.nan
 
     order = [d+1 for d in xrange(nrows)]
-    if randomize:
+    if seed is not None:
         import random
-        random.seed(123456789)
+        random.seed(seed)
         random.shuffle(order)
     order = order[start:start+nmax]
     order.sort()
@@ -153,7 +153,7 @@ def process_gal_file(filename, nmax=None, debug=False, randomize=True, emission=
         with chroma.ProgressBar(nmax, file=outdev) as bar:
             j = 0
             for i, line in enumerate(f):
-                if i == 0 : continue #ignore column labels row
+                if i == 0 : continue # ignore column labels row
                 if j >= nmax : break
                 if order[j] != i : continue
                 bar.update()
@@ -288,6 +288,8 @@ if __name__ == '__main__':
                         help="output filename. Default 'output/galaxy_data.pkl'")
     parser.add_argument('--nmax', type=int, default=30000,
                         help="maximum number of galaxies to process. Default 30000")
+    parser.add_argument('--seed', type=int, default=None,
+                        help="Seed to randomize order of galaxies in catalog. [Default: None]")
     parser.add_argument('--start', type=int, default=0,
                         help="starting index for catalog.  Default 0")
     parser.add_argument('--emission', action='store_true',
@@ -297,6 +299,7 @@ if __name__ == '__main__':
 
     cPickle.dump(process_gal_file(args.infile,
                                   nmax=args.nmax,
+                                  seed=args.seed,
                                   emission=args.emission,
                                   start=args.start,
                                   debug=args.debug),
