@@ -58,25 +58,33 @@ def stellar_spectrum(star, norm_bandpass):
     sed = sed.redden(A_v=star['galacticAv'])
     return sed
 
-def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0):
+def process_star_file(filename, nmax=None, debug=False, seed=None, start=0):
     filters = {}
     for f in 'ugrizy':
         ffile = datadir+'filters/LSST_{}.dat'.format(f)
-        filters['LSST_{}'.format(f)] = (chroma.Bandpass(ffile)
-                                        .thin(1.e-5) #thin for speed
+        filters['LSST_{}'.format(f)] = (galsim.Bandpass(ffile)
+                                        .thin(1.e-5) # thin for speed
                                         .withZeropoint('AB',
                                                        effective_diameter=6.4,
                                                        exptime=30.0))
     for width in [150,250,350,450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
-        filters['Euclid_{}'.format(width)] = (chroma.Bandpass(ffile)
+        filters['Euclid_{}'.format(width)] = (galsim.Bandpass(ffile)
                                               .thin(1.e-5)
                                               .withZeropoint('AB',
-                                                             effective_diameter=6.4,
+                                                             effective_diameter=6.4, # huh?
                                                              exptime=30.0))
+    for f in 'ugriz':
+        ffile = datadir+'filters/sdss/SDSS_{}.dat'.format(f)
+        filters['SDSS_{}'.format(f)] = (galsim.Bandpass(ffile, wave_type='a')
+                                        .withZeropoint('AB',
+                                                       effective_diameter=6.4, # huh?
+                                                       exptime=30.0))
+
+
     # LSST SED catalog entries are normalized by their AB magnitude at 500 nm.  So define a narrow
     # filter at 500nm to use for normalization.
-    filters['norm'] = (chroma.Bandpass(interp1d([499, 500, 501], [0, 1, 0]))
+    filters['norm'] = (galsim.Bandpass(galsim.LookupTable([499, 500, 501], [0, 1, 0]))
                        .withZeropoint('AB', effective_diameter=6.4, exptime=30.0))
 
     nrows = file_len(filename)
@@ -86,13 +94,28 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
         nmax = nrows-1
 
     # Define some useful np dtypes
-    ugrizy = [('LSST_u', np.float),
+    Lbands = [('LSST_u', np.float),
               ('LSST_g', np.float),
               ('LSST_r', np.float),
               ('LSST_i', np.float),
               ('LSST_z', np.float),
               ('LSST_y', np.float)]
-    ugrizyE = [('LSST_u', np.float),
+    Ebands = [('Euclid_150', np.float),
+              ('Euclid_250', np.float),
+              ('Euclid_350', np.float),
+              ('Euclid_450', np.float)]
+    LSbands = [('LSST_u', np.float),
+               ('LSST_g', np.float),
+               ('LSST_r', np.float),
+               ('LSST_i', np.float),
+               ('LSST_z', np.float),
+               ('LSST_y', np.float),
+               ('SDSS_u', np.float),
+               ('SDSS_g', np.float),
+               ('SDSS_r', np.float),
+               ('SDSS_i', np.float),
+               ('SDSS_z', np.float)]
+    LEbands = [('LSST_u', np.float),
                ('LSST_g', np.float),
                ('LSST_r', np.float),
                ('LSST_i', np.float),
@@ -102,10 +125,21 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                ('Euclid_250', np.float),
                ('Euclid_350', np.float),
                ('Euclid_450', np.float)]
-    E = [('Euclid_150', np.float),
-         ('Euclid_250', np.float),
-         ('Euclid_350', np.float),
-         ('Euclid_450', np.float)]
+    LSEbands = [('LSST_u', np.float),
+                ('LSST_g', np.float),
+                ('LSST_r', np.float),
+                ('LSST_i', np.float),
+                ('LSST_z', np.float),
+                ('LSST_y', np.float),
+                ('SDSS_u', np.float),
+                ('SDSS_g', np.float),
+                ('SDSS_r', np.float),
+                ('SDSS_i', np.float),
+                ('SDSS_z', np.float),
+                ('Euclid_150', np.float),
+                ('Euclid_250', np.float),
+                ('Euclid_350', np.float),
+                ('Euclid_450', np.float)]
 
     # Define the output compound dtype
     data = np.recarray((nmax,),
@@ -115,48 +149,61 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                                    ('magNorm', np.float),
                                    ('sedFilePath', np.str_, 64),
                                    ('galacticAv', np.float),
-                                   ('mag', ugrizy),
-                                   ('magCalc', ugrizyE),
-                                   ('magErr', ugrizy),
-                                   ('Rbar', ugrizy),
-                                   ('V', ugrizy),
-                                   ('S_m02', ugrizy),
-                                   ('S_p06', E),
-                                   ('S_p10', E)])
+                                   ('mag', Lbands), # only LSST since read straight from CatSim
+                                   ('magCalc', LSEbands),
+                                   ('magErr', LSEbands),
+                                   ('Rbar', LSbands), # doesn't make sense for space mission
+                                   ('V', LSbands),
+                                   ('S_m02', LSbands),
+                                   ('S_p06', Ebands),
+                                   ('S_p10', Ebands)])
     data[:] = np.nan
 
+    order = [d+1 for d in xrange(nrows)]
+    if seed is not None:
+        import random
+        random.seed(seed)
+        random.shuffle(order)
+    order = order[start:start+nmax]
+    order.sort()
     with open(filename) as f:
         if not debug:
             outdev = sys.stdout
         else:
             outdev = open(os.devnull, 'w')
         with chroma.ProgressBar(nmax, file=outdev) as bar:
+            j = 0
             for i, line in enumerate(f):
-                if i == 0 : continue #ignore column labels row
-                if i > nmax : break
+                if i == 0 : continue # ignore column labels row
+                if j >= nmax : break
+                if order[j] != i : continue
                 bar.update()
                 s = line.split(', ')
-                data[i-1].objectID = int(s[0])
-                data[i-1].raJ2000 = float(s[1])
-                data[i-1].decJ2000 = float(s[2])
-                data[i-1].magNorm = float(s[3])
-                data[i-1].sedFilePath = s[10]
-                data[i-1].galacticAv = float(s[11])
-                spec = stellar_spectrum(data[i-1], filters['norm'])
+
+                # position
+                data[j].objectID = int(s[0])
+                data[j].raJ2000 = float(s[1])
+                data[j].decJ2000 = float(s[2])
+
+                # flux
+                data[j].magNorm = float(s[3])
+                data[j].sedFilePath = s[10]
+                data[j].galacticAv = float(s[11])
+                spec = stellar_spectrum(data[j], filters['norm'])
 
                 # loop through filters and fill in database columns
                 for k, f in enumerate('ugrizy'):
                     # also append magnitude from catalog as a sanity check
-                    data[i-1]['mag']['LSST_'+f] = float(s[4+k])
+                    data[j]['mag']['LSST_'+f] = float(s[4+k])
                     bp = filters['LSST_'+f] # for brevity
                     try:
-                        data[i-1]['magCalc']['LSST_'+f] = spec.calculateMagnitude(bp)
+                        data[j]['magCalc']['LSST_'+f] = spec.calculateMagnitude(bp)
                         dcr = spec.calculateDCRMomentShifts(bp, zenith_angle=np.pi/4)
-                        data[i-1]['Rbar']['LSST_'+f] = dcr[0][1,0]
-                        data[i-1]['V']['LSST_'+f] = dcr[1][1,1]
-                        data[i-1]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
-                        data[i-1]['magErr']['LSST_'+f] = etc[f].err(psf,
-                                                                    data[i-1]['magCalc']['LSST_'+f])
+                        data[j]['Rbar']['LSST_'+f] = dcr[0][1,0]
+                        data[j]['V']['LSST_'+f] = dcr[1][1,1]
+                        data[j]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
+                        data[j]['magErr']['LSST_'+f] = etc[f].err(psf,
+                                                                    data[j]['magCalc']['LSST_'+f])
                     except:
                         pass
                 # separate loop for Euclid filters
@@ -164,24 +211,37 @@ def process_star_file(filename, nmax=None, debug=False, randomize=True, start=0)
                     fname = 'Euclid_{}'.format(fw)
                     bp = filters[fname]
                     try:
-                        data[i-1]['magCalc'][fname] = spec.calculateMagnitude(bp)
-                        data[i-1]['S_p06'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=0.6)
-                        data[i-1]['S_p10'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=1.0)
+                        data[j]['magCalc'][fname] = spec.calculateMagnitude(bp)
+                        data[j]['S_p06'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=0.6)
+                        data[j]['S_p10'][fname] = spec.calculateSeeingMomentRatio(bp, alpha=1.0)
+                    except:
+                        pass
+                # separate loop for SDSS filters
+                for f in 'ugriz':
+                    fname = 'SDSS_{}'.format(f)
+                    bp = filters[fname]
+                    try:
+                        data[j]['magCalc'][fname] = spec.calculateMagnitude(bp)
+                        dcr = spec.calculateDCRMomentShifts(bp, zenith_angle=np.pi/4)
+                        data[j]['Rbar'][fname] = dcr[0][1,0]
+                        data[j]['V'][fname] = dcr[1][1,1]
+                        data[j]['S_m02'][fname] = spec.calculateSeeingMomentRatio(bp)
                     except:
                         pass
                 if debug:
                     print
                     print 'syn mag:' + ' '.join(['{:6.3f}'.format(
-                        data[i-1]['magCalc']['LSST_'+fname])
+                        data[j]['magCalc']['LSST_'+fname])
                         for fname in 'ugrizy'])
                     print 'syn err:' + ' '.join(['{:6.3f}'.format(
-                        data[i-1]['magErr']['LSST_'+fname])
+                        data[j]['magErr']['LSST_'+fname])
                         for fname in 'ugrizy'])
-                    print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[i-1]['mag']['LSST_'+fname])
+                    print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
                                                  for fname in 'ugrizy'])
                     print 'Euclid: ' + ' '.join(['{:6.3f}'.format(
-                        data[i-1]['magCalc']['Euclid_{}'.format(fw)])
+                        data[j]['magCalc']['Euclid_{}'.format(fw)])
                         for fw in [150, 250, 350, 450]])
+                j += 1
     return data
 
 def runme():
@@ -191,6 +251,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--nmax', type=int, default=30000,
                         help="maximum number of stars to process (default: 30000)")
+    parser.add_argument('--seed', type=int, default=None,
+                        help="randomize order of stars in catalog")
     parser.add_argument('--outfile', default = 'output/star_data.pkl',
                         help="output filename (Default: output/star_data.pkl)")
     parser.add_argument('--infile', default = 'output/star_catalog.dat',
@@ -198,5 +260,6 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
 
-    cPickle.dump(process_star_file(args.infile, nmax=args.nmax, debug=args.debug),
+    cPickle.dump(process_star_file(args.infile, nmax=args.nmax, 
+                                   debug=args.debug, seed=args.seed),
                  open(args.outfile, 'wb'))
