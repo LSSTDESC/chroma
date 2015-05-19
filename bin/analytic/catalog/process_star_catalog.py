@@ -55,7 +55,7 @@ def stellar_spectrum(star, norm_bandpass):
     sed = sed.withMagnitude(star['magNorm'], norm_bandpass)
     # Limit the range to that which can be reddened.
     sed.blue_limit = max([91, sed.blue_limit])
-    sed.red_limit = min([6000, sed.blue_limit])
+    sed.red_limit = min([6000, sed.red_limit])
     sed = sed.redden(A_v=star['galacticAv'])
     return sed
 
