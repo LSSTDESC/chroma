@@ -44,8 +44,10 @@ var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)*
 m_Euclid = 0.001
 r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
+epsf_Euclid = 0.2
 mean_dS_p06_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
 mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
+var_dS_p06_sufficient = var_c_sufficient[1] / (epsf_Euclid / 2.0 * r2psf_Euclid / r2gal_Euclid)**2 * 0.5
 
 print
 print
@@ -335,6 +337,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
                     arrowprops=arrowdict,
                     zorder=10)
     elif bias == 'S_p06':
+        var_req = np.sqrt(var_dS_p06_sufficient)
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
         ax.fill_between(xlim,
                         [-mean_dS_p06_req]*2,
@@ -385,6 +388,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     im = ax.scatter(gals.redshift[rand_order],
                     galdata[rand_order],
                     c=c[rand_order],
+                    cmap='jet',
                     vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
     ax.set_xlabel("redshift", fontsize=fontsize)
 
@@ -468,10 +472,14 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     # var_ax.set_ylim(var_ylim)
     var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
                         color='#BBBBBB', zorder=1)
-    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
-                        color='#999999')
-    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
-                        color='#777777')
+    if bias in ['LnRbarSqr', 'V', 'S_m02']:
+        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
+                            color='#999999')
+        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
+                            color='#777777')
+    else:
+        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req]*2,
+                            color='#777777')
 
     f.savefig(outfile, dpi=220)
 
