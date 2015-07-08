@@ -14,7 +14,7 @@ if __name__ == '__main__':
         raise IOError("Need to run analytic_table.py script in directory $CHROMA/bin/analytic/")
 
     # LSST r-band power law size figure
-    # Want multiplicative bias (vs G5v star) vs. redshift
+    # Want multiplicative bias (vs G5V star) vs. redshift
     rsqr_gal = 0.3**2 # arcsec^2
     Ixx0 = 0.1147 # size of constant part of PSF (telescope, atm) (Moffat beta=5, FWHM=0.64)
     Ixx1 = 0.0065 # size of CCD part at effective wavelength (Gaussian FWHM=0.19)
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # Stars first
     G_idx = stardata['star_type'] == 'ukg5v'
     G_Ixx = Ixx0 + Ixx1 + stardata[G_idx]['linear']['LSST_r'] * (180/np.pi * 3600)**2
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     stars = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
 
     # LSST r-band linear ellipticity figure
-    # Want additive bias (vs G5v star) vs. redshift
+    # Want additive bias (vs G5V star) vs. redshift
     f = plt.figure(figsize=(6, 4))
     ax = f.add_subplot(111)
     ax.set_xlim(-0.1, 3.0)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     # Stars first
     G_idx = stardata['star_type'] == 'ukg5v'
     G_Ixx = Ixx0 + Ixx1 + stardata[G_idx]['linear']['LSST_r'] * (180/np.pi * 3600)**2
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     stars = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 

@@ -22,9 +22,9 @@ def compute_second_moment_radii(filter_name):
     f_data = numpy.genfromtxt(filter_dir + 'LSST_{}.dat'.format(filter_name))
     f_wave, f_throughput = f_data[:,0], f_data[:,1]
 
-    G5v_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
-    G5v_wave, G5v_flambda = G5v_data[:,0], G5v_data[:,1]
-    G5v_r2 = get_r2(G5v_wave, G5v_flambda, f_wave, f_throughput)
+    G5V_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
+    G5V_wave, G5V_flambda = G5V_data[:,0], G5V_data[:,1]
+    G5V_r2 = get_r2(G5V_wave, G5V_flambda, f_wave, f_throughput)
 
     star_types = ['uko5v',
                   'ukb5iii',
@@ -33,7 +33,7 @@ def compute_second_moment_radii(filter_name):
                   'ukg5v',
                   'ukk5v',
                   'ukm5v',
-                  'ukg5v'] #extra G5v star to make 8
+                  'ukg5v'] #extra G5V star to make 8
     star_diffs = {}
     for star_type in star_types:
         star_diffs[star_type] = {}
@@ -41,7 +41,7 @@ def compute_second_moment_radii(filter_name):
         wave, flambda = SED_data[:,0], SED_data[:,1]
 
         r2 = get_r2(wave, flambda, f_wave, f_throughput)
-        star_diffs[star_type]['dlogr2'] = numpy.log(r2 / G5v_r2)
+        star_diffs[star_type]['dlogr2'] = numpy.log(r2 / G5V_r2)
 
     gal_types= ['CWW_E_ext',
                 'KIN_Sa_ext',
@@ -60,16 +60,16 @@ def compute_second_moment_radii(filter_name):
             wave, flambda = SED_data[:,0], SED_data[:,1]
             for z in numpy.arange(0.0, 3.0, 0.03):
                 r2 = get_r2(wave * (1.0 + z), flambda, f_wave, f_throughput)
-                gal_diffs[gal_type]['dlogr2'].append( numpy.log(r2 / G5v_r2))
+                gal_diffs[gal_type]['dlogr2'].append( numpy.log(r2 / G5V_r2))
                 bar.update()
     return star_diffs, gal_diffs
 
 def plot_FWHM():
     data = pickle.load(open('data.pik'))
-    G5vlib, starlib, gallib = data
+    G5Vlib, starlib, gallib = data
 
     star_types = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
     #r-band
@@ -83,8 +83,8 @@ def plot_FWHM():
     for i in range(len(star_types)):
         w = (starlib['type'] == star_types[i]) & (starlib['filter'] == 'r')
         star_r2 = starlib[w]['FWHM']
-        G5v_r2 = G5vlib[w]['FWHM']
-        d_ln_r2 = numpy.log(numpy.mean(star_r2 / G5v_r2))
+        G5V_r2 = G5Vlib[w]['FWHM']
+        d_ln_r2 = numpy.log(numpy.mean(star_r2 / G5V_r2))
         ax.scatter(0.0, d_ln_r2, label=star_names[i], color=star_colors[i], marker='*', s=40)
 
 
@@ -94,10 +94,10 @@ def plot_FWHM():
     for i in range(len(gal_types)):
         w = (gallib['type'] == gal_types[i]) & (gallib['filter'] == 'r')
         gal_r2 = gallib[w]['FWHM']
-        G5v_r2 = G5vlib[i]['FWHM']
+        G5V_r2 = G5Vlib[i]['FWHM']
         d_ln_r2 = numpy.empty(100, dtype='f4')
         for j in range(100):
-            d_ln_r2[j] = numpy.log(numpy.mean(gal_r2[j,:] / G5v_r2))
+            d_ln_r2[j] = numpy.log(numpy.mean(gal_r2[j,:] / G5V_r2))
         ax.scatter(gallib[w]['z'], d_ln_r2, label=gal_types[i], color=gal_colors[i], s=10)
 
     ax.legend(prop={"size":9})

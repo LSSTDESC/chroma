@@ -17,7 +17,7 @@ def DCR_color_correction(shape_filter, color_filters):
     stars = cPickle.load(open('output/stars.pkl'))
     gals = cPickle.load(open('output/galaxies.pkl'))
 
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     star_types = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_pcolors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
@@ -26,7 +26,7 @@ def DCR_color_correction(shape_filter, color_filters):
                  'CWW_Im_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
     gal_pcolors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'Gray']
 
-    # Normalize all chromatic shifts to the shift for a G5v star.
+    # Normalize all chromatic shifts to the shift for a G5V star.
     G_idx = stars['star_type'] == 'ukg5v'
 
     # Populate lists of data for stars to plot and fit with

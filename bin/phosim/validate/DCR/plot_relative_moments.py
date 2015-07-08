@@ -30,9 +30,9 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
     f_data = numpy.genfromtxt(filter_dir + 'LSST_{}.dat'.format(filter_name))
     f_wave, f_throughput = f_data[:,0], f_data[:,1]
 
-    G5v_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
-    G5v_wave, G5v_flambda = G5v_data[:,0], G5v_data[:,1]
-    G5v_mom = moments(G5v_wave, G5v_flambda, f_wave, f_throughput, zenith, **kwargs)
+    G5V_data = numpy.genfromtxt(spec_dir + 'ukg5v.ascii')
+    G5V_wave, G5V_flambda = G5V_data[:,0], G5V_data[:,1]
+    G5V_mom = moments(G5V_wave, G5V_flambda, f_wave, f_throughput, zenith, **kwargs)
 
     star_types = ['uko5v',
                   'ukb5iii',
@@ -41,7 +41,7 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
                   'ukg5v',
                   'ukk5v',
                   'ukm5v',
-                  'ukg5v'] #extra G5v star to make 8
+                  'ukg5v'] #extra G5V star to make 8
     star_diffs = {}
     for star_type in star_types:
         star_diffs[star_type] = {}
@@ -49,10 +49,10 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
         wave, flambda = SED_data[:,0], SED_data[:,1]
 
         m = moments(wave, flambda, f_wave, f_throughput, zenith, **kwargs)
-        star_diffs[star_type]['M1'] = (m[0] - G5v_mom[0]) * 180 / numpy.pi * 3600 # rad -> arcsec
+        star_diffs[star_type]['M1'] = (m[0] - G5V_mom[0]) * 180 / numpy.pi * 3600 # rad -> arcsec
         # rad^2 -> arcsec^2
-        star_diffs[star_type]['M2'] = (m[1] - G5v_mom[1]) * (180 / numpy.pi * 3600)**2
-        star_diffs[star_type]['wM2'] = (m[2] - G5v_mom[2]) * (180 / numpy.pi * 3600)**2
+        star_diffs[star_type]['M2'] = (m[1] - G5V_mom[1]) * (180 / numpy.pi * 3600)**2
+        star_diffs[star_type]['wM2'] = (m[2] - G5V_mom[2]) * (180 / numpy.pi * 3600)**2
 
     gal_types= ['CWW_E_ext',
                 'KIN_Sa_ext',
@@ -73,9 +73,9 @@ def compute_relative_moments(filter_name, zenith, **kwargs):
                 bar.update()
                 m = moments(wave * (1.0 + z), flambda, f_wave, f_throughput, zenith, **kwargs)
                 # rad -> arcsec, rad^2 -> arcsec^2
-                gal_diffs[gal_type]['M1'].append((m[0] - G5v_mom[0]) * 180 / numpy.pi * 3600)
-                gal_diffs[gal_type]['M2'].append((m[1] - G5v_mom[1]) * (180 / numpy.pi * 3600)**2)
-                gal_diffs[gal_type]['wM2'].append((m[2] - G5v_mom[2]) * (180 / numpy.pi * 3600)**2)
+                gal_diffs[gal_type]['M1'].append((m[0] - G5V_mom[0]) * 180 / numpy.pi * 3600)
+                gal_diffs[gal_type]['M2'].append((m[1] - G5V_mom[1]) * (180 / numpy.pi * 3600)**2)
+                gal_diffs[gal_type]['wM2'].append((m[2] - G5V_mom[2]) * (180 / numpy.pi * 3600)**2)
     return star_diffs, gal_diffs
 
 def encode_obstypeid(filter_name, zenith, seed):
@@ -109,7 +109,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     if not os.path.exists('plots/'):
         os.mkdir('plots/')
 
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     stars = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
@@ -181,7 +181,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     if not os.path.exists('plots/'):
         os.mkdir('plots/')
 
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     stars = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
@@ -254,7 +254,7 @@ def plot_relative_moments(filter_name, zenith, seed):
     if not os.path.exists('plots/'):
         os.mkdir('plots/')
 
-    star_names = ['O5v', 'B5iii', 'A5v', 'F5v', 'G5v', 'K5v', 'M5v']
+    star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
     stars = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
     star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
