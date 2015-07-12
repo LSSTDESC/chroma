@@ -14,6 +14,10 @@ hist_axes_range = [0.17, 0.12, 0.09, 0.65]
 scatter_axes_range = [0.26, 0.12, 0.70, 0.65]
 var_axes_range = [0.26, 0.77, 0.70, 0.15]
 colorbar_axes_range = [0.81, 0.15, 0.025, 0.35]
+# Alternative locations when omitting variance panel.
+hist_axes_novar_range = [0.17, 0.12, 0.09, 0.8]
+scatter_axes_novar_range = [0.26, 0.12, 0.70, 0.8]
+
 fontsize = 16
 
 # Some annotation arrow properties
@@ -41,37 +45,50 @@ var_dS_m02_sufficient = var_c_sufficient / (epsf / 2.0 * r2sqr_PSF / r2sqr_gal)*
 # last factor of 0.5 needed to account for possible rotation of DeltaV from being purely real.
 # see appendix of Meyers+Burchat15.
 
-m_Euclid = 0.001
+m_Euclid = 0.0015 # From Cropper++ Table 1.
 r2gal_Euclid = 0.23**2 # where did I get this from?
 r2psf_Euclid = 0.2**2
 epsf_Euclid = 0.2
 mean_dS_p06_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
 mean_dS_p10_req = m_Euclid * r2gal_Euclid / r2psf_Euclid
-var_dS_p06_sufficient = var_c_sufficient[1] / (epsf_Euclid / 2.0 * r2psf_Euclid / r2gal_Euclid)**2 * 0.5
+# Set Euclid variance req equal to LSST req.
+# Compare this (1.8e-7) to Cropper++ value for (sigma[c])**2 = 1.e-7
+var_c_sufficient_Euclid = var_c_sufficient[1]
+var_dS_p06_sufficient = (var_c_sufficient_Euclid /
+                         (epsf_Euclid / 2.0 * r2psf_Euclid / r2gal_Euclid)**2 * 0.5)
 
-print
-print
-print "DES reqs"
-print "<m>: {}".format(mean_m_req[0])
-print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[0])
-print "<dV>: {}".format(mean_DeltaV_req[0])
-print "<dS>: {}".format(mean_dS_m02_req[0])
-print "var(c): {}".format(var_c_sufficient[0])
-print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[0])
-print "var(dV): {}".format(var_DeltaV_sufficient[0])
-print "var(dS): {}".format(var_dS_m02_sufficient[0])
-print
-print "LSST reqs"
-print "<m>: {}".format(mean_m_req[1])
-print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[1])
-print "<dV>: {}".format(mean_DeltaV_req[1])
-print "<dS>: {}".format(mean_dS_m02_req[1])
-print "var(c): {}".format(var_c_sufficient[1])
-print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[1])
-print "var(dV): {}".format(var_DeltaV_sufficient[1])
-print "var(dS): {}".format(var_dS_m02_sufficient[1])
-print
-
+def print_reqs():
+    print
+    print
+    print "DES reqs"
+    print "--------"
+    print "<m>: {}".format(mean_m_req[0])
+    print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[0])
+    print "<dV>: {}".format(mean_DeltaV_req[0])
+    print "<dS>: {}".format(mean_dS_m02_req[0])
+    print "var(c): {}".format(var_c_sufficient[0])
+    print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[0])
+    print "var(dV): {}".format(var_DeltaV_sufficient[0])
+    print "var(dS): {}".format(var_dS_m02_sufficient[0])
+    print
+    print "LSST reqs"
+    print "---------"
+    print "<m>: {}".format(mean_m_req[1])
+    print "<dRbarSqr>: {}".format(mean_DeltaRbarSqr_req[1])
+    print "<dV>: {}".format(mean_DeltaV_req[1])
+    print "<dS>: {}".format(mean_dS_m02_req[1])
+    print "var(c): {}".format(var_c_sufficient[1])
+    print "var(dRbarSqr): {}".format(var_DeltaRbarSqr_sufficient[1])
+    print "var(dV): {}".format(var_DeltaV_sufficient[1])
+    print "var(dS): {}".format(var_dS_m02_sufficient[1])
+    print
+    print "Euclid reqs"
+    print "-----------"
+    print "<m>: {}".format(m_Euclid)
+    print "<dS>: {}".format(mean_dS_p06_req)
+    print "var(c): {}".format(var_c_sufficient_Euclid)
+    print "var(dS): {}".format(var_dS_p06_sufficient)
+    print
 
 
 def hist_with_peak(x, bins=None, range=None, ax=None, orientation='vertical',
@@ -122,7 +139,7 @@ def set_range(x):
     return [low - 0.3*span, high + 0.3*span]
 
 
-def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwargs):
+def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, novar=False, **kwargs):
     """Produce a plot of a chromatic bias, which is one of:
        `RbarSqr` - Square of centroid shift due to differential chromatic refraction
        `LnRbarSqr` - Use log plot for square of centroid shift due to differential chromatic refraction
@@ -140,17 +157,22 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     @param cband      A tuple of two strings containing two bands to form a color.  Plot symbols will
                       be colored according to this color.
     @param corrected  Flag to plot photometric residuals instead of shift relative to G5v star
+    @param novar      Don't plot variance panel.
     @param kwargs     Other arguments to pass to the scatter plot
     """
 
     f = plt.figure(figsize=(8, 6))
     # scatter plot
-    ax = f.add_axes(scatter_axes_range)
+    if not novar:
+        ax = f.add_axes(scatter_axes_range)
+    else:
+        ax = f.add_axes(scatter_axes_novar_range)
     xlim = (0.0, 2.5)
     ax.set_xlim(xlim)
 
-    # create variance axis so can draw requirement bars
-    var_ax = f.add_axes(var_axes_range)
+    if not novar:
+        # create variance axis so can draw requirement bars
+        var_ax = f.add_axes(var_axes_range)
     # fill in some data based on which chromatic bias is requested.
     if bias == 'RbarSqr':
         var_req = np.sqrt(var_DeltaRbarSqr_sufficient)
@@ -244,6 +266,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     elif bias == 'V':
         var_req = np.sqrt(var_DeltaV_sufficient)
         ylabel = "$\Delta \mathrm{V}}$ (arcsec$^2$)"
+        # ylabel = "$\Delta I_{xx}$ (arcsec$^2$)" # Hack for AACC slide.
         ax.fill_between(xlim,
                         [-mean_DeltaV_req[0]]*2,
                         [mean_DeltaV_req[0]]*2,
@@ -275,6 +298,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) * (180/np.pi * 3600)**2
             ylabel = "$\delta(\Delta \mathrm{V})$ (arcsec$^2$)"
+            # ylabel = "$\delta(\Delta I_{xx})$ (arcsec$^2$)" # Hack for AACC slide
         if band == 'LSST_i':
             ax.annotate("LSST requirement",
                         xy=(0.1, mean_DeltaV_req[1]),
@@ -295,6 +319,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     elif bias == 'S_m02':
         var_req = np.sqrt(var_dS_m02_sufficient)
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
+        # ylabel = "$\Delta I_{xx} + \Delta I_{yy} / (I_{xx} + I_{yy})$" # Hack for AACC slide
         ax.fill_between(xlim,
                         [-mean_dS_m02_req[0]]*2,
                         [mean_dS_m02_req[0]]*2,
@@ -326,6 +351,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
+            # ylabel = "$\delta(\Delta I_{xx} + \Delta I_{yy} / (I_{xx} + I_{yy}))$" # Hack for AACC slide
         ax.annotate("LSST requirement",
                     xy=(0.1, mean_dS_m02_req[1]),
                     xytext=(0.18, mean_dS_m02_req[1]+2.e-3),
@@ -339,6 +365,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     elif bias == 'S_p06':
         var_req = np.sqrt(var_dS_p06_sufficient)
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
+        # ylabel = "$\Delta (I_{xx} + I_{yy}) / (I_{xx} + I_{yy})$" # Hack for AACC slide
         ax.fill_between(xlim,
                         [-mean_dS_p06_req]*2,
                         [mean_dS_p06_req]*2,
@@ -357,8 +384,10 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
+            # ylabel = "$\delta(\Delta (I_{xx} + I_{yy}) / (I_{xx} + I_{yy}))$" # Hack for AACC slide
     elif bias == 'S_p10':
         ylabel = "$\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF}$"
+        # ylabel = "$\Delta I_{xx} + \Delta I_{yy} / (I_{xx} + I_{yy})$" # Hack for AACC slide
         ax.fill_between(xlim,
                         [-mean_dS_p10_req]*2,
                         [mean_dS_p10_req]*2,
@@ -377,6 +406,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
             ungaldata = galdata
             galdata = (gals[bias][band] - gals['photo_'+bias][band]) / gals['photo_'+bias][band]
             ylabel = "$\delta(\Delta r^2_\mathrm{PSF}/r^2_\mathrm{PSF})$"
+            # ylabel = "$\delta(\Delta I_{xx} + \Delta I_{yy} / (I_{xx} + I_{yy}))$" # Hack for AACC slide
     else:
         raise ValueError("Unknown chromatic bias in plot_bias")
 
@@ -422,11 +452,14 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
         label.set_fontsize(fontsize)
 
     # label which band we're dealing with
-    ax.text(0.83, 0.93, band.replace('LSST_','')+' band', transform=ax.transAxes,
-            fontsize=fontsize)
+    ax.text(0.97, 0.93, band.replace('LSST_','')+' band', transform=ax.transAxes,
+            fontsize=fontsize, ha='right')
 
     # star histogram
-    hist_ax = f.add_axes(hist_axes_range)
+    if not novar:
+        hist_ax = f.add_axes(hist_axes_range)
+    else:
+        hist_ax = f.add_axes(hist_axes_novar_range)
     log = False
     if bias == 'LnRbarSqr':
         hist_ax.set_yscale('log')
@@ -458,28 +491,29 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, **kwarg
     for label in cbar_ax.get_yticklabels():
         label.set_fontsize(fontsize)
 
-    # variance axis
-    var_ax.set_xlim(ax.get_xlim())
-    var_ax.xaxis.set_ticklabels([])
-    var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
-    var_ax.set_ylim(var_ylim)
-    var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
+    if not novar:
+        # variance axis
+        var_ax.set_xlim(ax.get_xlim())
+        var_ax.xaxis.set_ticklabels([])
+        var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
+        var_ax.set_ylim(var_ylim)
+        var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
 
-    var_ax.locator_params(axis='y', nbins=4, prune='lower')
-    yticks = var_ax.get_yticks()
-    # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
-    var_ylim = [0, var_ax.get_ylim()[1]]
-    # var_ax.set_ylim(var_ylim)
-    var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
-                        color='#BBBBBB', zorder=1)
-    if bias in ['LnRbarSqr', 'V', 'S_m02']:
-        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
-                            color='#999999')
-        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
-                            color='#777777')
-    else:
-        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req]*2,
-                            color='#777777')
+        var_ax.locator_params(axis='y', nbins=4, prune='lower')
+        yticks = var_ax.get_yticks()
+        # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
+        var_ylim = [0, var_ax.get_ylim()[1]]
+        # var_ax.set_ylim(var_ylim)
+        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
+                            color='#BBBBBB', zorder=1)
+        if bias in ['LnRbarSqr', 'V', 'S_m02']:
+            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
+                                color='#999999')
+            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
+                                color='#777777')
+        else:
+            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req]*2,
+                                color='#777777')
 
     f.savefig(outfile, dpi=220)
 
@@ -503,48 +537,41 @@ if __name__ == '__main__':
                         help="output filename (Default: 'output/chromatic_bias.png')")
     parser.add_argument('--nominal_plots', action='store_true',
                         help="Plot some nominal useful LSST and Euclid figures")
+    parser.add_argument('--novar', action='store_true',
+                        help="Don't plot variance panel.")
     args = parser.parse_args()
+
+    print_reqs()
 
     gals = cPickle.load(open(args.galfile))
     stars = cPickle.load(open(args.starfile))
 
     if not args.nominal_plots:
         plot_bias(gals, stars, args.bias, args.band, args.color,
-                  outfile=args.outfile, corrected=args.corrected, s=s)
+                  outfile=args.outfile, corrected=args.corrected, novar=args.novar, s=s)
     else:
-        if args.corrected:
-            # LSST r-band
-            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dLnRbarSqr_corrected_LSST_r.png", corrected=True, s=s)
-            plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dV_corrected_LSST_r.png", corrected=True, s=s)
-            plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_m02_corrected_LSST_r.png", corrected=True, s=s)
-            # LSST i-band
-            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dLnRbarSqr_corrected_LSST_i.png", corrected=True, s=s)
-            plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dV_corrected_LSST_i.png", corrected=True, s=s)
-            plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_m02_corrected_LSST_i.png", corrected=True, s=s)
-            # Euclid 350nm band
-            plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_p06_corrected_Euclid_350.png", corrected=True, s=s)
-        else:
-            # LSST r-band
-            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dLnRbarSqr_LSST_r.png", s=s)
-            plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dV_LSST_r.png", s=s)
-            plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_m02_LSST_r.png", s=s)
-            # LSST i-band
-            plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dLnRbarSqr_LSST_i.png", s=s)
-            plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dV_LSST_i.png", s=s)
-            plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_m02_LSST_i.png", s=s)
-            # Euclid 350nm band
-            plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
-                      outfile="output/dS_p06_Euclid_350.png", s=s)
+        corrstr = "_corrected" if args.corrected else ""
+        # LSST r-band
+        plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
+                  outfile="output/dLnRbarSqr"+corrstr+"_LSST_r.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
+                  outfile="output/dV"+corrstr+"_LSST_r.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
+                  outfile="output/dS_m02"+corrstr+"_LSST_r.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        # LSST i-band
+        plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
+                  outfile="output/dLnRbarSqr"+corrstr+"_LSST_i.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
+                  outfile="output/dV"+corrstr+"_LSST_i.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
+                  outfile="output/dS_m02"+corrstr+"_LSST_i.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
+        # Euclid 350nm band
+        plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
+                  outfile="output/dS_p06"+corrstr+"_Euclid_350.png", corrected=args.corrected,
+                  novar=args.novar, s=s)
