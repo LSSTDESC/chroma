@@ -17,10 +17,11 @@ from argparse import ArgumentParser
 import warnings
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound
-from lsst.sims.catalogs.generation.db import CatalogDBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import CatalogDBObject
+from lsst.sims.utils import ObservationMetaData
 import lsst.sims.catUtils.baseCatalogModels
-from lsst.sims.photUtils.EBV import EBVmixin
-from lsst.sims.coordUtils import AstrometryBase
+from lsst.sims.catUtils.mixins import EBVmixin
+from lsst.sims.catUtils.mixins import AstrometryBase
 
 import numpy
 
@@ -95,6 +96,8 @@ if __name__ == "__main__":
                         help="Size of the pointing in degrees")
     parser.add_argument('--verbose', action="store_true",
                         help="Show all warnings")
+    parser.add_argument('--outdir', type=str, default="output/",
+                        help="output directory name.  Default: 'output/'")
     args = parser.parse_args()
 
     if not args.verbose:
@@ -120,9 +123,9 @@ if __name__ == "__main__":
     cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
     #Write the catalog out in chunks.  I find that 100000 is a good number of lines to
     #write at a time.  It is not too slow but will not push on memory limits.
-    if not os.path.isdir('output/'):
-        os.mkdir('output/')
-    filename = "output/galaxy_catalog.dat"
+    if not os.path.isdir(args.outdir):
+        os.mkdir(args.outdir)
+    filename = args.outdir+"galaxy_catalog.dat"
     print "Writing galaxy catalog"
     cat.write_catalog(filename, chunk_size=100000)
 
@@ -133,5 +136,5 @@ if __name__ == "__main__":
     print "Getting star catalog"
     cat = dbobj.getCatalog(filetype, obs_metadata=obs_metadata, constraint=constraint)
     print "Writing star catalog"
-    filename = "output/star_catalog.dat"
+    filename = args.outdir+"star_catalog.dat"
     cat.write_catalog(filename, chunk_size=100000)
