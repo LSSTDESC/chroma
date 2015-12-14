@@ -19,6 +19,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 
+
 def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         use_color=False, use_mag=False, regressor="SVR"):
 
@@ -35,64 +36,65 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
         train_Y[:] = train_objs[predict_var][predict_band]
         test_Y[:] = test_objs[predict_var][predict_band]
 
-    if use_color: # use only five colors to train
+    if use_color:  # use only five colors to train
         train_X = np.empty([ntrain, 5], dtype=np.float)
 
         # training data
-        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
-        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
-        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
-        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
-        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
+        train_X[:, 0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
+        train_X[:, 1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
+        train_X[:, 2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
+        train_X[:, 3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
+        train_X[:, 4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
 
         # test data
         test_X = np.empty([ntest, 5], dtype=np.float)
-        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
-        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
-        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
-        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
-        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
-    elif use_mag: # use only six magnitudes to train
+        test_X[:, 0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
+        test_X[:, 1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
+        test_X[:, 2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
+        test_X[:, 3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
+        test_X[:, 4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
+    elif use_mag:  # use only six magnitudes to train
         train_X = np.empty([ntrain, 6], dtype=np.float)
 
         # training data
-        train_X[:,0] = train_objs['magCalc']['LSST_u']
-        train_X[:,1] = train_objs['magCalc']['LSST_g']
-        train_X[:,2] = train_objs['magCalc']['LSST_r']
-        train_X[:,3] = train_objs['magCalc']['LSST_i']
-        train_X[:,4] = train_objs['magCalc']['LSST_z']
-        train_X[:,5] = train_objs['magCalc']['LSST_y']
+        train_X[:, 0] = train_objs['magCalc']['LSST_u']
+        train_X[:, 1] = train_objs['magCalc']['LSST_g']
+        train_X[:, 2] = train_objs['magCalc']['LSST_r']
+        train_X[:, 3] = train_objs['magCalc']['LSST_i']
+        train_X[:, 4] = train_objs['magCalc']['LSST_z']
+        train_X[:, 5] = train_objs['magCalc']['LSST_y']
 
         # test data
         test_X = np.empty([ntest, 6], dtype=np.float)
-        test_X[:,0] = test_objs['magCalc']['LSST_u']
-        test_X[:,1] = test_objs['magCalc']['LSST_g']
-        test_X[:,2] = test_objs['magCalc']['LSST_r']
-        test_X[:,3] = test_objs['magCalc']['LSST_i']
-        test_X[:,4] = test_objs['magCalc']['LSST_z']
-        test_X[:,5] = test_objs['magCalc']['LSST_y']
-    else: # default: use i-band magnitude, and five colors to train
+        test_X[:, 0] = test_objs['magCalc']['LSST_u']
+        test_X[:, 1] = test_objs['magCalc']['LSST_g']
+        test_X[:, 2] = test_objs['magCalc']['LSST_r']
+        test_X[:, 3] = test_objs['magCalc']['LSST_i']
+        test_X[:, 4] = test_objs['magCalc']['LSST_z']
+        test_X[:, 5] = test_objs['magCalc']['LSST_y']
+    else:  # default: use i-band magnitude, and five colors to train
         train_X = np.empty([ntrain, 6], dtype=np.float)
 
         # training data
-        train_X[:,0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
-        train_X[:,1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
-        train_X[:,2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
-        train_X[:,3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
-        train_X[:,4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
-        train_X[:,5] = train_objs['magCalc']['LSST_i']
+        train_X[:, 0] = train_objs['magCalc']['LSST_u'] - train_objs['magCalc']['LSST_g']
+        train_X[:, 1] = train_objs['magCalc']['LSST_g'] - train_objs['magCalc']['LSST_r']
+        train_X[:, 2] = train_objs['magCalc']['LSST_r'] - train_objs['magCalc']['LSST_i']
+        train_X[:, 3] = train_objs['magCalc']['LSST_i'] - train_objs['magCalc']['LSST_z']
+        train_X[:, 4] = train_objs['magCalc']['LSST_z'] - train_objs['magCalc']['LSST_y']
+        train_X[:, 5] = train_objs['magCalc']['LSST_i']
 
         # test data
         test_X = np.empty([ntest, 6], dtype=np.float)
-        test_X[:,0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
-        test_X[:,1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
-        test_X[:,2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
-        test_X[:,3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
-        test_X[:,4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
-        test_X[:,5] = test_objs['magCalc']['LSST_i']
+        test_X[:, 0] = test_objs['magCalc']['LSST_u'] - test_objs['magCalc']['LSST_g']
+        test_X[:, 1] = test_objs['magCalc']['LSST_g'] - test_objs['magCalc']['LSST_r']
+        test_X[:, 2] = test_objs['magCalc']['LSST_r'] - test_objs['magCalc']['LSST_i']
+        test_X[:, 3] = test_objs['magCalc']['LSST_i'] - test_objs['magCalc']['LSST_z']
+        test_X[:, 4] = test_objs['magCalc']['LSST_z'] - test_objs['magCalc']['LSST_y']
+        test_X[:, 5] = test_objs['magCalc']['LSST_i']
 
     from sklearn.preprocessing import StandardScaler
 
+    train_Y = train_Y.reshape(-1, 1)
     Y_scaler = StandardScaler().fit(train_Y)
     X_scaler = StandardScaler().fit(train_X)
 
@@ -115,9 +117,8 @@ def ML(train_objs, test_objs, predict_var=None, predict_band=None,
     #               'max_features':[2, 3, 4, 5],
     #               'min_samples_split':[2, 3, 4]}
     # learner = grid_search.GridSearchCV(learner, param_grid, cv=5, n_jobs=8)
-    # import ipdb; ipdb.set_trace()
 
-    learner.fit(scaled_train_X, scaled_train_Y)
+    learner.fit(scaled_train_X, scaled_train_Y.ravel())
     predict_Y = Y_scaler.inverse_transform(learner.predict(scaled_test_X))
     return predict_Y
 
@@ -145,24 +146,24 @@ def star_ML(train_objs, test_objs, **kwargs):
          ('Euclid_450', np.float32)]
 
     data = np.recarray((len(test_objs),),
-                          dtype = [('objectID', np.uint64),
-                                   ('raJ2000', np.float64),
-                                   ('decJ2000', np.float64),
-                                   ('magNorm', np.float32),
-                                   ('sedFilePath', np.str_, 64),
-                                   ('galacticAv', np.float32),
-                                   ('mag', ugrizy),
-                                   ('magCalc', ugrizyE),
-                                   ('Rbar', ugrizy),
-                                   ('V', ugrizy),
-                                   ('S_m02', ugrizy),
-                                   ('S_p06', E),
-                                   ('S_p10', E),
-                                   ('photo_Rbar', ugrizy),   # `photo` indicates the photometrically
-                                   ('photo_V', ugrizy),      # trained estimate.
-                                   ('photo_S_m02', ugrizy),
-                                   ('photo_S_p06', E),
-                                   ('photo_S_p10', E)])
+                       dtype=[('objectID', np.uint64),
+                              ('raJ2000', np.float64),
+                              ('decJ2000', np.float64),
+                              ('magNorm', np.float32),
+                              ('sedFilePath', np.str_, 64),
+                              ('galacticAv', np.float32),
+                              ('mag', ugrizy),
+                              ('magCalc', ugrizyE),
+                              ('Rbar', ugrizy),
+                              ('V', ugrizy),
+                              ('S_m02', ugrizy),
+                              ('S_p06', E),
+                              ('S_p10', E),
+                              ('photo_Rbar', ugrizy),   # `photo` indicates the photometrically
+                              ('photo_V', ugrizy),      # trained estimate.
+                              ('photo_S_m02', ugrizy),
+                              ('photo_S_p06', E),
+                              ('photo_S_p10', E)])
     copy_fields = ['objectID', 'raJ2000', 'decJ2000', 'magNorm',
                    'sedFilePath', 'galacticAv', 'mag', 'magCalc',
                    'Rbar', 'V', 'S_m02', 'S_p06', 'S_p10']
@@ -188,7 +189,6 @@ def star_ML(train_objs, test_objs, **kwargs):
                                        predict_var='S_m02', predict_band='LSST_r', **kwargs)
     print 'resid std: {}'.format(np.std(data['S_m02']['LSST_r'] - data['photo_S_m02']['LSST_r']))
 
-
     print 'training i-band centroid shifts'
     data['photo_Rbar']['LSST_i'] = ML(train_objs, test_objs,
                                       predict_var='Rbar', predict_band='LSST_i', **kwargs)
@@ -204,12 +204,11 @@ def star_ML(train_objs, test_objs, **kwargs):
                                        predict_var='S_m02', predict_band='LSST_i', **kwargs)
     print 'resid std: {}'.format(np.std(data['S_m02']['LSST_i'] - data['photo_S_m02']['LSST_i']))
 
-
     print 'training Euclid_350 diffraction limit shifts'
     data['photo_S_p06']['Euclid_350'] = ML(train_objs, test_objs,
                                            predict_var='S_p06', predict_band='Euclid_350', **kwargs)
-    print 'resid std: {}'.format(np.std(data['S_p06']['Euclid_350']
-                                        - data['photo_S_p06']['Euclid_350']))
+    print 'resid std: {}'.format(np.std(data['S_p06']['Euclid_350'] -
+                                        data['photo_S_p06']['Euclid_350']))
 
     return data
 
@@ -237,6 +236,8 @@ if __name__ == '__main__':
                         help="dont perturb magnitudes (Default: estimate LSST mag uncertainties)")
     parser.add_argument('--min_err', default=0.01, type=float,
                         help="minimum photometric uncertainty in each band (Default: 0.01)")
+    parser.add_argument('--sys_err', default=0.0, type=float,
+                        help="Systematic photometric uncertainty to simulate (Default: 0.00)")
     regressor = parser.add_mutually_exclusive_group()
     regressor.add_argument("--RandomForest", action="store_true",
                            help="Use random forest regressor (Default: SVR)")
@@ -255,11 +256,14 @@ if __name__ == '__main__':
     train_objs = cPickle.load(open(args.trainfile))
     test_objs = cPickle.load(open(args.testfile))
 
+    sys_err = np.random.randn(len('ugrizy')) * args.sys_err
+
     if not args.no_err:
         shape = len(test_objs['magCalc']['LSST_u'])
         for i, band in enumerate('ugrizy'):
             magerr = np.maximum(test_objs['magErr']['LSST_'+band], args.min_err)
             test_objs['magCalc']['LSST_'+band] += np.random.randn(shape) * magerr
+            test_objs['magCalc']['LSST_'+band] += sys_err[i]
 
     out = star_ML(train_objs[args.trainstart:args.trainstart+args.ntrain],
                   test_objs[args.teststart:args.teststart+args.ntest],

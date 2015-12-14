@@ -1,9 +1,9 @@
 """Process galaxy catalog produced by make_catalogs.py to add columns for DCR biases, chromatic
 seeing biases, and chromatic diffraction limit biases.  This script requires that the LSST CatSim
-SED files are downloaded and that either the environment variable $CAT_SHARE_DATA (for older versions
-of the LSST DM stack) or SIMS_SED_LIBRARY_DIR (for the current version of the stack) points to them.
-Note that you might need to source the `loadLSST.sh` file and run `setup sims_sed_library` to get
-these paths to work for the current version of the lsst stack.
+SED files are downloaded and that either the environment variable $CAT_SHARE_DATA (for older
+versions of the LSST DM stack) or SIMS_SED_LIBRARY_DIR (for the current version of the stack) points
+to them.  Note that you might need to source the `loadLSST.sh` file and run `setup sims_sed_library`
+to get these paths to work for the current version of the lsst stack.
 
 Chromatic biases include:
   Rbar - centroid shift due to differential chromatic refraction.
@@ -30,7 +30,7 @@ import chroma
 import chroma.lsstetc
 
 # For use in Exposure Time Calculator for magnitude error estimates
-psf = galsim.Kolmogorov(fwhm = 0.67)
+psf = galsim.Kolmogorov(fwhm=0.67)
 
 datadir = '../../../data/'
 
@@ -41,6 +41,7 @@ elif 'SIMS_SED_LIBRARY_DIR' in os.environ:
 else:
     raise ValueError("Cannot find CatSim SED files.")
 
+
 def file_len(fname):
     """Count '\n's in file.
     """
@@ -48,6 +49,7 @@ def file_len(fname):
         for i, l in enumerate(f):
             pass
     return i + 1
+
 
 def component_spectrum(sedfile, magnorm, av, rv, redshift, norm_bandpass, emission=False):
     sed = chroma.SED(os.path.join(SED_dir, sedfile))
@@ -60,6 +62,7 @@ def component_spectrum(sedfile, magnorm, av, rv, redshift, norm_bandpass, emissi
     sed = sed.atRedshift(redshift)
     return sed
 
+
 def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False, start=0):
     filters = {}
     for f in 'ugrizy':
@@ -67,7 +70,7 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
         filters['LSST_{}'.format(f)] = (chroma.Bandpass(ffile)
                                         .thin(1.e-5)
                                         .withZeropoint('AB', effective_diameter=6.4, exptime=30.0))
-    for width in [150,250,350,450]:
+    for width in [150, 250, 350, 450]:
         ffile = datadir+'filters/Euclid_{}.dat'.format(width)
         filters['Euclid_{}'.format(width)] = (chroma.Bandpass(ffile)
                                               .thin(1.e-5)
@@ -104,37 +107,37 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
          ('Euclid_450', np.float)]
 
     data = np.recarray((nmax,),
-                       dtype = [('galTileID', np.uint64),
-                                ('objectID', np.uint64),
-                                ('raJ2000', np.float),
-                                ('decJ2000', np.float),
-                                ('redshift', np.float),
-                                ('BulgeHLR', np.float),
-                                ('DiskHLR', np.float),
-                                ('BulgeE1', np.float),
-                                ('BulgeE2', np.float),
-                                ('DiskE1', np.float),
-                                ('DiskE2', np.float),
-                                ('sedPathBulge', np.str_, 64),
-                                ('sedPathDisk', np.str_, 64),
-                                ('sedPathAGN', np.str_, 64),
-                                ('magNormBulge', np.float),
-                                ('magNormDisk', np.float),
-                                ('magNormAGN', np.float),
-                                ('internalAVBulge', np.float),
-                                ('internalRVBulge', np.float),
-                                ('internalAVDisk', np.float),
-                                ('internalRVDisk', np.float),
-                                ('mag', ugrizy),
-                                ('magCalc', ugrizyE),
-                                ('magErr', ugrizy),
-                                ('BulgeFrac', ugrizyE),
-                                ('Rbar', ugrizy),
-                                ('V', ugrizy),
-                                ('dVcg', ugrizy),
-                                ('S_m02', ugrizy),
-                                ('S_p06', E),
-                                ('S_p10', E)])
+                       dtype=[('galTileID', np.uint64),
+                              ('objectID', np.uint64),
+                              ('raJ2000', np.float),
+                              ('decJ2000', np.float),
+                              ('redshift', np.float),
+                              ('BulgeHLR', np.float),
+                              ('DiskHLR', np.float),
+                              ('BulgeE1', np.float),
+                              ('BulgeE2', np.float),
+                              ('DiskE1', np.float),
+                              ('DiskE2', np.float),
+                              ('sedPathBulge', np.str_, 64),
+                              ('sedPathDisk', np.str_, 64),
+                              ('sedPathAGN', np.str_, 64),
+                              ('magNormBulge', np.float),
+                              ('magNormDisk', np.float),
+                              ('magNormAGN', np.float),
+                              ('internalAVBulge', np.float),
+                              ('internalRVBulge', np.float),
+                              ('internalAVDisk', np.float),
+                              ('internalRVDisk', np.float),
+                              ('mag', ugrizy),
+                              ('magCalc', ugrizyE),
+                              ('magErr', ugrizy),
+                              ('BulgeFrac', ugrizyE),
+                              ('Rbar', ugrizy),
+                              ('V', ugrizy),
+                              ('dVcg', ugrizy),
+                              ('S_m02', ugrizy),
+                              ('S_p06', E),
+                              ('S_p10', E)])
 
     data[:] = np.nan
 
@@ -153,9 +156,12 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
         with chroma.ProgressBar(nmax, file=outdev) as bar:
             j = 0
             for i, line in enumerate(f):
-                if i == 0 : continue # ignore column labels row
-                if j >= nmax : break
-                if order[j] != i : continue
+                if i == 0:
+                    continue  # ignore column labels row
+                if j >= nmax:
+                    break
+                if order[j] != i:
+                    continue
                 bar.update()
                 s = line.split(', ')
 
@@ -211,7 +217,7 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
                         data[j].internalAVBulge, data[j].internalRVBulge,
                         data[j].redshift, filters['norm'], emission=emission)
                     spec = bulge_spec
-                    bulge = galsim.DeVaucouleurs(half_light_radius = data[j].BulgeHLR)
+                    bulge = galsim.DeVaucouleurs(half_light_radius=data[j].BulgeHLR)
                     bulge = bulge.shear(e1=data[j].BulgeE1, e2=data[j].BulgeE2)
                 if A_Disk != 0.0:
                     disk_spec = component_spectrum(
@@ -219,7 +225,7 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
                         data[j].internalAVDisk, data[j].internalRVDisk,
                         data[j].redshift, filters['norm'], emission=emission)
                     spec = disk_spec
-                    disk = galsim.Exponential(half_light_radius = data[j].DiskHLR)
+                    disk = galsim.Exponential(half_light_radius=data[j].DiskHLR)
                     disk = disk.shear(e1=data[j].DiskE1, e2=data[j].DiskE2)
                 if 'bulge_spec' in locals() and 'disk_spec' in locals():
                     spec = bulge_spec + disk_spec
@@ -228,12 +234,12 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
                 for k, f in enumerate('ugrizy'):
                     # grab catalog magnitude
                     data[j]['mag']['LSST_'+f] = float(s[11+k])
-                    bp = filters['LSST_'+f] # for brevity
+                    bp = filters['LSST_'+f]  # for brevity
                     try:
                         data[j]['magCalc']['LSST_'+f] = spec.calculateMagnitude(bp)
                         dcr = spec.calculateDCRMomentShifts(bp, zenith_angle=np.pi/4)
-                        data[j]['Rbar']['LSST_'+f] = dcr[0][1,0]
-                        data[j]['V']['LSST_'+f] = dcr[1][1,1]
+                        data[j]['Rbar']['LSST_'+f] = dcr[0][1, 0]
+                        data[j]['V']['LSST_'+f] = dcr[1][1, 1]
                         data[j]['S_m02']['LSST_'+f] = spec.calculateSeeingMomentRatio(bp)
                         if 'bulge_spec' in locals() and 'disk_spec' not in locals():
                             data[j]['BulgeFrac']['LSST_'+f] = 1.0
@@ -264,27 +270,28 @@ def process_gal_file(filename, nmax=None, debug=False, seed=None, emission=False
                         pass
                 if debug:
                     print
-                    print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+fname])
-                                                 for fname in 'ugrizy'])
-                    print 'syn err:' + ' '.join(['{:6.3f}'.format(data[j]['magErr']['LSST_'+fname])
-                                                 for fname in 'ugrizy'])
-                    print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+fname])
-                                                 for fname in 'ugrizy'])
+                    print 'syn mag:' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']['LSST_'+f])
+                                                 for f in 'ugrizy'])
+                    print 'syn err:' + ' '.join(['{:6.3f}'.format(data[j]['magErr']['LSST_'+f])
+                                                 for f in 'ugrizy'])
+                    print 'cat mag:' + ' '.join(['{:6.3f}'.format(data[j]['mag']['LSST_'+f])
+                                                 for f in 'ugrizy'])
                     print 'Euclid: ' + ' '.join(['{:6.3f}'.format(data[j]['magCalc']
                                                                   ['Euclid_{}'.format(fw)])
                                                  for fw in [150, 250, 350, 450]])
                 j += 1
     return data
 
+
 def runme():
-    junk = process_gal_file('output/galaxy_catalog.dat', nmax=25, emission=False, start=0, debug=True)
+    process_gal_file('output/galaxy_catalog.dat', nmax=25, emission=False, start=0, debug=True)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--infile', default = 'output/galaxy_catalog.dat',
+    parser.add_argument('--infile', default='output/galaxy_catalog.dat',
                         help="input filename. Default 'output/galaxy_catalog.dat'")
-    parser.add_argument('--outfile', default = 'output/galaxy_data.pkl',
+    parser.add_argument('--outfile', default='output/galaxy_data.pkl',
                         help="output filename. Default 'output/galaxy_data.pkl'")
     parser.add_argument('--nmax', type=int, default=30000,
                         help="maximum number of galaxies to process. Default 30000")
