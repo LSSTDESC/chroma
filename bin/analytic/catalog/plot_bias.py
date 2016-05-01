@@ -139,7 +139,8 @@ def set_range(x):
     return [low - 0.3*span, high + 0.3*span]
 
 
-def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, novar=False, **kwargs):
+def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, novar=False,
+              CWW=False, **kwargs):
     """Produce a plot of a chromatic bias, which is one of:
        `RbarSqr` - Square of centroid shift due to differential chromatic refraction
        `LnRbarSqr` - Use log plot for square of centroid shift due to differential chromatic refraction
@@ -167,7 +168,7 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, novar=F
         ax = f.add_axes(scatter_axes_range)
     else:
         ax = f.add_axes(scatter_axes_novar_range)
-    xlim = (0.0, 2.5)
+    xlim = (-0.1, 2.5)
     ax.set_xlim(xlim)
 
     if not novar:
@@ -411,109 +412,139 @@ def plot_bias(gals, stars, bias, band, cbands, outfile, corrected=False, novar=F
         raise ValueError("Unknown chromatic bias in plot_bias")
 
     # colors for plotting symbols
-    c = gals['magCalc'][cbands[0]] - gals['magCalc'][cbands[1]]
-    clim = set_range(c)
-    clim[1] += 0.1 * (clim[1]-clim[0])
-    rand_order = np.random.shuffle(np.arange(len(gals)))
-    im = ax.scatter(gals.redshift[rand_order],
-                    galdata[rand_order],
-                    c=c[rand_order],
-                    cmap='jet',
-                    vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
-    ax.set_xlabel("redshift", fontsize=fontsize)
+    if CWW:
+        ylim = (-0.002, 0.0015)  #HACK
+        ax.set_ylim(ylim)
+        ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB', zorder=1)
+        star_names = ['O5V', 'B5III', 'A5V', 'F5V', 'G5V', 'K5V', 'M5V']
+        star_types = ['uko5v', 'ukb5iii', 'uka5v', 'ukf5v', 'ukg5v', 'ukk5v', 'ukm5v']
+        star_colors = ['Blue', 'Cyan', 'Green', 'Gold', 'Orange', 'Red', 'Violet']
 
-    # running mean and variance:
-    nbins = int(len(galdata)**0.4)
-    xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
-    means = [np.mean(galdata[(gals.redshift > xbins[i])
-                             & (gals.redshift < xbins[i+1])])
-             for i in range(nbins)]
-    sqrt_vars = [np.sqrt(np.var(galdata[(gals.redshift > xbins[i])
-                                        & (gals.redshift < xbins[i+1])]))
-                 for i in range(nbins)]
-    var_ylim = [0, np.max(sqrt_vars)*1.2]
-    if 'ungaldata' in locals():
-        unsqrt_vars = [np.sqrt(np.var(ungaldata[(gals.redshift > xbins[i])
-                                                & (gals.redshift < xbins[i+1])]))
-                       for i in range(nbins)]
-        var_ylim = [0, np.max(unsqrt_vars)*1.2]
+        #plot stars
+        for star_name, star_type, star_color in zip(star_names, star_types, star_colors):
+            star_idx = (stars.star_type == star_type)
+            ax.scatter(0.0, stardata[star_idx], c=star_color, marker='*', s=160, label=star_name,
+                       zorder=3)
 
-    zs = 0.5*(xbins[1:] + xbins[:-1])
-    ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
+        gal_names = ['E', 'Sa', 'Sb', 'Sbc', 'Scd', 'Im', 'SB1', 'SB6']
+        gal_types = ['CWW_E_ext', 'KIN_Sa_ext', 'KIN_Sb_ext', 'CWW_Sbc_ext', 'CWW_Scd_ext',
+                     'CWW_Im_ext', 'KIN_SB1_ext', 'KIN_SB6_ext']
+        gal_colors = ['Violet', 'Red', 'Orange', 'Gold', 'Green', 'Cyan', 'Blue', 'Gray']
 
-    # if bias in ['Rbar', 'V']:
-    #     ax.set_title('zenith angle = 45 degrees, filter = {}'.format(band), fontsize=fontsize)
-    # else: # size bias is indep of zenith angle, so don't print it.
-    #     ax.set_title('filter = {}'.format(band), fontsize=fontsize)
-    ax.yaxis.set_ticklabels([])
-    ax.set_ylim(ylim)
-    ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB', zorder=1)
-    for label in ax.get_xticklabels():
-        label.set_fontsize(fontsize)
-
-    # label which band we're dealing with
-    ax.text(0.97, 0.93, band.replace('LSST_','')+' band', transform=ax.transAxes,
-            fontsize=fontsize, ha='right')
-
-    # star histogram
-    if not novar:
-        hist_ax = f.add_axes(hist_axes_range)
+        for gal_name, gal_type, gal_color in zip(gal_names, gal_types, gal_colors):
+            gal_idx = (gals.gal_type == gal_type)
+            ax.plot(gals[gal_idx].redshift, galdata[gal_idx], c=gal_color, label=gal_name)
+        ax.legend(loc='right').set_zorder(11)
+        ax.set_xlabel("redshift", fontsize=fontsize)
+        ax.set_ylabel(ylabel, fontsize=fontsize)
+        for label in ax.get_xticklabels():
+            label.set_fontsize(fontsize)
+        for label in ax.get_yticklabels():
+            label.set_fontsize(fontsize)
     else:
-        hist_ax = f.add_axes(hist_axes_novar_range)
-    log = False
-    if bias == 'LnRbarSqr':
-        hist_ax.set_yscale('log')
-        log = True
-    hist_with_peak(stardata, bins=200, range=ylim, orientation='horizontal',
-                   histtype='stepfilled', log=log, color='blue')
-    hist_ax.xaxis.set_ticklabels([])
-    hist_ax.set_ylim(ylim)
-    xlim = hist_ax.get_xlim()
-    hist_ax.set_xlim(xlim)
-    hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
-    hist_ax.set_ylabel(ylabel, fontsize=fontsize)
-    # gal histogram
-    hist_with_peak(galdata, bins=200, range=ylim, orientation='horizontal',
-                   histtype='step', log=log, color='red')
-    hist_ax.text(0.1, 0.93,
-                 "stars", fontsize=fontsize, color='blue', transform=hist_ax.transAxes)
-    hist_ax.text(0.1, 0.88,
-                 "gals", fontsize=fontsize, color='red', transform=hist_ax.transAxes)
-    for label in hist_ax.get_yticklabels():
-        label.set_fontsize(fontsize)
+        c = gals['magCalc'][cbands[0]] - gals['magCalc'][cbands[1]]
+        clim = set_range(c)
+        clim[1] += 0.1 * (clim[1]-clim[0])
+        order = np.random.shuffle(np.arange(len(gals)))
+        im = ax.scatter(gals.redshift[order],
+                        galdata[order],
+                        c=c[order],
+                        cmap='jet',
+                        vmin=clim[0], vmax=clim[1], zorder=4, **kwargs)
+        ax.set_xlabel("redshift", fontsize=fontsize)
 
-    # colorbar
-    cbar_ax = f.add_axes(colorbar_axes_range)
-    cbar = plt.colorbar(im, cax=cbar_ax)
-    cbar_ax.set_ylabel("{} - {}".format(cbands[0].replace('LSST_',''),
-                                        cbands[1].replace('LSST_','')),
-                       fontsize=fontsize)
-    for label in cbar_ax.get_yticklabels():
-        label.set_fontsize(fontsize)
+        # running mean and variance:
+        nbins = int(len(galdata)**0.4)
+        xbins = np.linspace(0.0, np.max(gals.redshift), nbins+1)
+        means = [np.mean(galdata[(gals.redshift > xbins[i])
+                                 & (gals.redshift < xbins[i+1])])
+                 for i in range(nbins)]
+        sqrt_vars = [np.sqrt(np.var(galdata[(gals.redshift > xbins[i])
+                                            & (gals.redshift < xbins[i+1])]))
+                     for i in range(nbins)]
+        var_ylim = [0, np.max(sqrt_vars)*1.2]
+        if 'ungaldata' in locals():
+            unsqrt_vars = [np.sqrt(np.var(ungaldata[(gals.redshift > xbins[i])
+                                                    & (gals.redshift < xbins[i+1])]))
+                           for i in range(nbins)]
+            var_ylim = [0, np.max(unsqrt_vars)*1.2]
 
-    if not novar:
-        # variance axis
-        var_ax.set_xlim(ax.get_xlim())
-        var_ax.xaxis.set_ticklabels([])
-        var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
-        var_ax.set_ylim(var_ylim)
-        var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
+        zs = 0.5*(xbins[1:] + xbins[:-1])
+        ax.plot(zs, means, color='red', linestyle='-', linewidth=2, zorder=10)
 
-        var_ax.locator_params(axis='y', nbins=4, prune='lower')
-        yticks = var_ax.get_yticks()
-        # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
-        var_ylim = [0, var_ax.get_ylim()[1]]
-        # var_ax.set_ylim(var_ylim)
-        var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
-                            color='#BBBBBB', zorder=1)
-        if bias in ['LnRbarSqr', 'V', 'S_m02']:
-            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
-                                color='#999999')
-            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
-                                color='#777777')
+        # if bias in ['Rbar', 'V']:
+        #     ax.set_title('zenith angle = 45 degrees, filter = {}'.format(band), fontsize=fontsize)
+        # else: # size bias is indep of zenith angle, so don't print it.
+        #     ax.set_title('filter = {}'.format(band), fontsize=fontsize)
+        ax.yaxis.set_ticklabels([])
+        ax.set_ylim(ylim)
+        ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='#BBBBBB', zorder=1)
+        for label in ax.get_xticklabels():
+            label.set_fontsize(fontsize)
+
+        # label which band we're dealing with
+        ax.text(0.97, 0.93, band.replace('LSST_','')+' band', transform=ax.transAxes,
+                fontsize=fontsize, ha='right')
+
+        # star histogram
+        if not novar:
+            hist_ax = f.add_axes(hist_axes_range)
         else:
-            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req]*2,
-                                color='#777777')
+            hist_ax = f.add_axes(hist_axes_novar_range)
+        log = False
+        if bias == 'LnRbarSqr':
+            hist_ax.set_yscale('log')
+            log = True
+        hist_with_peak(stardata, bins=200, range=ylim, orientation='horizontal',
+                       histtype='stepfilled', log=log, color='blue')
+        hist_ax.xaxis.set_ticklabels([])
+        hist_ax.set_ylim(ylim)
+        xlim = hist_ax.get_xlim()
+        hist_ax.set_xlim(xlim)
+        hist_ax.fill_between(xlim, [ylim[0]]*2, [ylim[1]]*2, color='white', zorder=1)
+        hist_ax.set_ylabel(ylabel, fontsize=fontsize)
+        # gal histogram
+        hist_with_peak(galdata, bins=200, range=ylim, orientation='horizontal',
+                       histtype='step', log=log, color='red')
+        hist_ax.text(0.1, 0.93,
+                     "stars", fontsize=fontsize, color='blue', transform=hist_ax.transAxes)
+        hist_ax.text(0.1, 0.88,
+                     "gals", fontsize=fontsize, color='red', transform=hist_ax.transAxes)
+        for label in hist_ax.get_yticklabels():
+            label.set_fontsize(fontsize)
+
+        # colorbar
+        cbar_ax = f.add_axes(colorbar_axes_range)
+        cbar = plt.colorbar(im, cax=cbar_ax)
+        cbar_ax.set_ylabel("{} - {}".format(cbands[0].replace('LSST_',''),
+                                            cbands[1].replace('LSST_','')),
+                           fontsize=fontsize)
+        for label in cbar_ax.get_yticklabels():
+            label.set_fontsize(fontsize)
+
+        if not novar:
+            # variance axis
+            var_ax.set_xlim(ax.get_xlim())
+            var_ax.xaxis.set_ticklabels([])
+            var_ax.set_ylabel("$\sqrt{\mathrm{Var}}$")
+            var_ax.set_ylim(var_ylim)
+            var_ax.plot(zs, sqrt_vars, color='blue', linewidth=2)
+
+            var_ax.locator_params(axis='y', nbins=4, prune='lower')
+            yticks = var_ax.get_yticks()
+            # var_ax.set_yticks([0.0, 0.5*yticks[-1], yticks[-1]])
+            var_ylim = [0, var_ax.get_ylim()[1]]
+            # var_ax.set_ylim(var_ylim)
+            var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_ylim[1]]*2,
+                                color='#BBBBBB', zorder=1)
+            if bias in ['LnRbarSqr', 'V', 'S_m02']:
+                var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[0]]*2,
+                                    color='#999999')
+                var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req[1]]*2,
+                                    color='#777777')
+            else:
+                var_ax.fill_between(var_ax.get_xlim(), [var_ylim[0]]*2, [var_req]*2,
+                                    color='#777777')
 
     f.savefig(outfile, dpi=220)
 
@@ -526,8 +557,8 @@ if __name__ == '__main__':
                         help="input star file. Default 'output/corrected_star_data.pkl'")
     parser.add_argument('--corrected', action='store_true',
                         help="plot learning residuals instead of G5v residuals.")
-    parser.add_argument('bias', default='Rbar', nargs='?',
-                        help="""which chromatic bias to plot (Default: 'Rbar')
+    parser.add_argument('bias', default='RbarSqr', nargs='?',
+                        help="""which chromatic bias to plot (Default: 'RbarSqr')
                              Other possibilities include: 'V', 'S_m02', 'S_p06', 'S_p10'""")
     parser.add_argument('--band', default='LSST_r', nargs='?',
                         help="band of chromatic bias to plot (Default: 'LSST_r')")
@@ -539,39 +570,46 @@ if __name__ == '__main__':
                         help="Plot some nominal useful LSST and Euclid figures")
     parser.add_argument('--novar', action='store_true',
                         help="Don't plot variance panel.")
+    parser.add_argument('--CWW', action='store_true',
+                        help="Use CWW templates instead of CatSim.")
     args = parser.parse_args()
 
     print_reqs()
 
-    gals = cPickle.load(open(args.galfile))
-    stars = cPickle.load(open(args.starfile))
+    if args.CWW:
+        gals = cPickle.load(open('../output/galaxies.pkl'))
+        stars = cPickle.load(open('../output/stars.pkl'))
+    else:
+        gals = cPickle.load(open(args.galfile))
+        stars = cPickle.load(open(args.starfile))
 
     if not args.nominal_plots:
         plot_bias(gals, stars, args.bias, args.band, args.color,
-                  outfile=args.outfile, corrected=args.corrected, novar=args.novar, s=s)
+                  outfile=args.outfile, corrected=args.corrected, novar=args.novar,
+                  CWW=args.CWW, s=s)
     else:
         corrstr = "_corrected" if args.corrected else ""
         # LSST r-band
         plot_bias(gals, stars, 'LnRbarSqr', 'LSST_r', ('LSST_r', 'LSST_i'),
                   outfile="output/dLnRbarSqr"+corrstr+"_LSST_r.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         plot_bias(gals, stars, 'V', 'LSST_r', ('LSST_r', 'LSST_i'),
                   outfile="output/dV"+corrstr+"_LSST_r.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         plot_bias(gals, stars, 'S_m02', 'LSST_r', ('LSST_r', 'LSST_i'),
                   outfile="output/dS_m02"+corrstr+"_LSST_r.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         # LSST i-band
         plot_bias(gals, stars, 'LnRbarSqr', 'LSST_i', ('LSST_r', 'LSST_i'),
                   outfile="output/dLnRbarSqr"+corrstr+"_LSST_i.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         plot_bias(gals, stars, 'V', 'LSST_i', ('LSST_r', 'LSST_i'),
                   outfile="output/dV"+corrstr+"_LSST_i.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         plot_bias(gals, stars, 'S_m02', 'LSST_i', ('LSST_r', 'LSST_i'),
                   outfile="output/dS_m02"+corrstr+"_LSST_i.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
         # Euclid 350nm band
         plot_bias(gals, stars, 'S_p06', 'Euclid_350', ('LSST_r', 'LSST_i'),
                   outfile="output/dS_p06"+corrstr+"_Euclid_350.png", corrected=args.corrected,
-                  novar=args.novar, s=s)
+                  novar=args.novar, CWW=args.CWW, s=s)
