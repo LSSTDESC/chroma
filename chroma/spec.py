@@ -63,11 +63,12 @@ class SED(object):
                          above for valid options for this parameter. [default: 'flambda']
 
     """
-    def __init__(self, spec, wave_type='nm', flux_type='flambda'):
+
+    def __init__(self, spec, wave_type="nm", flux_type="flambda"):
         # Figure out input wavelength type
-        if wave_type.lower() in ['nm', 'nanometer', 'nanometers']:
+        if wave_type.lower() in ["nm", "nanometer", "nanometers"]:
             wave_factor = 1.0
-        elif wave_type.lower() in ['a', 'ang', 'angstrom', 'angstroms']:
+        elif wave_type.lower() in ["a", "ang", "angstrom", "angstroms"]:
             wave_factor = 10.0
         else:
             raise ValueError("Unknown wave_type '{0}'".format(wave_type))
@@ -75,6 +76,7 @@ class SED(object):
         # Figure out input flux density type
         if isinstance(spec, str):
             import os
+
             if os.path.isfile(spec):
                 w, f = np.genfromtxt(spec).T
                 spec = interp1d(w, f)
@@ -87,19 +89,22 @@ class SED(object):
                 # a valid spectrum specification.
                 # Are there any other types of errors we should trap here?
                 try:
-                    spec = eval('lambda wave : ' + spec)   # This can raise SyntaxError
-                    spec(700)   # This can raise NameError or ZeroDivisionError
+                    spec = eval("lambda wave : " + spec)  # This can raise SyntaxError
+                    spec(700)  # This can raise NameError or ZeroDivisionError
                 except ArithmeticError:
                     pass
                 except:
                     raise ValueError(
-                        "String spec must either be a valid filename or something that " +
-                        "can eval to a function of wave. Input provided: {0}".format(origspec))
+                        "String spec must either be a valid filename or something that "
+                        + "can eval to a function of wave. Input provided: {0}".format(
+                            origspec
+                        )
+                    )
 
         if isinstance(spec, interp1d):
             self.blue_limit = spec.x.min() / wave_factor
             self.red_limit = spec.x.max() / wave_factor
-            self.wave_list = np.array(spec.x)/wave_factor
+            self.wave_list = np.array(spec.x) / wave_factor
         else:
             self.blue_limit = None
             self.red_limit = None
@@ -107,19 +112,21 @@ class SED(object):
 
         # Do some SED unit conversions to make internal representation proportional to photons/nm.
         # Note that w should have units of nm below.
-        c = 2.99792458e17   # speed of light in nm/s
+        c = 2.99792458e17  # speed of light in nm/s
         h = 6.62606957e-27  # Planck's constant in erg seconds
-        if flux_type == 'flambda':
+        if flux_type == "flambda":
             # photons/nm = (erg/nm) * (photons/erg)
             #            = spec(w) * 1/(h nu) = spec(w) * lambda / hc
-            self._rest_photons = lambda w: (spec(np.array(w) * wave_factor) * w / (h*c))
-        elif flux_type == 'fnu':
+            self._rest_photons = lambda w: (
+                spec(np.array(w) * wave_factor) * w / (h * c)
+            )
+        elif flux_type == "fnu":
             # photons/nm = (erg/Hz) * (photons/erg) * (Hz/nm)
             #            = spec(w) * 1/(h nu) * |dnu/dlambda|
             # [Use dnu/dlambda = d(c/lambda)/dlambda = -c/lambda^2 = -nu/lambda]
             #            = spec(w) * 1/(h lambda)
             self._rest_photons = lambda w: (spec(np.array(w) * wave_factor) / (w * h))
-        elif flux_type == 'fphotons':
+        elif flux_type == "fphotons":
             # Already basically correct.  Just convert the units of lambda
             self._rest_photons = lambda w: spec(np.array(w) * wave_factor)
         else:
@@ -144,7 +151,7 @@ class SED(object):
         return blue_limit, red_limit
 
     def __call__(self, wave):
-        """ Return photon density at wavelength `wave`.
+        """Return photon density at wavelength `wave`.
 
         Note that outside of the wavelength range defined by the `blue_limit` and `red_limit`
         attributes, the SED is considered undefined, and this method will raise an exception if a
@@ -154,21 +161,27 @@ class SED(object):
 
         @returns the photon density in units of photons/nm
         """
-        if hasattr(wave, '__iter__'):  # Only iterables respond to min(), max()
+        if hasattr(wave, "__iter__"):  # Only iterables respond to min(), max()
             wmin = min(wave)
             wmax = max(wave)
         else:  # python scalar
             wmin = wave
             wmax = wave
-        extrapolation_slop = 1.e-6  # allow a small amount of extrapolation
+        extrapolation_slop = 1.0e-6  # allow a small amount of extrapolation
         if self.blue_limit is not None:
             if wmin < self.blue_limit - extrapolation_slop:
-                raise ValueError("Requested wavelength ({0}) is bluer than blue_limit ({1})"
-                                 .format(wmin, self.blue_limit))
+                raise ValueError(
+                    "Requested wavelength ({0}) is bluer than blue_limit ({1})".format(
+                        wmin, self.blue_limit
+                    )
+                )
         if self.red_limit is not None:
             if wmax > self.red_limit + extrapolation_slop:
-                raise ValueError("Requested wavelength ({0}) is redder than red_limit ({1})"
-                                 .format(wmax, self.red_limit))
+                raise ValueError(
+                    "Requested wavelength ({0}) is redder than red_limit ({1})".format(
+                        wmax, self.red_limit
+                    )
+                )
         wave_factor = 1.0 + self.redshift
         # figure out what we received, and return the same thing
         # option 1: a numpy array
@@ -187,7 +200,7 @@ class SED(object):
     def __mul__(self, other):
         # SEDs can be multiplied by scalars or functions (callables)
         ret = self.copy()
-        if hasattr(other, '__call__'):
+        if hasattr(other, "__call__"):
             wave_factor = 1.0 + self.redshift
             ret._rest_photons = lambda w: self._rest_photons(w) * other(w * wave_factor)
         else:
@@ -195,12 +208,12 @@ class SED(object):
         return ret
 
     def __rmul__(self, other):
-        return self*other
+        return self * other
 
     def __div__(self, other):
         # SEDs can be divided by scalars or functions (callables)
         ret = self.copy()
-        if hasattr(other, '__call__'):
+        if hasattr(other, "__call__"):
             wave_factor = 1.0 + self.redshift
             ret._rest_photons = lambda w: self._rest_photons(w) / other(w * wave_factor)
         else:
@@ -210,7 +223,7 @@ class SED(object):
     def __rdiv__(self, other):
         # SEDs can be divided by scalars or functions (callables)
         ret = self.copy()
-        if hasattr(other, '__call__'):
+        if hasattr(other, "__call__"):
             wave_factor = 1.0 + self.redshift
             ret._rest_photons = lambda w: other(w * wave_factor) / self._rest_photons(w)
         else:
@@ -253,10 +266,11 @@ class SED(object):
 
     def copy(self):
         import copy
+
         return copy.deepcopy(self)
 
     def withFluxDensity(self, target_flux_density, wavelength):
-        """ Return a new SED with flux density set to `target_flux_density` at wavelength
+        """Return a new SED with flux density set to `target_flux_density` at wavelength
         `wavelength`.  Note that this normalization is *relative* to the `flux` attribute of the
         chromaticized GSObject.
 
@@ -272,7 +286,7 @@ class SED(object):
         return ret
 
     def withFlux(self, target_flux, bandpass):
-        """ Return a new SED with flux through the Bandpass `bandpass` set to `target_flux`. Note
+        """Return a new SED with flux through the Bandpass `bandpass` set to `target_flux`. Note
         that this normalization is *relative* to the `flux` attribute of the chromaticized GSObject.
 
         @param target_flux  The desired *relative* flux normalization of the SED.
@@ -281,13 +295,13 @@ class SED(object):
         @returns the new normalized SED.
         """
         current_flux = self.calculateFlux(bandpass)
-        norm = target_flux/current_flux
+        norm = target_flux / current_flux
         ret = self.copy()
         ret._rest_photons = lambda w: self._rest_photons(w) * norm
         return ret
 
     def withMagnitude(self, target_magnitude, bandpass):
-        """ Return a new SED with magnitude through `bandpass` set to `target_magnitude`.  Note
+        """Return a new SED with magnitude through `bandpass` set to `target_magnitude`.  Note
         that this requires `bandpass` to have been assigned a zeropoint using
         `Bandpass.withZeropoint()`.  When the returned SED is multiplied by a GSObject with
         flux=1, the resulting ChromaticObject will have magnitude `target_magnitude` when drawn
@@ -301,13 +315,13 @@ class SED(object):
         @returns the new normalized SED.
         """
         current_magnitude = self.calculateMagnitude(bandpass)
-        norm = 10**(-0.4*(target_magnitude - current_magnitude))
+        norm = 10 ** (-0.4 * (target_magnitude - current_magnitude))
         ret = self.copy()
         ret._rest_photons = lambda w: self._rest_photons(w) * norm
         return ret
 
     def atRedshift(self, redshift):
-        """ Return a new SED with redshifted wavelengths.
+        """Return a new SED with redshifted wavelengths.
 
         @param redshift
 
@@ -324,7 +338,7 @@ class SED(object):
         return ret
 
     def calculateFlux(self, bandpass):
-        """ Return the SED flux through a Bandpass `bandpass`.
+        """Return the SED flux through a Bandpass `bandpass`.
 
         @param bandpass   A Bandpass object representing a filter, or None to compute the
                           bolometric flux.  For the bolometric flux the integration limits will be
@@ -350,11 +364,14 @@ class SED(object):
                 x = x[(x <= bandpass.red_limit) & (x >= bandpass.blue_limit)]
                 return np.trapz(bandpass(x) * self(x), x)
             else:
-                return quad(lambda w: bandpass(w)*self(w),
-                            bandpass.blue_limit, bandpass.red_limit)
+                return quad(
+                    lambda w: bandpass(w) * self(w),
+                    bandpass.blue_limit,
+                    bandpass.red_limit,
+                )
 
     def calculateMagnitude(self, bandpass):
-        """ Return the SED magnitude through a Bandpass `bandpass`.  Note that this requires
+        """Return the SED magnitude through a Bandpass `bandpass`.  Note that this requires
         `bandpass` to have been assigned a zeropoint using `Bandpass.withZeropoint()`.
 
         @param bandpass   A Bandpass object representing a filter, or None to compute the
@@ -368,8 +385,8 @@ class SED(object):
         current_flux = self.calculateFlux(bandpass)
         return -2.5 * np.log10(current_flux) + bandpass.zeropoint
 
-    def thin(self, rel_err=1.e-4, preserve_range=False):
-        """ If the SED was initialized with a interp1d or from a file (which internally creates a
+    def thin(self, rel_err=1.0e-4, preserve_range=False):
+        """If the SED was initialized with a interp1d or from a file (which internally creates a
         interp1d), then remove tabulated values while keeping the integral over the set of
         tabulated values still accurate to `rel_err`.
 
@@ -386,7 +403,9 @@ class SED(object):
             wave_factor = 1.0 + self.redshift
             x = np.array(self.wave_list) / wave_factor
             f = self._rest_photons(x)
-            newx, newf = thin_tabulated_values(x, f, rel_err=rel_err, preserve_range=preserve_range)
+            newx, newf = thin_tabulated_values(
+                x, f, rel_err=rel_err, preserve_range=preserve_range
+            )
             ret = self.copy()
             ret.blue_limit = np.min(newx) * wave_factor
             ret.red_limit = np.max(newx) * wave_factor
@@ -395,7 +414,7 @@ class SED(object):
             return ret
 
     def calculateDCRMomentShifts(self, bandpass, **kwargs):
-        """ Calculates shifts in first and second moments of PSF due to differential chromatic
+        """Calculates shifts in first and second moments of PSF due to differential chromatic
         refraction (DCR).  I.e., equations (1) and (2) from Plazas and Bernstein (2012)
         (http://arxiv.org/abs/1204.1346).
 
@@ -416,17 +435,20 @@ class SED(object):
         @returns a tuple.  The first element is the vector of DCR first moment shifts, and the
                  second element is the 2x2 matrix of DCR second (central) moment shifts.
         """
-        if 'zenith_angle' in kwargs:
-            zenith_angle = kwargs.pop('zenith_angle')
-            parallactic_angle = kwargs.pop('parallactic_angle', 0.0)
+        if "zenith_angle" in kwargs:
+            zenith_angle = kwargs.pop("zenith_angle")
+            parallactic_angle = kwargs.pop("parallactic_angle", 0.0)
         else:
             raise TypeError(
-                "Need to specify zenith_angle and parallactic_angle in calculateDCRMomentShifts!")
+                "Need to specify zenith_angle and parallactic_angle in calculateDCRMomentShifts!"
+            )
         # Any remaining kwargs will get forwarded to galsim.dcr.get_refraction
         # Check that they're valid
         for kw in kwargs.keys():
-            if kw not in ['temperature', 'pressure', 'H2O_pressure']:
-                raise TypeError("Got unexpected keyword in calculateDCRMomentShifts: {0}".format(kw))
+            if kw not in ["temperature", "pressure", "H2O_pressure"]:
+                raise TypeError(
+                    "Got unexpected keyword in calculateDCRMomentShifts: {0}".format(kw)
+                )
         # Now actually start calculating things.
         flux = self.calculateFlux(bandpass)
         if len(bandpass.wave_list) > 0:
@@ -436,25 +458,38 @@ class SED(object):
             photons = self(x)
             throughput = bandpass(x)
             Rbar = np.trapz(throughput * photons * R, x) / flux
-            V = np.trapz(throughput * photons * (R-Rbar)**2, x) / flux
+            V = np.trapz(throughput * photons * (R - Rbar) ** 2, x) / flux
         else:
             weight = lambda w: bandpass(w) * self(w)
             Rbar_kernel = lambda w: dcr.get_refraction(w, zenith_angle, **kwargs)
-            Rbar = quad(lambda w: weight(w) * Rbar_kernel(w),
-                        bandpass.blue_limit, bandpass.red_limit)
-            V_kernel = lambda w: (galsim.dcr.get_refraction(w, zenith_angle, **kwargs) - Rbar)**2
-            V = quad(lambda w: weight(w) * V_kernel(w),
-                     bandpass.blue_limit, bandpass.red_limit)
+            Rbar = quad(
+                lambda w: weight(w) * Rbar_kernel(w),
+                bandpass.blue_limit,
+                bandpass.red_limit,
+            )
+            V_kernel = (
+                lambda w: (galsim.dcr.get_refraction(w, zenith_angle, **kwargs) - Rbar)
+                ** 2
+            )
+            V = quad(
+                lambda w: weight(w) * V_kernel(w),
+                bandpass.blue_limit,
+                bandpass.red_limit,
+            )
         # Rbar and V are computed above assuming that the parallactic angle is 0.  Hence we
         # need to rotate our frame by the parallactic angle to get the desired output.
-        rot = np.matrix([[np.cos(parallactic_angle), -np.sin(parallactic_angle)],
-                         [np.sin(parallactic_angle), np.cos(parallactic_angle)]])
-        Rbar = rot * Rbar * np.matrix([0,1]).T
+        rot = np.matrix(
+            [
+                [np.cos(parallactic_angle), -np.sin(parallactic_angle)],
+                [np.sin(parallactic_angle), np.cos(parallactic_angle)],
+            ]
+        )
+        Rbar = rot * Rbar * np.matrix([0, 1]).T
         V = rot * np.matrix([[0, 0], [0, V]]) * rot.T
         return Rbar, V
 
     def calculateSeeingMomentRatio(self, bandpass, alpha=-0.2, base_wavelength=500):
-        """ Calculates the relative size of a PSF compared to the monochromatic PSF size at
+        """Calculates the relative size of a PSF compared to the monochromatic PSF size at
         wavelength `base_wavelength`.
 
         @param bandpass             Bandpass through which object is being imaged.
@@ -470,15 +505,24 @@ class SED(object):
             x = x[(x <= bandpass.red_limit) & (x >= bandpass.blue_limit)]
             photons = self(x)
             throughput = bandpass(x)
-            return np.trapz(photons * throughput * (x/base_wavelength)**(2*alpha), x) / flux
+            return (
+                np.trapz(photons * throughput * (x / base_wavelength) ** (2 * alpha), x)
+                / flux
+            )
         else:
             weight = lambda w: bandpass(w) * self(w)
-            kernel = lambda w: (w/base_wavelength)**(2*alpha)
-            return quad(lambda w: weight(w) * kernel(w),
-                        bandpass.blue_limit, bandpass.red_limit) / flux
+            kernel = lambda w: (w / base_wavelength) ** (2 * alpha)
+            return (
+                quad(
+                    lambda w: weight(w) * kernel(w),
+                    bandpass.blue_limit,
+                    bandpass.red_limit,
+                )
+                / flux
+            )
 
     def calculateLinearMomentShift(self, bandpass, slope, base_wavelength=500):
-        """ Calculates the integral:
+        """Calculates the integral:
         \int{F(w) S(w) w (w - base_wavelength)*slope dw} / \int{F(w) S(w) w dw}
 
         @param bandpass         Bandpass through which object is being imaged.
@@ -497,20 +541,28 @@ class SED(object):
             return np.trapz(throughput * photons * R, x) / flux
         else:
             weight = lambda w: bandpass(w) * self(w)
-            kernel = lambda w: (w - base_wavelength)*slope
-            return 1./flux * quad(lambda w: weight(w) * kernel(w),
-                                  bandpass.blue_limit, bandpass.red_limit)
+            kernel = lambda w: (w - base_wavelength) * slope
+            return (
+                1.0
+                / flux
+                * quad(
+                    lambda w: weight(w) * kernel(w),
+                    bandpass.blue_limit,
+                    bandpass.red_limit,
+                )
+            )
 
     def redden(self, A_v, R_v=3.1):
-        """ Return a new SED with the specified extinction applied.  Note that this will
+        """Return a new SED with the specified extinction applied.  Note that this will
         truncate the wavelength range to lie between 91 nm and 6000 nm where the extinction
         correction law is defined.
         """
-        return self / (lambda w: extinction.reddening(w * 10, a_v=A_v, r_v=R_v, model='f99'))
+        return self / (
+            lambda w: extinction.reddening(w * 10, a_v=A_v, r_v=R_v, model="f99")
+        )
 
     def getDCRAngleDensity(self, bandpass, zenith, **kwargs):
-        """Return photon density per unit refraction angle through a given filter.
-        """
+        """Return photon density per unit refraction angle through a given filter."""
         wave = bandpass.interp.x
         photons = bandpass.interp.y * self(wave)
         R = dcr.get_refraction(wave, zenith, **kwargs)
@@ -528,7 +580,7 @@ class SED(object):
         UV_fnu = UV_fphot * h * (230.0)  # converted to erg/s/Hz
 
         # construct line function
-        lines = ['OII', 'OIII', 'Hbeta', 'Halpha', 'Lya']
+        lines = ["OII", "OIII", "Hbeta", "Halpha", "Lya"]
         multipliers = np.r_[1.0, 0.36, 0.61, 1.77, 2.0] * 1.0e13
         waves = [372.7, 500.7, 486.1, 656.3, 121.5]  # nm
         velocity = 200.0  # km/s
@@ -541,10 +593,10 @@ class SED(object):
                 line_flux *= lw / hc  # converted to phot / sec
                 sigma = velocity / 299792.458 * lw  # sigma in Angstroms
                 amplitude = line_flux / sigma / np.sqrt(2.0 * np.pi)
-                out += amplitude * np.exp(-(lw-w)**2/(2*sigma**2))
+                out += amplitude * np.exp(-((lw - w) ** 2) / (2 * sigma**2))
             return out
 
-        return self + SED(lines, flux_type='fphotons')
+        return self + SED(lines, flux_type="fphotons")
 
         # wave = self.interp.x
         # fphot = self.interp.y
@@ -626,8 +678,15 @@ class Bandpass(object):
     @param wave_type    The units to use for the wavelength argument of the `throughput`
                         function. See above for details. [default: 'nm']
     """
-    def __init__(self, throughput, blue_limit=None, red_limit=None, wave_type='nm',
-                 _wave_list=None):
+
+    def __init__(
+        self,
+        throughput,
+        blue_limit=None,
+        red_limit=None,
+        wave_type="nm",
+        _wave_list=None,
+    ):
         # Note that `_wave_list` acts as a private construction variable that overrides the way that
         # `wave_list` is normally constructed (see `Bandpass.__mul__` below)
 
@@ -635,6 +694,7 @@ class Bandpass(object):
         tp = throughput  # For brevity within this function
         if isinstance(tp, str):
             import os
+
             if os.path.isfile(tp):
                 w, t = np.genfromtxt(tp).T
                 tp = interp1d(w, t)
@@ -649,17 +709,20 @@ class Bandpass(object):
                     # be able to be evaluated at any wavelength, so check.
                     test_wave = 700
                 try:
-                    tp = eval('lambda wave : ' + tp)
+                    tp = eval("lambda wave : " + tp)
                     tp(test_wave)
                 except:
                     raise ValueError(
-                        "String throughput must either be a valid filename or something that " +
-                        "can eval to a function of wave. Input provided: {0}".format(throughput))
+                        "String throughput must either be a valid filename or something that "
+                        + "can eval to a function of wave. Input provided: {0}".format(
+                            throughput
+                        )
+                    )
 
         # Figure out wavelength type
-        if wave_type.lower() in ['nm', 'nanometer', 'nanometers']:
+        if wave_type.lower() in ["nm", "nanometer", "nanometers"]:
             wave_factor = 1.0
-        elif wave_type.lower() in ['a', 'ang', 'angstrom', 'angstroms']:
+        elif wave_type.lower() in ["a", "ang", "angstrom", "angstroms"]:
             wave_factor = 10.0
         else:
             raise ValueError("Unknown wave_type '{0}'".format(wave_type))
@@ -673,7 +736,8 @@ class Bandpass(object):
         else:
             if blue_limit is None or red_limit is None:
                 raise AttributeError(
-                    "red_limit and blue_limit are required if throughput is not a numpy.interp1d.")
+                    "red_limit and blue_limit are required if throughput is not a numpy.interp1d."
+                )
 
         if blue_limit > red_limit:
             raise ValueError("blue_limit must be less than red_limit")
@@ -682,14 +746,18 @@ class Bandpass(object):
 
         # Sanity check blue/red limit and create self.wave_list
         if isinstance(tp, interp1d):
-            self.wave_list = np.array(tp.x)/wave_factor
+            self.wave_list = np.array(tp.x) / wave_factor
             # Make sure that blue_limit and red_limit are within interp1d region of support.
-            if self.blue_limit < (tp.x.min()/wave_factor):
-                raise ValueError("Cannot set blue_limit to be less than throughput " +
-                                 "interp1d.x.min()")
-            if self.red_limit > (tp.x.max()/wave_factor):
-                raise ValueError("Cannot set red_limit to be greater than throughput " +
-                                 "interp1d.x.max()")
+            if self.blue_limit < (tp.x.min() / wave_factor):
+                raise ValueError(
+                    "Cannot set blue_limit to be less than throughput "
+                    + "interp1d.x.min()"
+                )
+            if self.red_limit > (tp.x.max() / wave_factor):
+                raise ValueError(
+                    "Cannot set red_limit to be greater than throughput "
+                    + "interp1d.x.max()"
+                )
             # Make sure that blue_limit and red_limit are part of wave_list.
             if self.blue_limit not in self.wave_list:
                 np.insert(self.wave_list, 0, self.blue_limit)
@@ -720,9 +788,12 @@ class Bandpass(object):
 
         # product of Bandpass instance and Bandpass subclass instance
         if isinstance(other, Bandpass) and type(self) != type(other):
-            ret = Bandpass(lambda w: other(w)*self(w),
-                           blue_limit=blue_limit, red_limit=red_limit,
-                           _wave_list=wave_list)
+            ret = Bandpass(
+                lambda w: other(w) * self(w),
+                blue_limit=blue_limit,
+                red_limit=red_limit,
+                _wave_list=wave_list,
+            )
         # otherwise, preserve type of self
         else:
             ret = self.copy()
@@ -730,16 +801,18 @@ class Bandpass(object):
             ret.red_limit = red_limit
             ret.wave_list = wave_list
             ret.zeropoint = None
-            if hasattr(ret, '_effective_wavelength'):
-                del ret._effective_wavelength  # this will get lazily recomputed when needed
-            if hasattr(other, '__call__'):
-                ret.func = lambda w: other(w)*self(w)
+            if hasattr(ret, "_effective_wavelength"):
+                del (
+                    ret._effective_wavelength
+                )  # this will get lazily recomputed when needed
+            if hasattr(other, "__call__"):
+                ret.func = lambda w: other(w) * self(w)
             else:
-                ret.func = lambda w: other*self(w)
+                ret.func = lambda w: other * self(w)
         return ret
 
     def __rmul__(self, other):
-        return self*other
+        return self * other
 
     # Doesn't check for divide by zero, so be careful.
     def __div__(self, other):
@@ -756,9 +829,12 @@ class Bandpass(object):
 
         # product of Bandpass instance and Bandpass subclass instance
         if isinstance(other, Bandpass) and type(self) != type(other):
-            ret = Bandpass(lambda w: self(w)/other(w),
-                           blue_limit=blue_limit, red_limit=red_limit,
-                           _wave_list=wave_list)
+            ret = Bandpass(
+                lambda w: self(w) / other(w),
+                blue_limit=blue_limit,
+                red_limit=red_limit,
+                _wave_list=wave_list,
+            )
         # otherwise, preserve type of self
         else:
             ret = self.copy()
@@ -766,12 +842,14 @@ class Bandpass(object):
             ret.red_limit = red_limit
             ret.wave_list = wave_list
             ret.zeropoint = None
-            if hasattr(ret, '_effective_wavelength'):
-                del ret._effective_wavelength  # this will get lazily recomputed when needed
-            if hasattr(other, '__call__'):
-                ret.func = lambda w: self(w)/other(w)
+            if hasattr(ret, "_effective_wavelength"):
+                del (
+                    ret._effective_wavelength
+                )  # this will get lazily recomputed when needed
+            if hasattr(other, "__call__"):
+                ret.func = lambda w: self(w) / other(w)
             else:
-                ret.func = lambda w: self(w)/other
+                ret.func = lambda w: self(w) / other
         return ret
 
     # Doesn't check for divide by zero, so be careful.
@@ -789,9 +867,12 @@ class Bandpass(object):
 
         # product of Bandpass instance and Bandpass subclass instance
         if isinstance(other, Bandpass) and type(self) != type(other):
-            ret = Bandpass(lambda w: other(w)/self(w),
-                           blue_limit=blue_limit, red_limit=red_limit,
-                           _wave_list=wave_list)
+            ret = Bandpass(
+                lambda w: other(w) / self(w),
+                blue_limit=blue_limit,
+                red_limit=red_limit,
+                _wave_list=wave_list,
+            )
         # otherwise, preserve type of self
         else:
             ret = self.copy()
@@ -799,12 +880,14 @@ class Bandpass(object):
             ret.red_limit = red_limit
             ret.wave_list = wave_list
             ret.zeropoint = None
-            if hasattr(ret, '_effective_wavelength'):
-                del ret._effective_wavelength  # this will get lazily recomputed when needed
-            if hasattr(other, '__call__'):
-                ret.func = lambda w: other(w)/self(w)
+            if hasattr(ret, "_effective_wavelength"):
+                del (
+                    ret._effective_wavelength
+                )  # this will get lazily recomputed when needed
+            if hasattr(other, "__call__"):
+                ret.func = lambda w: other(w) / self(w)
             else:
-                ret.func = lambda w: other/self(w)
+                ret.func = lambda w: other / self(w)
         return ret
 
     # Doesn't check for divide by zero, so be careful.
@@ -817,10 +900,11 @@ class Bandpass(object):
 
     def copy(self):
         import copy
+
         return copy.deepcopy(self)
 
     def __call__(self, wave):
-        """ Return dimensionless throughput of bandpass at given wavelength in nanometers.
+        """Return dimensionless throughput of bandpass at given wavelength in nanometers.
 
         Note that outside of the wavelength range defined by the `blue_limit` and `red_limit`
         attributes, the throughput is assumed to be zero.
@@ -838,38 +922,48 @@ class Bandpass(object):
             return ret
         # option 2: a tuple
         elif isinstance(wave, tuple):
-            return tuple([self.func(w) if (w >= self.blue_limit and w <= self.red_limit) else 0.0
-                          for w in wave])
+            return tuple(
+                [
+                    self.func(w)
+                    if (w >= self.blue_limit and w <= self.red_limit)
+                    else 0.0
+                    for w in wave
+                ]
+            )
         # option 3: a list
         elif isinstance(wave, list):
-            return [self.func(w) if (w >= self.blue_limit and w <= self.red_limit) else 0.0
-                    for w in wave]
+            return [
+                self.func(w) if (w >= self.blue_limit and w <= self.red_limit) else 0.0
+                for w in wave
+            ]
         # option 4: a single value
         else:
-            return self.func(wave) if (wave >= self.blue_limit and wave <= self.red_limit) else 0.0
+            return (
+                self.func(wave)
+                if (wave >= self.blue_limit and wave <= self.red_limit)
+                else 0.0
+            )
 
     @property
     def effective_wavelength(self):
-        """ Calculate, store, and return the effective wavelength for this bandpass.  We define
+        """Calculate, store, and return the effective wavelength for this bandpass.  We define
         the effective wavelength as the throughput-weighted average wavelength, which is
         SED-independent.  Units are nanometers.
         """
-        if not hasattr(self, '_effective_wavelength'):
+        if not hasattr(self, "_effective_wavelength"):
             if len(self.wave_list) > 0:
                 f = self.func(self.wave_list)
-                self._effective_wavelength = (np.trapz(f * self.wave_list, self.wave_list) /
-                                              np.trapz(f, self.wave_list))
+                self._effective_wavelength = np.trapz(
+                    f * self.wave_list, self.wave_list
+                ) / np.trapz(f, self.wave_list)
             else:
-                self._effective_wavelength = (quad(lambda w: self.func(w) * w,
-                                                   self.blue_limit,
-                                                   self.red_limit) /
-                                              quad(self.func,
-                                                   self.blue_limit,
-                                                   self.red_limit))
+                self._effective_wavelength = quad(
+                    lambda w: self.func(w) * w, self.blue_limit, self.red_limit
+                ) / quad(self.func, self.blue_limit, self.red_limit)
         return self._effective_wavelength
 
     def withZeropoint(self, zeropoint, effective_diameter=None, exptime=None):
-        """ Assign a zeropoint to this Bandpass.
+        """Assign a zeropoint to this Bandpass.
 
         The first argument `zeropoint` can take a variety of possible forms:
         1. a number, which will be the zeropoint
@@ -893,9 +987,11 @@ class Bandpass(object):
         """
         if isinstance(zeropoint, str):
             if effective_diameter is None or exptime is None:
-                raise ValueError("Cannot calculate Zeropoint from string {0} without " +
-                                 "telescope effective diameter or exposure time.")
-            if zeropoint.upper() == 'AB':
+                raise ValueError(
+                    "Cannot calculate Zeropoint from string {0} without "
+                    + "telescope effective diameter or exposure time."
+                )
+            if zeropoint.upper() == "AB":
                 AB_source = 3631e-23  # 3631 Jy in units of erg/s/Hz/cm^2
                 c = 2.99792458e17  # speed of light in nm/s
                 AB_flambda = AB_source * c / self.wave_list**2
@@ -903,7 +999,7 @@ class Bandpass(object):
                 flux = AB_sed.calculateFlux(self)
             # If zeropoint.upper() is 'ST', then use HST STmags:
             # http://www.stsci.edu/hst/acs/analysis/zeropoints
-            elif zeropoint.upper() == 'ST':
+            elif zeropoint.upper() == "ST":
                 ST_flambda = 3.63e-8  # erg/s/cm^2/nm
                 ST_sed = SED(interp1d(self.wave_list, ST_flambda))
                 flux = ST_sed.calculateFlux(self)
@@ -915,8 +1011,10 @@ class Bandpass(object):
             #     sed = galsim.SED(vegafile)
             #     flux = sed.calculateFlux(self)
             else:
-                raise ValueError("Do not recognize Zeropoint string {0}.".format(zeropoint))
-            flux *= np.pi*effective_diameter**2/4 * exptime
+                raise ValueError(
+                    "Do not recognize Zeropoint string {0}.".format(zeropoint)
+                )
+            flux *= np.pi * effective_diameter**2 / 4 * exptime
             new_zeropoint = 2.5 * np.log10(flux)
         # If `zeropoint` is an `SED`, then compute the SED flux through the bandpass, and
         # use this to create a magnitude zeropoint.
@@ -929,7 +1027,10 @@ class Bandpass(object):
         # But if zeropoint is none of these, raise an exception.
         else:
             raise ValueError(
-                "Don't know how to handle zeropoint of type: {0}".format(type(zeropoint)))
+                "Don't know how to handle zeropoint of type: {0}".format(
+                    type(zeropoint)
+                )
+            )
         ret = self.copy()
         ret.zeropoint = new_zeropoint
         return ret
@@ -967,22 +1068,23 @@ class Bandpass(object):
             if relative_throughput is not None:
                 wave = np.array(self.wave_list)
                 tp = self.func(wave)
-                w = (tp >= tp.max()*relative_throughput).nonzero()
+                w = (tp >= tp.max() * relative_throughput).nonzero()
                 blue_limit = max([min(wave[w]), blue_limit])
                 red_limit = min([max(wave[w]), red_limit])
         elif relative_throughput is not None:
             raise ValueError(
-                "Can only truncate with relative_throughput argument if throughput is " +
-                "a LookupTable")
+                "Can only truncate with relative_throughput argument if throughput is "
+                + "a LookupTable"
+            )
         # preserve type
         ret = self.copy()
         ret.blue_limit = blue_limit
         ret.red_limit = red_limit
-        if hasattr(ret, '_effective_wavelength'):
+        if hasattr(ret, "_effective_wavelength"):
             del ret._effective_wavelength
         return ret
 
-    def thin(self, rel_err=1.e-4, preserve_range=False):
+    def thin(self, rel_err=1.0e-4, preserve_range=False):
         """Thin out the internal wavelengths of a Bandpass that uses a LookupTable.
 
         If the bandpass was initialized with a LookupTable or from a file (which internally
@@ -1007,20 +1109,21 @@ class Bandpass(object):
         if len(self.wave_list) > 0:
             x = self.wave_list
             f = self(x)
-            newx, newf = thin_tabulated_values(x, f, rel_err=rel_err,
-                                               preserve_range=preserve_range)
+            newx, newf = thin_tabulated_values(
+                x, f, rel_err=rel_err, preserve_range=preserve_range
+            )
             # preserve type
             ret = self.copy()
             ret.func = interp1d(newx, newf)
             ret.blue_limit = np.min(newx)
             ret.red_limit = np.max(newx)
             ret.wave_list = np.array(newx)
-            if hasattr(ret, '_effective_wavelength'):
+            if hasattr(ret, "_effective_wavelength"):
                 del ret._effective_wavelength
             return ret
 
 
-def thin_tabulated_values(x, f, rel_err=1.e-4, preserve_range=False):
+def thin_tabulated_values(x, f, rel_err=1.0e-4, preserve_range=False):
     """
     Remove items from a set of tabulated f(x) values so that the error in the integral is still
     accurate to a given relative accuracy.
@@ -1064,23 +1167,23 @@ def thin_tabulated_values(x, f, rel_err=1.e-4, preserve_range=False):
         # Remove values from the front that integrate to less than thresh.
         integ = 0.5 * (abs(f[0]) + abs(f[1])) * (x[1] - x[0])
         k0 = 0
-        while k0 < len(x)-2 and integ < thresh:
-            k0 = k0+1
-            integ += 0.5 * (abs(f[k0]) + abs(f[k0+1])) * (x[k0+1] - x[k0])
+        while k0 < len(x) - 2 and integ < thresh:
+            k0 = k0 + 1
+            integ += 0.5 * (abs(f[k0]) + abs(f[k0 + 1])) * (x[k0 + 1] - x[k0])
         # Now the integral from 0 to k0+1 (inclusive) is a bit too large.
         # That means k0 is the largest value we can use that will work as the staring value.
 
         # Remove values from the back that integrate to less than thresh.
-        k1 = len(x)-1
-        integ = 0.5 * (abs(f[k1-1]) + abs(f[k1])) * (x[k1] - x[k1-1])
+        k1 = len(x) - 1
+        integ = 0.5 * (abs(f[k1 - 1]) + abs(f[k1])) * (x[k1] - x[k1 - 1])
         while k1 > k0 and integ < thresh:
-            k1 = k1-1
-            integ += 0.5 * (abs(f[k1-1]) + abs(f[k1])) * (x[k1] - x[k1-1])
+            k1 = k1 - 1
+            integ += 0.5 * (abs(f[k1 - 1]) + abs(f[k1])) * (x[k1] - x[k1 - 1])
         # Now the integral from k1-1 to len(x)-1 (inclusive) is a bit too large.
         # That means k1 is the smallest value we can use that will work as the ending value.
 
-        x = x[k0:k1+1]  # +1 since end of range is given as one-past-the-end.
-        f = f[k0:k1+1]
+        x = x[k0 : k1 + 1]  # +1 since end of range is given as one-past-the-end.
+        f = f[k0 : k1 + 1]
 
     # Start a new list with just the first item so far
     newx = [x[0]]
@@ -1088,12 +1191,14 @@ def thin_tabulated_values(x, f, rel_err=1.e-4, preserve_range=False):
 
     k0 = 0  # The last item currently in the new array
     k1 = 1  # The current item we are considering to skip or include
-    while k1 < len(x)-1:
+    while k1 < len(x) - 1:
         # We are considering replacing all the true values between k0 and k1+1 (non-inclusive)
         # with a linear approxmation based on the points at k0 and k1+1.
-        lin_f = f[k0] + (f[k1+1]-f[k0])/(x[k1+1]-x[k0]) * (x[k0:k1+2] - x[k0])
+        lin_f = f[k0] + (f[k1 + 1] - f[k0]) / (x[k1 + 1] - x[k0]) * (
+            x[k0 : k1 + 2] - x[k0]
+        )
         # Integrate | f(x) - lin_f(x) | from k0 to k1+1, inclusive.
-        integ = np.trapz(abs(f[k0:k1+2] - lin_f), x[k0:k1+2])
+        integ = np.trapz(abs(f[k0 : k1 + 2] - lin_f), x[k0 : k1 + 2])
         # If the integral of the difference is < thresh, we can skip this item.
         if integ < thresh:
             # OK to skip item k1
