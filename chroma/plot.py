@@ -35,7 +35,7 @@ def chroma_fill_between(x, y1, y2=None, c=None, cm=cm.gist_rainbow, axes=None):
     cc[cc > 1.0] = 1.0
     cc[cc < 0.0] = 0.0
 
-    for i in xrange(cm.N):
+    for i in range(cm.N):
         cmin = 1.0 * i / cm.N
         cmax = 1.0 * (i + 1) / cm.N
         w = np.int_(np.logical_and(cc >= cmin, cc <= cmax))
