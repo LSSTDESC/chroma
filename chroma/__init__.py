@@ -5,5 +5,4 @@ from .target import *
 from .plot import chroma_fill_between
 from .measure import *
 import chroma.extinction
-import chroma.bipolar
 import chroma.lsstetc
