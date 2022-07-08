@@ -1,7 +1,7 @@
 import numpy
 
 def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067):
-    '''Return the refractive index of air as function of wavelength.
+    """Return the refractive index of air as function of wavelength.
 
     Uses the formulae given in Filippenko (1982), which appears to come from Edlen (1953),
     and Coleman, Bozman, and Meggers (1960).  The units of the original formula are non-SI,
@@ -16,7 +16,7 @@ def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure
     pressure -- in kiloPascals (default 69.328 kPa = 520 mmHg)
     temperature -- in Kelvin (default 293.15 kPa = 20 C)
     H2O_pressure -- in kiloPascals (default 1.067 kPa = 8 mmHg)
-    '''
+    """
 
     sigma_squared = 1.0 / (wave * 1.e-3)**2.0 # inverse wavenumber squared in um^-2
 
@@ -30,7 +30,7 @@ def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure
     return n_minus_one + 1.0
 
 def air_refractive_index2(wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067):
-    '''Return the refractive index of air as function of wavelength.
+    """Return the refractive index of air as function of wavelength.
 
     Uses the formulae given by Allens Astrophysical Quantities (Cox et al. 2001), including effects
     due to `pressure`, `temperature`, and the partial pressure of water vapor: `H2O_pressure`.
@@ -43,7 +43,7 @@ def air_refractive_index2(wave, pressure=69.328, temperature=293.15, H2O_pressur
     pressure -- in kiloPascals (default 69.328 kPa = 520 mmHg)
     temperature -- in Kelvin (default 293.15 kPa = 20 C)
     H2O_pressure -- in kiloPascals (default 1.067 kPa = 8 mmHg)
-    '''
+    """
 
     sigma_squared = 1.0 / wave**2.0
     n_minus_one = (64.328 + (29498.1e-6 / (146e-6 - sigma_squared))
@@ -55,7 +55,7 @@ def air_refractive_index2(wave, pressure=69.328, temperature=293.15, H2O_pressur
     return n_minus_one + 1.0
 
 def get_refraction(wave, zenith, **kwargs):
-    '''Compute refraction angle (in radians) from space to atmosphere.
+    """Compute refraction angle (in radians) from space to atmosphere.
 
     Uses formulae from Allen's Astrophysical Quantities (Cox et al. 2001).  Result depends on the
     inpute wavelength `wave` and the zenith angle `zenith`.  Only valid for zenith angles less than
@@ -69,7 +69,7 @@ def get_refraction(wave, zenith, **kwargs):
     **kwargs
     --------
     pressure, temperature, H2O_pressure forwarded to air_refractive_index()
-    '''
+    """
 
     n_squared = air_refractive_index(wave, **kwargs)**2.0
     r0 = (n_squared - 1.0) / (2.0 * n_squared)
