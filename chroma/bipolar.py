@@ -10,7 +10,6 @@ http://www.mathworks.com/matlabcentral/fileexchange/26026-bipolar-colormap
 Based on Manja Lehmann's hand-crafted colormap for cortical visualisation
 """
 
-from __future__ import division
 import scipy.interpolate
 from matplotlib import cm
 import numpy as np

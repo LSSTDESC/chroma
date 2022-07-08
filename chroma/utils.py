@@ -44,7 +44,7 @@ except:
             self.file_.write('.')
             self.file_.flush()
             if self._i % 100 == 0:
-                print '{} of {}'.format(self._i, self._total)
+                print('{} of {}'.format(self._i, self._total))
             self._i += 1
 
 def Sersic_r2_over_hlr(n):

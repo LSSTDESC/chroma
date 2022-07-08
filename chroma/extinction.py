@@ -27,7 +27,6 @@
 
 """Extinction law functions."""
 
-from __future__ import division
 import numpy as np
 import warnings
 

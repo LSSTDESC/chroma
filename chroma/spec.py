@@ -6,8 +6,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 
-import dcr
-import extinction
+import chroma.dcr
+import chroma.extinction
 
 
 class SED(object):
@@ -73,7 +73,7 @@ class SED(object):
             raise ValueError("Unknown wave_type '{0}'".format(wave_type))
 
         # Figure out input flux density type
-        if isinstance(spec, basestring):
+        if isinstance(spec, str):
             import os
             if os.path.isfile(spec):
                 w, f = np.genfromtxt(spec).T
@@ -633,7 +633,7 @@ class Bandpass(object):
 
         # Figure out input throughput type.
         tp = throughput  # For brevity within this function
-        if isinstance(tp, basestring):
+        if isinstance(tp, str):
             import os
             if os.path.isfile(tp):
                 w, t = np.genfromtxt(tp).T
@@ -891,7 +891,7 @@ class Bandpass(object):
                                     zeropoint is 'AB', 'Vega', or 'ST'].
         @returns new Bandpass with zeropoint set.
         """
-        if isinstance(zeropoint, basestring):
+        if isinstance(zeropoint, str):
             if effective_diameter is None or exptime is None:
                 raise ValueError("Cannot calculate Zeropoint from string {0} without " +
                                  "telescope effective diameter or exposure time.")

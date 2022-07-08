@@ -46,8 +46,8 @@ class LSTSQEllipMeasurer(EllipMeasurer):
         # ax2.imshow(image.array)
         # ax3 = fig.add_subplot(313)
         # ax3.imshow((target_image-image).array)
-        # print np.min(target_image.array), np.max(target_image.array)
-        # print np.min(image.array), np.max(image.array)
+        # print(np.min(target_image.array), np.max(target_image.array))
+        # print(np.min(image.array), np.max(image.array))
         # plt.show()
 
         return (image.array - target_image.array).flatten()

@@ -20,18 +20,18 @@ galtool = chroma.GalTools.SGalTool(s_engine)
 gparam = fiducial_galaxy()
 
 gparam['n'].value = 0.5
-print 'testing sqrt(Ixx + Iyy) / hlr for n=0.5'
-print 'analytic value is 1.20112'
-print np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7))
-print
+print('testing sqrt(Ixx + Iyy) / hlr for n=0.5')
+print('analytic value is 1.20112')
+print(np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7)))
+print()
 
 gparam['n'].value = 1.0
-print 'testing sqrt(Ixx + Iyy) / hlr for n=1.0'
-print 'analytic value is 1.45947'
-print np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7))
-print
+print('testing sqrt(Ixx + Iyy) / hlr for n=1.0')
+print('analytic value is 1.45947')
+print(np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7)))
+print()
 
 gparam['n'].value = 4.0
-print 'testing sqrt(Ixx + Iyy) / hlr for n=4.0'
-print 'analytic value is 4.65611'
-print np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7))
+print('testing sqrt(Ixx + Iyy) / hlr for n=4.0')
+print('analytic value is 4.65611')
+print(np.sqrt(s_engine.get_uncvl_r2(gparam, pixsize=1./7)))

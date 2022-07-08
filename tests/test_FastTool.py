@@ -56,15 +56,15 @@ def image_comparison(args):
     diff_mom = [n-o for n, o in zip(fast_mom, mom)]
     frac_mom = [d/o for d, o in zip(diff_mom, mom)]
 
-    print '      {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}'.format(
-        'flux', 'x0', 'y0', 'Ixx', 'Iyy', 'Ixy', 'e1', 'e2')
+    print('      {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s} {:>12s}'.format(
+        'flux', 'x0', 'y0', 'Ixx', 'Iyy', 'Ixy', 'e1', 'e2'))
     fmt = '{:12.8f} {:12.8f} {:12.8f} {:12.8f} {:12.8f} {:12.8f} {:12.8f} {:12.8f}'
-    print ('old   '+fmt).format(*mom)
-    print ('new   '+fmt).format(*fast_mom)
-    print ('diff  '+fmt).format(*diff_mom)
-    print ('frac  '+fmt).format(*frac_mom)
+    print(('old   '+fmt).format(*mom))
+    print(('new   '+fmt).format(*fast_mom))
+    print(('diff  '+fmt).format(*diff_mom))
+    print(('frac  '+fmt).format(*frac_mom))
     rms = np.sqrt(((image.array-fast_image.array)**2).sum()/args.stamp_size**2)
-    print 'rms image difference: {:12.8f}'.format(rms)
+    print('rms image difference: {:12.8f}'.format(rms))
 
     if args.plot:
         f = plt.figure(figsize=(10,10))

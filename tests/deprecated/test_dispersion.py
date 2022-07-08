@@ -30,10 +30,10 @@ def test_AtmDispPSF():
     V = simps(psfim * (yflat-Rrel)**2, yflat)/norm * plate_scale**2
     R = Rrel * plate_scale + atmdisp.get_refraction(685, zenith=zenith)*206265
     m = atmdisp.disp_moments(wave, photons, zenith=zenith)
-    print '{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment')
-    print '{:15s} {:15.7f} {:15.7f}'.format('simulated', R, V)
-    print '{:15s} {:15.7f} {:15.7f}'.format('analytic', m[0]*206265, m[1]*206265**2)
-    print '{:15s} {:15.7f} {:15.7f}'.format('difference', R - m[0]*206265, V - m[1]*206265**2)
+    print('{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment'))
+    print('{:15s} {:15.7f} {:15.7f}'.format('simulated', R, V))
+    print('{:15s} {:15.7f} {:15.7f}'.format('analytic', m[0]*206265, m[1]*206265**2))
+    print('{:15s} {:15.7f} {:15.7f}'.format('difference', R - m[0]*206265, V - m[1]*206265**2))
 
 def test_ConvolvePSF():
     from chroma import atmdisp
@@ -78,15 +78,15 @@ def test_ConvolvePSF():
 
     m = atmdisp.disp_moments(wave, photons, zenith=zenith)
     m = m[0] - atmdisp.get_refraction(685.0, zenith=zenith), m[1]
-    print 'change in moments when dispersion is added'
-    print '{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment')
-    print '{:15s} {:15.7f} {:15.7f}'.format('simulated',
+    print('change in moments when dispersion is added')
+    print('{:15s} {:15s} {:15s}'.format(' ', 'first moment', 'second moment'))
+    print('{:15s} {:15.7f} {:15.7f}'.format('simulated',
                                             (ybar-ybar0) * plate_scale,
-                                            (Vy-Vy0) * plate_scale**2)
-    print '{:15s} {:15.7f} {:15.7f}'.format('analytic', m[0]*206265, m[1]*206265**2)
-    print '{:15s} {:15.7f} {:15.7f}'.format('difference',
+                                            (Vy-Vy0) * plate_scale**2))
+    print('{:15s} {:15.7f} {:15.7f}'.format('analytic', m[0]*206265, m[1]*206265**2))
+    print('{:15s} {:15.7f} {:15.7f}'.format('difference',
                                             (ybar-ybar0) * plate_scale - m[0]*206265,
-                                            (Vy-Vy0) * plate_scale**2 - m[1]*206265**2)
+                                            (Vy-Vy0) * plate_scale**2 - m[1]*206265**2))
 
 if __name__ == '__main__':
     test_AtmDispPSF()
