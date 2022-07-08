@@ -10,7 +10,7 @@ import galsim
 import chroma
 
 
-class EllipMeasurer(object):
+class EllipMeasurer:
     """Abstract base class for ellipticity measurer, which measures the ellipticities of ring
     test target images, and optionally writes best-fit images to a FITS hdulist.
 

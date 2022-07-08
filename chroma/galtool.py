@@ -12,7 +12,7 @@ import lmfit
 import chroma
 
 
-class GalTool(object):
+class GalTool:
     """Some generic utilities for drawing ringtest images using GalSim and measuring second moment
     radii.
     """

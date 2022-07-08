@@ -15,7 +15,7 @@ except:
         except TypeError:
             return False
 
-    class ProgressBar(object):
+    class ProgressBar:
         """A somewhat simple console progress bar in case user doesn't have astropy."""
 
         def __init__(self, total_or_items, file=sys.stdout):

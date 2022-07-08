@@ -8,7 +8,7 @@ except:
 import chroma
 
 
-class TargetImageGenerator(object):
+class TargetImageGenerator:
     """A class to generate target images in a ring test.
 
     @param gparam      lmfit.Parameters object containing galaxy attributes

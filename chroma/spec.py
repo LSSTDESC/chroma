@@ -10,7 +10,7 @@ import chroma.dcr
 import chroma.extinction
 
 
-class SED(object):
+class SED:
     """Simple SED object to represent the spectral energy distributions of stars and galaxies.
 
     SEDs are callable, returning the flux in photons/nm as a function of wavelength in nm.
@@ -618,7 +618,7 @@ class SED(object):
         # return ret
 
 
-class Bandpass(object):
+class Bandpass:
     """Simple bandpass object, which models the transmission fraction of incident light as a
     function of wavelength, for either an entire optical path (e.g., atmosphere, reflecting and
     refracting optics, filters, CCD quantum efficiency), or some intermediate piece thereof.

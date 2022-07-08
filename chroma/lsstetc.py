@@ -39,7 +39,7 @@ sbar = {k: s0[k] * 10 ** (-0.4 * (B[k] - 24.0)) for k in B.keys()}
 bd = galsim.BaseDeviate(1)
 
 
-class ETC(object):
+class ETC:
     def __init__(
         self, band, pixel_scale=0.2, stamp_size=31, threshold=0.0, nvisits=None
     ):
