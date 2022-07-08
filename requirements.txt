@@ -1,0 +1,7 @@
+astropy>=5.0.4
+GalSim>=2.3.5
+matplotlib>=3.5.1
+numpy>=1.22.3
+scikit-learn>=1.0.1
+scipy>=1.8.1
+lmfit>=1.0.3
