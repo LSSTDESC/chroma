@@ -35,7 +35,7 @@ class TargetImageGenerator:
             hdu.header.append(("GAMMA1", gamma.real))
             hdu.header.append(("GAMMA2", gamma.imag))
             hdu.header.append(("BETA", beta))
-            for k, v in self.gparam.iteritems():
+            for k, v in self.gparam.items():
                 hdu.header.append((k, v.value))
             self.hdulist.append(hdu)
             target_high_res = self.galtool.get_image(

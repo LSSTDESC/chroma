@@ -62,7 +62,7 @@ class LSTSQEllipMeasurer(EllipMeasurer):
         if self.hdulist is not None:
             fit_image = self.galtool.get_image(result.params)
             hdu = fits.ImageHDU(fit_image.array, name="FIT")
-            for k, v in result.params.iteritems():
+            for k, v in result.params.items():
                 hdu.header.append((k, v.value))
             self.hdulist.append(hdu)
             fit_image_high_res = self.galtool.get_image(
