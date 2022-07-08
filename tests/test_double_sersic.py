@@ -1,6 +1,7 @@
 import _mypath
 import chroma
 import galsim
+from astropy import units as u
 
 monochromaticPSF = galsim.Moffat(fwhm=0.7, beta=3.0)
 PSF = galsim.ChromaticAtmosphere(
@@ -12,9 +13,12 @@ PSF = galsim.ChromaticAtmosphere(
 )
 stamp_size = 32
 pixel_scale = 0.2
-SED1 = chroma.SED("data/SEDs/CWW_E_ext.ascii")
-SED2 = chroma.SED("data/SEDs/CWW_Im_ext.ascii")
-bandpass = chroma.Bandpass("data/filters/LSST_g.dat")
+# SED1 = chroma.SED("data/SEDs/CWW_E_ext.ascii")
+# SED2 = chroma.SED("data/SEDs/CWW_Im_ext.ascii")
+# bandpass = chroma.Bandpass("data/filters/LSST_g.dat")
+SED1 = galsim.SED("data/SEDs/CWW_E_ext.ascii", u.nm, 'flambda')  # SM: need to verify units
+SED2 = galsim.SED("data/SEDs/CWW_Im_ext.ascii", u.nm, 'flambda')
+bandpass = galsim.Bandpass("data/filters/LSST_g.dat", u.nm)
 
 dst = chroma.DoubleSersicTool(
     PSF, stamp_size, pixel_scale, SED1=SED1, SED2=SED2, bandpass=bandpass

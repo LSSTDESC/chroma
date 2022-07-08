@@ -1,5 +1,4 @@
 from .dcr import *
-from .spec import *
 from .galtool import *
 from .utils import *
 from .target import *
