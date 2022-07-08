@@ -1,10 +1,5 @@
 import galsim
-
-try:
-    import astropy.io.fits as fits
-except:
-    import pyfits as fits
-
+import astropy.io.fits as fits
 import chroma
 
 

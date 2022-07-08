@@ -1,12 +1,7 @@
 import lmfit
 import numpy as np
-
-try:
-    import astropy.io.fits as fits
-except:
-    import pyfits as fits
+import astropy.io.fits as fits
 import galsim
-
 import chroma
 
 
