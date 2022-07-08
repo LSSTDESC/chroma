@@ -4,6 +4,8 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+import astropy.units as u
+import galsim
 
 import _mypath
 import chroma
@@ -28,12 +30,12 @@ def LSST_filters():
     colors = ['purple', 'blue', 'green', 'gold', 'magenta', 'red']
     for color, filter_ in zip(colors, 'ugrizy'):
         # filters are stored in two columns: wavelength (nm), and throughput
-        fdata = chroma.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
+        fdata = galsim.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_), u.nm)
         fwave, throughput = fdata.wave_list, fdata(fdata.wave_list)
         ax.fill_between(fwave, throughput, 0.0, color=color, alpha=0.3)
 
     label_pos = {'u':350.0, 'g':460, 'r':618, 'i':750, 'z':867, 'y':967}
-    for k,v in label_pos.iteritems():
+    for k,v in label_pos.items():
         ax.text(v, 0.1, k, fontsize=fontsize)
 
     for label in ax.get_xticklabels():

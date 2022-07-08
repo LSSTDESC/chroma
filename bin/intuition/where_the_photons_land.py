@@ -3,6 +3,8 @@ import subprocess
 
 import numpy as np
 import matplotlib.pyplot as plt
+import galsim
+import astropy.units as u
 
 import _mypath
 import chroma
@@ -32,7 +34,7 @@ zenith_angle = 35 * np.pi/180
 ax[1,0].set_xlabel('Wavelength (nm)', fontsize=12)
 ax[1,1].set_xlabel('Refraction (arcsec)', fontsize=12)
 for i, s in enumerate(spectra):
-    SED = chroma.SED(s)
+    SED = galsim.SED(s, u.nm, 'flambda')
     SED = SED.atRedshift(redshifts[i])
     wave = np.arange(500.0, 901.0, 1.0)
     photons = SED(wave)
@@ -52,7 +54,8 @@ for i, s in enumerate(spectra):
     ax[i,1].set_xlim(26.25, 27.25)
 
     for f in filters:
-        filter_ = chroma.Bandpass(f).truncate(blue_limit=500, red_limit=1000)
+        # TODO why was there a truncate call here?
+        filter_ = galsim.Bandpass(f, u.nm)  # .truncate(blue_limit=500, red_limit=1000)
         photons_filtered = photons * filter_(wave)
         color = np.interp(wave, cwave, np.linspace(1.0, 0.0, 256))
 

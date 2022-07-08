@@ -5,6 +5,8 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+import galsim
+import astropy.units as u
 
 import _mypath
 import chroma
@@ -65,7 +67,7 @@ def chromatic_biases(Euclid=True, chromatic_seeing=True, wide=True):
     colors = ['purple', 'blue', 'green', 'gold', 'magenta', 'red']
     for i, filter_ in enumerate('ugrizy'):
         # filters are stored in two columns: wavelength (nm), and throughput
-        fdata = chroma.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
+        fdata = galsim.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_), u.nm)
         fwave, throughput = fdata.wave_list, fdata(fdata.wave_list)
         ax.fill_between(fwave, throughput * 2.5 - 1, -1, color=colors[i], alpha=0.3)
     ax.legend(fontsize=11, title='zenith angle')
@@ -120,7 +122,7 @@ def chromatic_biases_700():
     colors = ['purple', 'blue', 'green', 'gold', 'magenta', 'red']
     for i, filter_ in enumerate('ugrizy'):
         # filters are stored in two columns: wavelength (nm), and throughput
-        fdata = chroma.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_))
+        fdata = galsim.Bandpass(datadir+'filters/LSST_{}.dat'.format(filter_), u.nm)
         fwave, throughput = fdata.wave_list, fdata(fdata.wave_list)
         ax.fill_between(fwave, throughput * 2.0 - 0.5, -0.5, color=colors[i], alpha=0.3)
     # Add in lambda^(-2/5) for chromatic seeing comparison integrand comparison
