@@ -11,13 +11,5 @@ setup(
     maintainer_email="sidneymau@gmail.com",
     license="MIT",
     packages=["chroma"],
-    package_data={
-        "chroma": [
-            "data/filters/*.dat",
-            "data/SEDs/*.ascii",
-            "data/SEDs/*.spec",
-            "data/simard/*.fits",
-        ]
-    },
     python_requires=">=3.5",
 )
