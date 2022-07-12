@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="chroma",
-    version="0.1",
+    version="0.2",
     description="Chromatic PSFs",
     url="https://github.com/LSSTDESC/chroma",
     author="Josh Meyers",
