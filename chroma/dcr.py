@@ -1,7 +1,12 @@
-import numpy
+import numpy as np
 
 
-def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067):
+def air_refractive_index(
+    wave: float,
+    pressure: float = 69.328,
+    temperature: float = 293.15,
+    H2O_pressure: float = 1.067,
+) -> float:
     """Return the refractive index of air as function of wavelength.
 
     Uses the formulae given in Filippenko (1982), which appears to come from Edlen (1953),
@@ -37,8 +42,11 @@ def air_refractive_index(wave, pressure=69.328, temperature=293.15, H2O_pressure
 
 
 def air_refractive_index2(
-    wave, pressure=69.328, temperature=293.15, H2O_pressure=1.067
-):
+    wave: float,
+    pressure: float = 69.328,
+    temperature: float = 293.15,
+    H2O_pressure: float = 1.067,
+) -> float:
     """Return the refractive index of air as function of wavelength.
 
     Uses the formulae given by Allens Astrophysical Quantities (Cox et al. 2001), including effects
@@ -50,7 +58,7 @@ def air_refractive_index2(
     ---------
     wave -- wavelength in nanometers
     pressure -- in kiloPascals (default 69.328 kPa = 520 mmHg)
-    temperature -- in Kelvin (default 293.15 kPa = 20 C)
+    temperature -- in Kelvin (default 293.15 K = 20 C)
     H2O_pressure -- in kiloPascals (default 1.067 kPa = 8 mmHg)
     """
 
@@ -67,7 +75,7 @@ def air_refractive_index2(
     return n_minus_one + 1.0
 
 
-def get_refraction(wave, zenith, **kwargs):
+def get_refraction(wave: float, zenith: float, **kwargs) -> float:
     """Compute refraction angle (in radians) from space to atmosphere.
 
     Uses formulae from Allen's Astrophysical Quantities (Cox et al. 2001).  Result depends on the
@@ -86,4 +94,4 @@ def get_refraction(wave, zenith, **kwargs):
 
     n_squared = air_refractive_index(wave, **kwargs) ** 2.0
     r0 = (n_squared - 1.0) / (2.0 * n_squared)
-    return r0 * numpy.tan(zenith)
+    return r0 * np.tan(zenith)

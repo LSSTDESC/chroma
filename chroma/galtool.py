@@ -3,6 +3,7 @@ Some tools to conveniently transform lmfit.Parameters into GalSim.Image's.
 """
 
 import copy
+from typing import List, Union, Tuple
 
 import numpy as np
 from scipy.optimize import newton
@@ -34,7 +35,13 @@ class GalTool:
         #                       galsim.ChromaticObject
         raise NotImplementedError("ABC GalTool must be instatiated through a subclass.")
 
-    def get_image(self, gparam, ring_beta=None, ring_shear=None, oversample=1):
+    def get_image(
+        self,
+        gparam: lmfit.Parameters,
+        ring_beta: Union[None, float] = None,
+        ring_shear: Union[None, galsim.Shear] = None,
+        oversample: int = 1,
+    ) -> galsim.Image:
         """Draw a galaxy image using GalSim.  Potentially rotate and shear the galaxy as part of a
         ring test.  Optionally draw a high-resolution image.
 
@@ -68,7 +75,7 @@ class GalTool:
             raise ValueError("Don't recognize galaxy object type in GalTool.")
         return im
 
-    def get_PSF_image(self, oversample=1, method="auto"):
+    def get_PSF_image(self, oversample: int = 1, method: str = "auto") -> galsim.Image:
         """Draw an image of the effective PSF.  Note that the returned PSF includes convolution
         by the pixel response function by default, though this can be overriden using the method
         keywords (e.g., method='fft').
@@ -90,7 +97,7 @@ class GalTool:
             raise ValueError("Don't recognize galaxy object type.")
         return im
 
-    def get_r2(self, gparam, oversample=1):
+    def get_r2(self, gparam: lmfit.Parameters, oversample: int = 1) -> float:
         """Compute object second moment radius sqrt(r^2) directly from image.  This may be biased
         if the object wings are significant or the postage stamp size is too small.
 
@@ -102,8 +109,13 @@ class GalTool:
         return np.sqrt(mxx + myy)
 
     def get_uncvl_image(
-        self, gparam, ring_beta=None, ring_shear=None, oversample=1, center=False
-    ):
+        self,
+        gparam: lmfit.Parameters,
+        ring_beta: Union[None, float] = None,
+        ring_shear: Union[None, galsim.Shear] = None,
+        oversample: int = 1,
+        center: bool = False,
+    ) -> galsim.Image:
         """Draw a galaxy image, not convolved with a PSF, using GalSim.  Potentially rotate and
         shear the galaxy as part of a ring test.  Optionally draw a high-resolution image.
 
@@ -133,7 +145,7 @@ class GalTool:
             raise ValueError("Don't recognize galaxy object type in GalTool.")
         return im
 
-    def get_uncvl_r2(self, gparam, oversample=1):
+    def get_uncvl_r2(self, gparam: lmfit.Parameters, oversample: int = 1) -> float:
         """Compute object second moment radius directly from image.  This may be biased if the
         object wings are significant or the postage stamp size is too small.
 
@@ -144,7 +156,9 @@ class GalTool:
         mx, my, mxx, myy, mxy = chroma.moments(im)
         return np.sqrt(mxx + myy)
 
-    def compute_AHM(self, gparam, oversample=4):
+    def compute_AHM(
+        self, gparam: lmfit.Parameters, oversample: int = 4
+    ) -> Tuple[float, float]:
         """Compute the area above half maximum of the convolved image."""
         original_offset = self.offset
         original_scale = self.pixel_scale
@@ -173,13 +187,15 @@ class GalTool:
         self.pixel_scale = original_scale
         return np.mean(ahms), np.std(ahms) / np.sqrt(len(ahms))
 
-    def compute_FWHM(self, gparam, oversample=4):
+    def compute_FWHM(
+        self, gparam: lmfit.Parameters, oversample: int = 4
+    ) -> Tuple[float, float]:
         """Compute FWHM of the convolved galaxy image."""
         ahm, err = self.compute_AHM(gparam, oversample=oversample)
         fwhm = np.sqrt(4.0 / np.pi * ahm)
         return fwhm, fwhm * err / ahm * 0.5
 
-    def compute_PSF_AHM(self, oversample=4):
+    def compute_PSF_AHM(self, oversample: int = 4) -> Tuple[float, float]:
         """Compute the area above half maximum of the PSF."""
         original_offset = self.offset
         original_scale = self.pixel_scale
@@ -210,13 +226,18 @@ class GalTool:
         self.pixel_scale = original_scale
         return np.mean(ahms), np.std(ahms) / np.sqrt(len(ahms))
 
-    def compute_PSF_FWHM(self, oversample=4):
+    def compute_PSF_FWHM(self, oversample: int = 4) -> Tuple[float, float]:
         """Compute FWHM of the PSF."""
         ahm, err = self.compute_PSF_AHM(oversample=oversample)
         fwhm = np.sqrt(4.0 / np.pi * ahm)
         return fwhm, fwhm * err / ahm * 0.5
 
-    def compute_HLA(self, gparam, oversample=4, flux=None):
+    def compute_HLA(
+        self,
+        gparam: lmfit.Parameters,
+        oversample: int = 4,
+        flux: Union[None, float] = None,
+    ) -> float:
         """Compute the half-light-area of the PSF-convolved galaxy image.
         I.e., the area of the contour containing half the image light.
         """
@@ -229,11 +250,21 @@ class GalTool:
         npix = np.interp(0.5, cumulative_sum, np.arange(len(cumulative_sum)))
         return npix * self.pixel_scale**2 / oversample**2
 
-    def compute_HLR(self, gparam, oversample=4, flux=None):
+    def compute_HLR(
+        self,
+        gparam: lmfit.Parameters,
+        oversample: int = 4,
+        flux: Union[None, float] = None,
+    ) -> float:
         """Compute the half-light-radius of the PSF-convolved galaxy image."""
         return np.sqrt(1.0 / np.pi * self.compute_HLA(gparam, oversample, flux))
 
-    def compute_uncvl_HLA(self, gparam, oversample=4, flux=None):
+    def compute_uncvl_HLA(
+        self,
+        gparam: lmfit.Parameters,
+        oversample: int = 4,
+        flux: Union[None, float] = None,
+    ) -> float:
         """Compute the half-light-area of the unconvolved galaxy image.
         I.e., the area of the contour containing half the image light.
         """
@@ -246,11 +277,17 @@ class GalTool:
         npix = np.interp(0.5, cumulative_sum, np.arange(len(cumulative_sum)))
         return npix * self.pixel_scale**2 / oversample**2
 
-    def compute_uncvl_HLR(self, gparam, oversample=4, flux=None):
+    def compute_uncvl_HLR(
+        self,
+        gparam: lmfit.Parameters,
+        oversample: int = 4,
+        flux: Union[None, float] = None,
+    ) -> float:
         """Compute the half-light-radius of the unconvolved galaxy image."""
         return np.sqrt(1.0 / np.pi * self.compute_uncvl_HLA(gparam, oversample, flux))
 
 
+# TODO type hinting
 class SersicTool(GalTool):
     def __init__(
         self,
@@ -282,7 +319,9 @@ class SersicTool(GalTool):
         gal = gal.withFlux(gparam["flux"].value) * self.SED
         return gal
 
-    def set_FWHM(self, gparam, FWHM, oversample=4):
+    def set_FWHM(
+        self, gparam: lmfit.Parameters, FWHM: float, oversample: int = 4
+    ) -> lmfit.Parameters:
         """Set the galaxy PSF-convolved FWHM."""
 
         def FWHM_resid(scale):
@@ -295,7 +334,9 @@ class SersicTool(GalTool):
         gparam["hlr"].value *= scale
         return gparam
 
-    def set_r2(self, gparam, r2, oversample=4):
+    def set_r2(
+        self, gparam: lmfit.Parameters, r2: float, oversample: int = 4
+    ) -> lmfit.Parameters:
         """Set the second moment radius sqrt(r^2).
 
         @param gparam      lmfit.Parameters object describing galaxy.
@@ -314,14 +355,14 @@ class SersicTool(GalTool):
         gparam["hlr"].value *= scale
         return gparam
 
-    def get_uncvl_r2(self, gparam):
+    def get_uncvl_r2(self, gparam: lmfit.Parameters) -> float:
         """Get second moment radius sqrt(r^2) of pre-PSF-convolved profile using polynomial
         approximation.
         @gparam   lmfit.Parameters
         """
         return gparam["hlr"].value * chroma.Sersic_r2_over_hlr(gparam["n"].value)
 
-    def set_uncvl_r2(self, gparam, r2):
+    def set_uncvl_r2(self, gparam: lmfit.Parameters, r2: float) -> lmfit.Parameters:
         """Set the second moment radius sqrt(r^2) of the pre-PSF-convolved profile using
         polynomial approximation.
 
@@ -336,7 +377,9 @@ class SersicTool(GalTool):
         gparam1["hlr"].value = gparam["hlr"].value * scale
         return gparam1
 
-    def get_ring_params(self, gparam, ring_beta, ring_shear):
+    def get_ring_params(
+        self, gparam: lmfit.Parameters, ring_beta: float, ring_shear: galsim.Shear
+    ) -> lmfit.Parameters:
         """Compute initial guess parameters for given angle around ellipticity ring during a ring
         test.
 
@@ -368,7 +411,7 @@ class SersicTool(GalTool):
         return gparam1
 
     @staticmethod
-    def default_galaxy():
+    def default_galaxy() -> lmfit.Parameters:
         """Setup lmfit.Parameters to represent a single Sersic galaxy.  Pick some default
         parameter values.  Parameters defining the single Sersic galaxy are:
         x0   - the x-coordinate of the galaxy center
@@ -392,7 +435,7 @@ class SersicTool(GalTool):
         gparam.add("phi", value=0.0)
         return gparam
 
-    def use_effective_PSF(self):
+    def use_effective_PSF(self) -> None:
         """Integrate a chromatic PSF over wavelength to yield an effective PSF.  Galsim is doing
         this internally anyway, but we do this explicitly here so that it happens only once, instead
         of every time a .drawImage command is executed.
@@ -454,6 +497,7 @@ class SersicTool(GalTool):
         self.PSF = galsim.InterpolatedImage(im)
 
 
+# TODO: type hinting
 # Note that DoubleSersicTool and FastDoubleSersicTool are both currently untested.
 class DoubleSersicTool(GalTool):
     """A GalTool to represent a sum of two chroma Sersic profiles."""
@@ -634,7 +678,9 @@ class DoubleSersicTool(GalTool):
         gparam1["hlr_2"].value *= scale
         return gparam1
 
-    def get_ring_params(self, gparam, ring_beta, ring_shear):
+    def get_ring_params(
+        self, gparam: lmfit.Parameters, ring_beta: float, ring_shear: galsim.Shear
+    ) -> lmfit.Parameters:
         """Compute initial guess parameters for given angle around ellipticity ring during a ring
         test.
 

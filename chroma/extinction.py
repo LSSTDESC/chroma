@@ -27,11 +27,20 @@
 
 """Extinction law functions."""
 
+from typing import List, Union
+
 import numpy as np
+import numpy.typing as npt
 import warnings
 
 
-def extinction(wave, ebv=None, a_v=None, r_v=3.1, model="f99"):
+def extinction(
+    wave: Union[float, List[float]],
+    ebv: Union[None, float] = None,
+    a_v: Union[None, float] = None,
+    r_v: float = 3.1,
+    model: str = "f99",
+) -> Union[float, npt.ArrayLike]:
     """Return extinction in magnitudes at given wavelength(s).
 
     Parameters
@@ -239,6 +248,7 @@ def extinction(wave, ebv=None, a_v=None, r_v=3.1, model="f99"):
     """
 
     model = model.lower()
+    # TODO: reformat error handling
     if (a_v is None) and (ebv is None):
         raise ValueError("Must specify either a_v or ebv")
     if (a_v is not None) and (ebv is not None):
@@ -276,7 +286,13 @@ def extinction(wave, ebv=None, a_v=None, r_v=3.1, model="f99"):
     return a_lambda
 
 
-def reddening(wave, ebv=None, a_v=None, r_v=3.1, model="od94"):
+def reddening(
+    wave: Union[float, List[float]],
+    ebv: Union[None, float] = None,
+    a_v: Union[None, float] = None,
+    r_v: float = 3.1,
+    model: str = "od94",
+) -> Union[float, npt.ArrayLike]:
     """Return reddening (inverse of flux transmission fraction) at given
     wavelength(s).
 
@@ -318,7 +334,7 @@ def reddening(wave, ebv=None, a_v=None, r_v=3.1, model="od94"):
     return 10 ** (0.4 * extinction(wave, ebv=ebv, a_v=a_v, r_v=r_v, model=model))
 
 
-def _gcc09(x, ebv, r_v):
+def _gcc09(x: npt.ArrayLike, ebv: float, r_v: float) -> npt.ArrayLike:
     f_a = np.zeros_like(x)
     f_b = np.zeros_like(x)
     select = x >= 5.9
@@ -348,7 +364,13 @@ od94_coeffs_b = np.array(
 )
 
 
-def _ccm89_like(x, ebv, r_v, optical_coeffs_a, optical_coeffs_b):
+def _ccm89_like(
+    x: npt.ArrayLike,
+    ebv: float,
+    r_v: float,
+    optical_coeffs_a: npt.ArrayLike,
+    optical_coeffs_b: npt.ArrayLike,
+):
     if np.any(x < 0.3) or np.any(x > 11.0):
         raise ValueError(
             "CCM law valid only for wavelengths from " "910 Angstroms to 3.3 microns"
@@ -393,7 +415,7 @@ def _ccm89_like(x, ebv, r_v, optical_coeffs_a, optical_coeffs_b):
     return ebv * (r_v * a + b)
 
 
-def _f99_like(x, ebv, r_v, model="f99"):
+def _f99_like(x: npt.ArrayLike, ebv: float, r_v: float, model: str = "f99"):
     from scipy.interpolate import interp1d
 
     if np.any(x < 0.167) or np.any(x > 11.0):

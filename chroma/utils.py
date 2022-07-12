@@ -142,7 +142,7 @@ def moments(image):
     scale = image.scale
     xs, ys = np.meshgrid(
         np.arange(data.shape[0], dtype=np.float64) * scale,
-        np.arange(data.shape[0], dtype=np.float64) * scale,
+        np.arange(data.shape[1], dtype=np.float64) * scale,
     )
     total = data.sum()
     xbar = (data * xs).sum() / total

@@ -1,9 +1,21 @@
+from typing import Union
+
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
+import numpy.typing as npt
+from matplotlib.axes import Axes
 
 
-def chroma_fill_between(x, y1, y2=None, c=None, cm=cm.gist_rainbow, axes=None):
+def chroma_fill_between(
+    x: npt.ArrayLike,
+    y1: npt.ArrayLike,
+    y2: Union[None, npt.ArrayLike] = None,
+    c: Union[None, npt.ArrayLike] = None,
+    cm: colors.LinearSegmentedColormap = cm.viridis,
+    axes: Union[None, Axes] = None,
+) -> None:
     """Plot y vs. x but fill in between y and 0 with a colormap.
 
     Arguments
@@ -59,7 +71,7 @@ def chroma_fill_between(x, y1, y2=None, c=None, cm=cm.gist_rainbow, axes=None):
             )
 
 
-def test():
+def test() -> None:
     x = np.linspace(0.0, 2.0 * np.pi, 1000)
     y = np.sin(x)
 
